@@ -1,0 +1,131 @@
+import { useEffect, useState } from "react";
+import Skeleton from "../skeleton/Skeleton";
+import { NavLink } from "react-router-dom";
+import { useCartStore } from "../../stores/useCartStore";
+
+export const CartItemSkeleton = () => {
+  return (
+    <div className="w-full flex gap-3 sm:gap-5 border-b border-gray-300 py-4 sm:py-5">
+      <div className="w-[30%] sm:w-[25%]">
+        <Skeleton className="w-full aspect-3/4 object-cover" />
+      </div>
+      <div className="flex-1 flex flex-col">
+        <div className="flex justify-between items-start gap-2">
+          <div className="w-[60%] space-y-2">
+            <Skeleton className="w-full h-5" />
+            <Skeleton className="w-20 h-4" />
+          </div>
+          <Skeleton className="w-20 h-5" />
+        </div>
+        <div className="flex items-center gap-4 mt-3">
+          <Skeleton className="w-24 h-8" />
+          <Skeleton className="w-10 h-5" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CartItem = ({
+  title,
+  mainImage,
+  salePrice,
+  quantityProps,
+  size,
+  slug,
+  productId
+}: {
+  title: string;
+  mainImage: string;
+  salePrice: number;
+  quantityProps: number;
+  size: string;
+  slug: string;
+  productId: string
+}) => {
+  const [quantity, setQuantity] = useState<number>(quantityProps);
+  const updateQuantity = useCartStore(state => state.updateQuantity)
+  const removeFromCart = useCartStore(state => state.removeFromCart)
+  
+  useEffect(() => {
+    updateQuantity(productId, size, quantity)
+  }, [quantity])
+
+  return (
+    <div className="w-full flex gap-3 sm:gap-5 border-b border-gray-300 py-4 sm:py-5">
+      {/* Hình ảnh */}
+      <NavLink to={`/products/${slug}`}>
+        <div className="w-[30%] sm:w-[25%]">
+          <img
+            src={mainImage}
+            alt=""
+            className="w-full aspect-3/4 object-cover"
+          />
+        </div>
+      </NavLink>
+
+      {/* Thông tin */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex justify-between items-start gap-2">
+          {/* Tên & Size */}
+          <div>
+            <NavLink to={`/products/${slug}`}>
+              <h3 className="font-semibold text-[15px] sm:text-[18px] leading-tight">
+                {title}
+              </h3>
+            </NavLink>
+            <p className="text-sm text-gray-600 mt-1">Size / {size}</p>
+          </div>
+          {/* Giá (Đưa lên góc phải trên cùng để không đè nút) */}
+          <p className="font-semibold text-[15px] sm:text-[18px]">
+            {salePrice}
+          </p>
+        </div>
+
+        {/* Nút tăng giảm & Xóa */}
+        <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
+          <div className="flex">
+            <div
+              className={`px-3 py-1 border border-black border-r-0 cursor-pointer select-none flex items-center justify-center ${
+                quantity === 1 ? "pointer-events-none text-gray-400" : ""
+              }`}
+              onClick={() => {
+                const currentQuantity: number = Number(quantity) || 0;
+                if (currentQuantity <= 1) return;
+                setQuantity(currentQuantity - 1);
+              }}
+            >
+              -
+            </div>
+            <input
+              type="text"
+              value={quantity}
+              onChange={(e) => {
+                const val: string = e.target.value;
+                if (val === "") setQuantity(0);
+                if (!isNaN(Number(val))) setQuantity(Number(val));
+              }}
+              className="max-w-10 px-2 py-1 border border-black outline-none text-center"
+            />
+            <div
+              className="px-3 py-1 border border-black border-l-0 cursor-pointer select-none flex items-center justify-center"
+              onClick={() => {
+                const currentQuantity: number = Number(quantity) || 0;
+                setQuantity(currentQuantity + 1);
+              }}
+            >
+              +
+            </div>
+          </div>
+          <button className="cursor-pointer text-gray-500 hover:text-black hover:underline" onClick={() => {
+            removeFromCart(productId, size)
+          }}>
+            Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CartItem;

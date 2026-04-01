@@ -1,0 +1,23 @@
+.skeleton {
+  /* Màu nền xám đậm đà hơn hẳn (gray-300) */
+  background-color: #cbd5e1; 
+  
+  background-image: linear-gradient(
+    90deg,
+    #cbd5e1 0%,
+    #f8fafc 50%,  /* Vệt sáng trắng ngà dịu mắt */
+    #cbd5e1 100%
+  );
+  
+  background-size: 200% 100%;
+  animation: shine 1.5s infinite linear;
+}
+
+@keyframes shine {
+  0% {
+    background-position-x: 200%;
+  }
+  100% {
+    background-position-x: -200%;
+  }
+}

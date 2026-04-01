@@ -1,0 +1,18 @@
+word: kỹ thuật lập trình với qua-cut
++ qa-cut là gì?
++ đặc điểm của qa-cut với springboot
++ cơ chế không đồng bộ trong qa-cut
++ kỹ thuật lập trình lỗi
++ kiến trúc và các thành phần của qa-cut
++ kỹ thuật lập trình ứng dụng với qa-cut (web)
++ kiuber-net và mối quan hệ với qa-cut
+
+
+-- Phần 2: phát triển 1 ứng dụng cụ thể với qa-cut
+
+-- hãy viết chương trình quản lý sinh viên (link đã cung câp trong zalo)
+
+-- sửa lại chương trình quản lý sinh viên trên sử dụng mysql (yc: khai báo lớp eposisStory với các phương thức kết nối csdl và thực hiện thao tác CRUD với csdl)
+-- sủa lại bài trên với đăng nhập bằng mã QR
+-- sửa lại bài trên yc kết nối và thao tác với csdl JPA (/high p rết)
+-- 

@@ -1,0 +1,27 @@
+/* ./src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography"; /* Thêm dòng này là xong! */
+
+a.active hr {
+  display: block;
+}
+
+* {
+  font-family: "Outfit", sans-serif;
+}
+
+.prata-regular {
+  font-family: "Prata", serif;
+}
+
+@media (max-width: 640px) {
+  a.active {
+    background: #000;
+    color: white;
+  }
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
