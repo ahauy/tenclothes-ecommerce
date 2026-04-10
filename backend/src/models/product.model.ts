@@ -53,6 +53,10 @@ const productSchema = new mongoose.Schema<IProduct>(
         imageUrl: { type: String },
       },
     ],
+    sold: {
+      type: Number,
+      default: 0,
+    },
     media: [String],
     isActive: {
       type: Boolean,

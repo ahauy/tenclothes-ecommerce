@@ -35,7 +35,7 @@ const Search = () => {
 
   return ReactDOM.createPortal(
     <div
-      className={`modal search fixed inset-0 flex justify-center items-center transition-all z-20 ${
+      className={`modal search fixed inset-0 flex justify-center items-center transition-all z-900 ${
         openModal ? "" : "opacity-0 invisible"
       }`}
     >

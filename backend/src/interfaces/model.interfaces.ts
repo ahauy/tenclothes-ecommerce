@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 // -------------------- USER MODEL ------------------
 interface IAddresses {
@@ -60,13 +60,50 @@ export interface IProduct extends Document {
   price: number;
   currency: string;
   discountPercentage?: number;
-  salePrice?: number;
+  salePrice: number;
   gender: string;
   variants: IVariants[];
+  sold: number; // số lượng sản phẩm đã bán
   media: string[];
   isActive: boolean;
   isFeatured: boolean;
   deleted: boolean;
   updatedAt?: Date;
-  createdAt?: Date; 
+  createdAt?: Date;
+}
+
+export interface IOrderProductItem {
+  productId: mongoose.Types.ObjectId;
+  slug: string;
+  title: string;
+  price: number;
+  salePrice: number;
+  size: string;
+  image: string;
+  quantity: number;
+}
+
+// --------------- ORDER MODEL --------------------
+export interface IOrder extends Document {
+  userId?: mongoose.Types.ObjectId;
+  orderCode: string;
+  customer: {
+    fullName: string;
+    email: string;
+    phone: string;
+    province: string;
+    district: string;
+    ward: string;
+    detailAddress: string;
+    note?: string;
+    paymentMethod: "cod" | "banking" | "momo"; // Thêm các method bạn hỗ trợ
+  };
+  items: IOrderProductItem[];
+
+  // Các trường Backend tự sinh ra để quản lý
+  totalAmount: number;
+  orderStatus: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  paymentStatus: "unpaid" | "paid" | "refunded";
+  createdAt: Date;
+  updatedAt: Date;
 }

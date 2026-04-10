@@ -34,7 +34,7 @@ const ProductItem = ({
 
   return (
     <NavLink
-      to={`/product/${slug}`}
+      to={`/collection/${slug}`}
       // Thêm h-full để card giãn đều chiều cao trong grid
       className="text-gray-700 cursor-pointer flex flex-col h-full group"
     >

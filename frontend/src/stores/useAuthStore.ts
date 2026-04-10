@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { IAuthState } from "../interfaces/iAuthState";
 import { authServices } from "../services/authService";
+import { toast } from "sonner";
 
 export const useAuthStore = create<IAuthState>((set) => ({
   accessToken: "",
@@ -21,6 +22,7 @@ export const useAuthStore = create<IAuthState>((set) => ({
     try {
       await authServices.logOutService();
       set({ accessToken: "", isAuthLoading: false })
+      toast.success("Đăng xuất thành công!")
     } catch (error) {
       console.log("Có lỗi trong quá trình đăng xuất!", error)
     }

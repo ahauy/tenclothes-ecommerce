@@ -1,5 +1,5 @@
 export interface ILocation {
-  code: number;
+  code: number | string;
   name: string;
 }
 

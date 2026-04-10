@@ -11,21 +11,22 @@ import PlaceOrder from "./pages/PlaceOrder";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SignUp from "./pages/SignUp";
-import { Toaster } from "sonner"
+import { Toaster } from "sonner";
 import { useAuthStore } from "./stores/useAuthStore";
 import { useEffect } from "react";
+import MoMoReturn from "./pages/MomoReturn";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 
 const App = () => {
-
-  const checkAuth = useAuthStore((state) => state.checkAuth)
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   return (
     <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] flex flex-col min-h-screen">
-      <Toaster richColors position="top-right" expand={false}/>
+      <Toaster richColors position="top-right" expand={false} />
       <Navbar></Navbar>
       <div className="grow">
         <Routes>
@@ -34,11 +35,13 @@ const App = () => {
           <Route path="/about" element={<About />}></Route>
           <Route path="/contact" element={<Contact />}></Route>
           <Route path="/cart" element={<Cart />}></Route>
-          <Route path="/product/:slug" element={<Product />}></Route>
+          <Route path="/collection/:slug" element={<Product />}></Route>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/sign-up" element={<SignUp />}></Route>
           <Route path="/order" element={<Order />}></Route>
+          <Route path="/momo-return" element={<MoMoReturn />}></Route>
           <Route path="/place-order" element={<PlaceOrder />}></Route>
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
         </Routes>
       </div>
       <Footer />

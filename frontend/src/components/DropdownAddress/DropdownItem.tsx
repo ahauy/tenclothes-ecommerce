@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 // Định nghĩa props để cha truyền vào
 interface IDropdownItemProps {
-  placeholder: string;
+  placeholder: string; 
   listLocation: { code: number | string; name: string }[];
   handle: (value: number | string) => void;
   selectedValue: number | string;
@@ -22,7 +22,9 @@ const DropdownItem = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Tìm tên hiển thị dựa trên code đang được chọn
-  const selectedName = listLocation.find((item) => item.code === selectedValue)?.name || placeholder;
+  const selectedName = listLocation.find((item) => {
+    return String(item.code) === String(selectedValue)
+  })?.name || placeholder;
 
   // Xử lý click ra ngoài để đóng dropdown
   useEffect(() => {

@@ -4,16 +4,22 @@ import { useState } from "react";
 import Search from "./Search";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useShopStore } from "../stores/useShopStore";
+import { useCartStore } from "../stores/useCartStore";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
   const setOpenModal = useShopStore((state) => state.setOpenModal)
+  const cartItems = useCartStore((state) => state.cartItems)
+
+  const quantityProduct: number = cartItems.reduce((acc, cur) => {
+    return acc + cur.quantity
+  }, 0)
 
   const accessToken = useAuthStore((state) => state.accessToken)
   const logOut = useAuthStore((state) => state.logOut)
 
   return (
-    <div className="sm:sticky sm:z-10 top-0 sm:bg-white sm:border-b sm:border-black">
+    <div className="sm:sticky sm:z-99 top-0 sm:bg-white sm:border-b sm:border-black">
       <Search />
       <div className="flex items-center justify-between py-5 font-medium">
         <Link to="/">
@@ -88,7 +94,7 @@ const Navbar = () => {
               alt="Cart"
             />
             <p className="absolute -right-1.25 -bottom-1.25 text-white text-[8px] bg-black aspect-square rounded-full w-4 text-center leading-4">
-              10
+              {quantityProduct}
             </p>
           </Link>
 

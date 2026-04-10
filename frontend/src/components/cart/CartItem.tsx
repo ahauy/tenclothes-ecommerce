@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Skeleton from "../skeleton/Skeleton";
 import { NavLink } from "react-router-dom";
 import { useCartStore } from "../../stores/useCartStore";
+import { convertPrice } from "../../utils/convertPrice";
+import { useShopStore } from "../../stores/useShopStore";
 
 export const CartItemSkeleton = () => {
   return (
@@ -33,7 +35,7 @@ const CartItem = ({
   quantityProps,
   size,
   slug,
-  productId
+  productId,
 }: {
   title: string;
   mainImage: string;
@@ -41,35 +43,37 @@ const CartItem = ({
   quantityProps: number;
   size: string;
   slug: string;
-  productId: string
+  productId: string;
 }) => {
   const [quantity, setQuantity] = useState<number>(quantityProps);
-  const updateQuantity = useCartStore(state => state.updateQuantity)
-  const removeFromCart = useCartStore(state => state.removeFromCart)
-  
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const removeFromCart = useCartStore((state) => state.removeFromCart);
+  const currency: string = useShopStore((state) => state.currency)
+
   useEffect(() => {
-    updateQuantity(productId, size, quantity)
-  }, [quantity])
+    updateQuantity(productId, size, quantity);
+    if(quantity == 0) {
+      removeFromCart(productId, size)
+    }
+  }, [quantity]);
 
   return (
     <div className="w-full flex gap-3 sm:gap-5 border-b border-gray-300 py-4 sm:py-5">
       {/* Hình ảnh */}
-      <NavLink to={`/products/${slug}`}>
-        <div className="w-[30%] sm:w-[25%]">
-          <img
-            src={mainImage}
-            alt=""
-            className="w-full aspect-3/4 object-cover"
-          />
-        </div>
+      <NavLink to={`/collection/${slug}`} className="w-[30%] sm:w-[25%]">
+        <img
+          src={mainImage}
+          alt=""
+          className="w-full aspect-3/4 object-cover rounded-lg"
+        />
       </NavLink>
 
       {/* Thông tin */}
       <div className="flex-1 flex flex-col">
-        <div className="flex justify-between items-start gap-2">
+        <div className="flex justify-between items-start gap-5">
           {/* Tên & Size */}
           <div>
-            <NavLink to={`/products/${slug}`}>
+            <NavLink to={`/collection/${slug}`}>
               <h3 className="font-semibold text-[15px] sm:text-[18px] leading-tight">
                 {title}
               </h3>
@@ -78,7 +82,7 @@ const CartItem = ({
           </div>
           {/* Giá (Đưa lên góc phải trên cùng để không đè nút) */}
           <p className="font-semibold text-[15px] sm:text-[18px]">
-            {salePrice}
+            {convertPrice(salePrice)}{currency}
           </p>
         </div>
 
@@ -86,12 +90,9 @@ const CartItem = ({
         <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
           <div className="flex">
             <div
-              className={`px-3 py-1 border border-black border-r-0 cursor-pointer select-none flex items-center justify-center ${
-                quantity === 1 ? "pointer-events-none text-gray-400" : ""
-              }`}
+              className={`px-3 py-1 border border-black border-r-0 cursor-pointer select-none flex items-center justify-center`}
               onClick={() => {
                 const currentQuantity: number = Number(quantity) || 0;
-                if (currentQuantity <= 1) return;
                 setQuantity(currentQuantity - 1);
               }}
             >
@@ -117,9 +118,12 @@ const CartItem = ({
               +
             </div>
           </div>
-          <button className="cursor-pointer text-gray-500 hover:text-black hover:underline" onClick={() => {
-            removeFromCart(productId, size)
-          }}>
+          <button
+            className="cursor-pointer text-gray-500 hover:text-black hover:underline"
+            onClick={() => {
+              removeFromCart(productId, size);
+            }}
+          >
             Xóa
           </button>
         </div>

@@ -24,6 +24,7 @@ export interface ShopState {
   addToCart: (item: ICartItem) => void;
   removeFromCart: (productId: string, size: string) => void
   updateQuantity: (productId: string, size: string, quantity: number) => void
+  clearCart: () => void
 }
 
 export const useCartStore = create<ShopState>()(
@@ -75,7 +76,7 @@ export const useCartStore = create<ShopState>()(
     {
       name: 'cart-storage', // Tên key lưu trong LocalStorage
       // Chỉ lưu cartItems xuống local storage, không lưu openModal
-      partialize: (state) => ({ cartItems: state.cartItems }), 
+      partialize: (state) => ({cartItems: state.cartItems}), 
     }
   )
 );
