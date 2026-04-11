@@ -13,10 +13,10 @@ const CheckoutSuccess = () => {
   const [fullAddress, setFullAddress] = useState<string>("");
 
   // Lấy orderId từ state lúc chuyển trang (navigate('/checkout/success', { state: { orderId: ... } }))
-  const orderID = location.state?.orderID;
+  const orderId = location.state?.orderId;
 
   useEffect(() => {
-    if (!orderID) {
+    if (!orderId) {
       // Nếu không có ID (khách tự gõ link vào), đẩy về trang chủ
       navigate("/");
       return;
@@ -25,7 +25,7 @@ const CheckoutSuccess = () => {
     const fetchOrderDetails = async () => {
       try {
         // Gọi API lấy chi tiết đơn hàng (Bạn nhớ tạo route GET /orders/:id ở backend nhé)
-        const response = await api.get(`/checkout/success/${orderID}`);
+        const response = await api.get(`/checkout/success/${orderId}`);
         if (response.data.status) {
           const orderData: IOrder = response.data.data;
           setOrder(orderData);
@@ -68,7 +68,7 @@ const CheckoutSuccess = () => {
     };
 
     fetchOrderDetails();
-  }, [orderID, navigate]);
+  }, [orderId, navigate]);
 
   if (isLoading) {
     return (

@@ -91,7 +91,7 @@ const Cart = () => {
         if (paymentMethod === "cod") {
           toast.success("Đặt hàng thành công!");
           navigate("/checkout/success", {
-            state: { orderId: response.data.data._id }, // Lưu ý: đã sửa thành orderId
+            state: { orderId: response.data.data._id },
           });
           clearCart();
         } else if (paymentMethod === "momo") {
