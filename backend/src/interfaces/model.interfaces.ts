@@ -81,6 +81,7 @@ export interface IOrderProductItem {
   size: string;
   image: string;
   quantity: number;
+  isOutOfStock?: boolean
 }
 
 // --------------- ORDER MODEL --------------------
@@ -106,4 +107,17 @@ export interface IOrder extends Document {
   paymentStatus: "unpaid" | "paid" | "refunded";
   createdAt: Date;
   updatedAt: Date;
+}
+
+
+// ----------------- CART MODEL -------------
+export interface ICartItem {
+  productId: mongoose.Types.ObjectId;
+  size: string;
+  quantity: number
+}
+
+export interface ICart extends Document {
+  userId?: mongoose.Types.ObjectId;
+  items: ICartItem[];
 }

@@ -7,7 +7,8 @@ import { type loginFormValue } from "../validators/signUp.validate";
 // import type { IJsonFail } from "../interfaces/iAuthState";
 import { useAuthStore } from "../stores/useAuthStore";
 import { authServices } from "../services/authService";
-
+import { useCartStore, type ICartItem } from "../stores/useCartStore";
+import api from "../utils/axios";
 
 const Login = () => {
   const {
@@ -16,19 +17,37 @@ const Login = () => {
     formState: { errors },
   } = useForm<loginFormValue>();
 
-  const setAccessToken = useAuthStore((state) => state.setAccessToken)
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
   const navigate = useNavigate();
 
+  const localCartItems: ICartItem[] = useCartStore((s) => s.cartItems);
 
   const onSubmit: SubmitHandler<loginFormValue> = async (
     data: loginFormValue
   ) => {
     try {
-      const res = await authServices.logInService(data.email, data.password)
+      const res = await authServices.logInService(data.email, data.password);
 
       if (res.data?.status) {
         setAccessToken(res.data.accessToken);
         toast.success("Đăng nhập thành công!");
+
+        if (localCartItems.length > 0) {
+          const response = await api.post(
+            "cart/sync",
+            { items: localCartItems },
+            {
+              headers: {
+                // Nhét thủ công Access Token vào đúng cái định dạng mà verifyToken đang chờ đón
+                Authorization: `Bearer ${res.data.accessToken}`,
+              },
+            }
+          );
+
+          // Frontend nhận kết quả gộp, cập nhật lại giao diện
+          useCartStore.getState().setCart(response.data.data);
+        }
+
         navigate("/");
       }
     } catch {
@@ -47,7 +66,7 @@ const Login = () => {
       //     toast.error(serverDataError.message || "Đăng nhập thất bại!");
       //   }
       // }
-      toast.error("Email hoặc mật khẩu không hợp lệ!")
+      toast.error("Email hoặc mật khẩu không hợp lệ!");
     }
   };
 

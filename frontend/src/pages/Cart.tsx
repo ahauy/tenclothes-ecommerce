@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CartItem, { CartItemSkeleton } from "../components/cart/CartItem";
 import Skeleton from "../components/skeleton/Skeleton";
 import { useCartStore, type ICartItem } from "../stores/useCartStore";
@@ -11,25 +11,61 @@ import api from "../utils/axios";
 import { NavLink, useNavigate } from "react-router-dom";
 import EmptyCartIcon from "../components/IconSVG/EmptyCartIcon";
 
+
 const Cart = () => {
-  const [isLoading] = useState<boolean>(false);
+  // isLoading để hiển thị Skeleton khi đang gọi API lấy data giỏ hàng
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isSubmitting để khóa nút bấm khi đang gửi đơn hàng
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  
+  // State lưu dữ liệu ĐẦY ĐỦ (có tên, ảnh, giá, ....) trả về từ Backend
+  const [validatedCart, setValidatedCart] = useState<ICartItem[]>([]);
+
   const currency: string = useShopStore((state) => state.currency);
   const delivery_fee: number = useShopStore((state) => state.delivery_fee);
 
-  // Lấy danh sách sản phẩm
+  // Lấy danh sách 3 trường (productId, size, quantity) từ LocalStorage
   const cartItems: ICartItem[] = useCartStore((state) => state.cartItems);
-
   const clearCart = useCartStore((s) => s.clearCart);
-
-  const totalSalePrice: number = cartItems.reduce((acc, cur) => {
-    return acc + cur.salePrice;
-  }, 0);
-
-  const totalPrice: number = cartItems.reduce((acc, cur) => {
-    return acc + cur.price;
-  }, 0);
-
   const navigate = useNavigate();
+
+  // Gọi API lấy dữ liệu tươi mỗi khi vào trang hoặc khi giỏ hàng thay đổi số lượng/xóa món
+  useEffect(() => {
+    const fetchValidatedCart = async () => {
+      // Nếu giỏ hàng local trống, không cần gọi API
+      if (!cartItems || cartItems.length === 0) {
+        setValidatedCart([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // setIsLoading(true);
+        // Gọi API lên Backend để lấy thông tin giá, ảnh, tên mới nhất
+        const response = await api.post("/cart/local-validate", { items: cartItems });
+        
+        if (response.data.status) {
+          setValidatedCart(response.data.data);
+        }
+      } catch (error) {
+        console.error("Lỗi đồng bộ giỏ hàng:", error);
+        toast.error("Không thể cập nhật thông tin giỏ hàng lúc này!");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchValidatedCart();
+  }, [cartItems]); // useEffect sẽ chạy lại nếu cartItems thay đổi (vd: xóa sp, tăng giảm SL)
+
+  // Tính tiền DỰA TRÊN DỮ LIỆU TỪ BACKEND TRẢ VỀ (chống hack giá local)
+  const totalSalePrice: number = (validatedCart).reduce((acc, cur) => {
+    return acc + (cur.salePrice * cur.quantity);
+  }, 0);
+
+  const totalPrice: number = (validatedCart).reduce((acc, cur) => {
+    return acc + (cur.price * cur.quantity);
+  }, 0);
 
   const handleSubmitSuccess = async (data: CheckoutInfoValue) => {
     if (!cartItems.length) {
@@ -38,10 +74,13 @@ const Cart = () => {
     }
 
     try {
+      setIsSubmitting(true); // Khóa nút bấm
+
       const orderPayload = {
         customer: data,
-        items: cartItems,
-        totalAmount: totalSalePrice + delivery_fee,
+        // Chỉ gửi 3 trường lên Backend cho nhẹ, vì Backend đã tự tính tiền rồi
+        items: cartItems, 
+        totalAmount: totalSalePrice + delivery_fee, 
       };
 
       const response = await api.post(`/orders`, orderPayload);
@@ -52,7 +91,7 @@ const Cart = () => {
         if (paymentMethod === "cod") {
           toast.success("Đặt hàng thành công!");
           navigate("/checkout/success", {
-            state: { orderID: response.data.data._id },
+            state: { orderId: response.data.data._id }, // Lưu ý: đã sửa thành orderId
           });
           clearCart();
         } else if (paymentMethod === "momo") {
@@ -68,62 +107,59 @@ const Cart = () => {
     } catch (error) {
       console.log("Lỗi khi đặt hàng: ", error);
       toast.error("Đã xảy ra lỗi khi đặt hàng!");
+    } finally {
+      setIsSubmitting(false); // Mở lại nút bấm
     }
   };
 
   return (
-    // Dùng flex-col trên mobile, lg:grid-cols-5 trên màn hình lớn
     <div className="flex flex-col lg:grid lg:grid-cols-5 py-8 sm:py-15 gap-8 lg:gap-12">
-      {/* CỘT BÊN TRÁI: FORM ĐIỀN THÔNG TIN (Sẽ nằm dưới Giỏ hàng trên mobile) */}
+      {/* CỘT BÊN TRÁI: FORM ĐIỀN THÔNG TIN */}
       <FormCheckoutInfo onSubmitSuccess={handleSubmitSuccess} />
 
-      {/* CỘT BÊN PHẢI: GIỎ HÀNG (Sẽ nằm trên cùng trên mobile) */}
+      {/* CỘT BÊN PHẢI: GIỎ HÀNG */}
       <div className="flex flex-col lg:col-span-2 order-1 lg:order-2 bg-white rounded-lg lg:sticky lg:top-20 h-fit">
         <div className="w-full mb-8">
           <h1 className="font-semibold text-xl sm:text-2xl">GIỎ HÀNG</h1>
 
           <div className="w-full pr-2 mt-4">
-            {cartItems.length === 0 && (
+            {!isLoading && validatedCart.length === 0 && (
               <div className="w-full flex flex-col justify-center items-center">
                 <EmptyCartIcon />
-                <p className="text-gray-500 font-semibold text-2xl">
+                <p className="text-gray-500 font-semibold text-2xl mt-2">
                   Không có sản phẩm!
                 </p>
                 <NavLink
-                  to="/"
+                  to="/collection"
                   className="cursor-pointer px-4 py-3 border border-black mt-4 rounded hover:bg-black hover:text-white transition ease-in duration-200"
                 >
                   MUA SẮM NGAY
                 </NavLink>
               </div>
             )}
+            
             {isLoading ? (
-              // Hiển thị 3 skeleton làm mẫu trong lúc đợi dữ liệu
+              // Hiển thị 3 skeleton làm mẫu trong lúc đợi dữ liệu từ API
               <>
                 <CartItemSkeleton />
                 <CartItemSkeleton />
                 <CartItemSkeleton />
               </>
             ) : (
-              // Hiển thị dữ liệu thật
+              // Render dữ liệu thật từ Backend trả về
               <>
-                {cartItems &&
-                  cartItems.map((item) => {
-                    return (
-                      <>
-                        <CartItem
-                          key={item.productId}
-                          title={item.title}
-                          mainImage={item.image}
-                          salePrice={item.salePrice}
-                          quantityProps={item.quantity}
-                          size={item.size}
-                          slug={item.slug}
-                          productId={item.productId}
-                        />
-                      </>
-                    );
-                  })}
+                {(validatedCart).map((item) => (
+                  <CartItem
+                    key={`${item.productId}-${item.size}`}
+                    title={item.title}
+                    mainImage={item.image}
+                    salePrice={item.salePrice}
+                    quantityProps={item.quantity}
+                    size={item.size}
+                    slug={item.slug}
+                    productId={item.productId}
+                  />
+                ))}
               </>
             )}
           </div>
@@ -148,29 +184,23 @@ const Cart = () => {
             CHI TIẾT ĐƠN HÀNG
           </h2>
           <div className="w-full space-y-2 text-sm sm:text-base">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <p>Tạm tính</p>
               {isLoading ? (
                 <Skeleton className="w-20 h-5" />
               ) : (
-                <p>
-                  {convertPrice(totalSalePrice)}
-                  {currency}
-                </p>
+                <p>{convertPrice(totalSalePrice)}{currency}</p>
               )}
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <p>Phí giao hàng</p>
               {isLoading ? (
                 <Skeleton className="w-16 h-5" />
               ) : (
-                <p>
-                  {delivery_fee}
-                  {currency}
-                </p>
+                <p>{delivery_fee}{currency}</p>
               )}
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <p>Voucher giảm giá</p>
               {isLoading ? <Skeleton className="w-10 h-5" /> : <p>0đ</p>}
             </div>
@@ -185,27 +215,32 @@ const Cart = () => {
                 <Skeleton className="w-28 h-7 mb-1 float-right" />
               ) : (
                 <p className="font-bold text-xl sm:text-2xl mb-1 text-red-600">
-                  {convertPrice(totalSalePrice)}
+                  {convertPrice(totalSalePrice + (validatedCart.length > 0 ? delivery_fee : 0))}
                   {currency}
                 </p>
               )}
               <div className="clear-both"></div>
-              <p className="text-xs sm:text-sm text-gray-500 italic mt-1">
-                (Đã giảm giá trên giá gốc:{" "}
-                {convertPrice(totalPrice - totalSalePrice)}
-                {currency})
-              </p>
+              {validatedCart.length > 0 && !isLoading && (
+                <p className="text-xs sm:text-sm text-gray-500 italic mt-1">
+                  (Đã tiết kiệm được: {convertPrice(totalPrice - totalSalePrice)}{currency})
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Đổi chữ Áp dụng thành Đặt hàng ở cuối */}
+        {/* Nút Đặt hàng với trạng thái Loading */}
         <button
           type="submit"
           form="checkout-info-form"
-          className="p-4 w-full bg-black text-white font-semibold text-lg border outline-none border-gray-800 rounded cursor-pointer hover:bg-gray-800 transition-all duration-300 ease-in-out"
+          disabled={isSubmitting || isLoading || validatedCart.length === 0}
+          className={`p-4 w-full text-white font-semibold text-lg border outline-none rounded transition-all duration-300 ease-in-out ${
+            isSubmitting || isLoading || validatedCart.length === 0
+              ? "bg-gray-400 border-gray-400 cursor-not-allowed"
+              : "bg-black border-gray-800 hover:bg-gray-800 cursor-pointer"
+          }`}
         >
-          ĐẶT HÀNG
+          {isSubmitting ? "ĐANG XỬ LÝ..." : "ĐẶT HÀNG"}
         </button>
       </div>
     </div>
