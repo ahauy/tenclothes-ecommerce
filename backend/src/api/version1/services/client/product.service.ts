@@ -46,7 +46,7 @@ export const getListProductService = async (
   if (queryFilter.sort) {
     switch (queryFilter.sort) {
       case "best-selling":
-        sortConditions = { isFeatured: -1 };
+        sortConditions = { sold: -1 };
         break;
       case "price-asc":
         sortConditions = { price: 1 };

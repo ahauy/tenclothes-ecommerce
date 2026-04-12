@@ -13,7 +13,7 @@ const Collection = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [totalProducts, setTotalProducts] = useState<number>(0)
+  const [totalProducts, setTotalProducts] = useState<number>(0);
 
   const [params, setParams] = useSearchParams();
   const currentPage: number = Number(params.get("page")) || 1;
@@ -29,7 +29,7 @@ const Collection = () => {
           },
         });
         setProducts(response.data.data.products);
-        setTotalProducts(response.data.data.totalProducts)
+        setTotalProducts(response.data.data.totalProducts);
         setTotalPages(response.data.data.totalPages || 1);
       } catch (error) {
         console.error(error);
@@ -48,19 +48,20 @@ const Collection = () => {
   };
 
   return (
-    // Thêm padding px-4 để không dính sát viền màn hình
+    // Mình bỏ padding dư thừa ở đây vì thường file App.tsx hoặc Layout tổng của bạn đã có padding rồi
     <div className="w-full">
-      <div className="w-full flex flex-col md:flex-row gap-6 lg:gap-10 pt-6 lg:pt-10">
-        {/* Cột Filter */}
-        <div className="w-full md:w-56 lg:w-64 shrink-0">
-          <Filter totalProducts={totalProducts}/>
+      {/* Đổi md:flex-row thành lg:flex-row. Dưới 1024px, Filter sẽ nằm trên để nhường toàn bộ chiều ngang cho Sản phẩm */}
+      <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-10 pt-6 lg:pt-10">
+        {/* Cột Filter: Chỉ cố định width khi lên màn hình lg */}
+        <div className="w-full lg:w-64 shrink-0">
+          <Filter totalProducts={totalProducts} />
         </div>
 
         {/* Cột Sản phẩm */}
         <div className="flex-1 min-w-0">
-          {/* Header section: Chuyển flex-col trên mobile để dropdown không bị ép */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div className="text-xl sm:text-2xl">
+          {/* Header section: Thêm flex-wrap để lỡ có chật thì Dropdown tự rớt xuống chứ không ép bẹp chữ Title */}
+          <div className="flex flex-wrap justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="text-xl sm:text-2xl shrink-0">
               <Title title1={"ALL"} title2={"COLLECTIONS"} />
             </div>
             <div className="w-full sm:w-auto flex justify-end">
@@ -68,8 +69,8 @@ const Collection = () => {
             </div>
           </div>
 
-          {/* Product Grid: Giữ 2 cột trên md, đẩy lên 3 cột từ màn lg */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          {/* Product Grid: Ở màn hình nhỏ (như lúc bạn mở DevTools) sẽ ưu tiên 2-3 cột rộng rãi */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
             {isLoading && (
               <>
                 {new Array(8).fill(0).map((_, index) => (

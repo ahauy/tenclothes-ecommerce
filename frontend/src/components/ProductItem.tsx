@@ -35,8 +35,8 @@ const ProductItem = ({
   return (
     <NavLink
       to={`/collection/${slug}`}
-      // Thêm h-full để card giãn đều chiều cao trong grid
-      className="text-gray-700 cursor-pointer flex flex-col h-full group"
+      // Đảm bảo có h-full, flex, flex-col
+      className="w-full h-full flex flex-col text-gray-700 cursor-pointer group"
     >
       <div className="overflow-hidden rounded-2xl relative">
         <img
@@ -46,12 +46,13 @@ const ProductItem = ({
         />
       </div>
 
-      {/* Thêm line-clamp-2 để giới hạn tên sản phẩm tối đa 2 dòng */}
-      <p className="pt-3 pb-2 text-sm sm:text-base flex-1 font-medium">
+      {/* Điểm mấu chốt: THÊM flex-1 vào thẻ p này */}
+      {/* flex-1 sẽ tự động chiếm hết mọi khoảng trống thừa ra, đẩy cái giá xuống đáy */}
+      <p className="pt-3 pb-2 text-sm sm:text-base font-medium flex-1">
         {title}
       </p>
 
-      {/* mt-auto đẩy giá xuống dưới cùng. flex-wrap giúp giá tự xuống dòng nếu chật */}
+      {/* Giữ nguyên mt-auto ở khối giá */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-auto">
         <p className="text-base sm:text-[18px] font-bold text-gray-900">
           {currency === "đ" && convertPrice(salePrice)}

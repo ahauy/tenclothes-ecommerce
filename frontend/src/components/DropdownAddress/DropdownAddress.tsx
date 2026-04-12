@@ -112,7 +112,7 @@ const DropdownAddress = ({
         <DropdownItem
           placeholder="Chọn Quận/Huyện"
           listLocation={districts}
-          selectedValue={province}
+          selectedValue={district}
           handle={handleChangeDistrict}
           disabled={!province}
         />

@@ -25,3 +25,13 @@ a.active hr {
 ::-webkit-scrollbar {
   display: none;
 }
+
+/* Ép Swiper wrapper dãn đều các item và cho phép slide tự động ôm content */
+.swiper-wrapper {
+  align-items: stretch !important;
+}
+
+.swiper-slide {
+  height: auto !important;
+  display: flex !important;
+}

@@ -3,7 +3,7 @@ import FilterItem from "./FilterItem";
 
 const Filter = ({ totalProducts }: {totalProducts: number}) => {
   return (
-    <div className="min-w-60 sticky top-25 self-start max-h-[calc(100vh-40px)] overflow-y-auto custom-scrollbar">
+    <div className="min-w-30 sticky top-25 self-start max-h-[calc(100vh-40px)] overflow-y-auto custom-scrollbar">
       <div className="flex items-center justify-between">
         <p className="my-2 text-xl flex items-center cursor-pointer gap-2">
           FILTER
