@@ -31,11 +31,12 @@ const App = () => {
       <div className="grow">
         <Routes>
           <Route path="/" element={<Home />}></Route>
-          <Route path="/collection" element={<Collection />}></Route>
+          {/* <Route path="/collection" element={<Collection />}></Route> */}
           <Route path="/about" element={<About />}></Route>
           <Route path="/contact" element={<Contact />}></Route>
           <Route path="/cart" element={<Cart />}></Route>
-          <Route path="/collection/:slug" element={<Product />}></Route>
+          <Route path="/product/:slug" element={<Product />}></Route>
+          <Route path="/collection/:slug" element={<Collection />}/>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/sign-up" element={<SignUp />}></Route>
           <Route path="/order" element={<Order />}></Route>

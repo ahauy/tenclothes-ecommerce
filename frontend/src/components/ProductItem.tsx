@@ -34,7 +34,7 @@ const ProductItem = ({
 
   return (
     <NavLink
-      to={`/collection/${slug}`}
+      to={`/product/${slug}`}
       // Đảm bảo có h-full, flex, flex-col
       className="w-full h-full flex flex-col text-gray-700 cursor-pointer group"
     >

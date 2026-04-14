@@ -137,7 +137,7 @@ const CheckoutSuccess = () => {
                     {item.title}
                   </h3>
                   <p className="text-gray-500 text-xs">
-                    Size: {item.size} | Số lượng: {item.quantity}
+                    Size/Color: {item.size}/{item.color} | Số lượng: {item.quantity}
                   </p>
                 </div>
                 <div className="flex justify-between items-end mt-2">
@@ -168,6 +168,7 @@ const CheckoutSuccess = () => {
                   Giá Niêm Yết
                 </th>
                 <th className="py-3 px-4 font-semibold text-center">Size</th>
+                <th className="py-3 px-4 font-semibold text-center">Color</th>
                 <th className="py-3 px-4 font-semibold text-right rounded-tr-sm">
                   Thành Tiền
                 </th>
@@ -197,6 +198,9 @@ const CheckoutSuccess = () => {
                   </td>
                   <td className="py-4 px-4 text-center font-medium text-sm">
                     {item.size}
+                  </td>
+                  <td className="py-4 px-4 text-center font-medium text-sm">
+                    {item.color}
                   </td>
                   <td className="py-4 px-4 text-right font-bold text-sm text-red-600">
                     {convertPrice(item.salePrice * item.quantity)} đ

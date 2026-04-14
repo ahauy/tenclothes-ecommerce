@@ -10,21 +10,26 @@ import type { IProduct } from "../interfaces/iProduct";
 const LatestCollection = () => {
   const [latestProducts, setLatestProducts] = useState<IProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function getLatestProducts() {
       try {
         setIsLoading(true);
+        setError(null);
 
-        const response = await api.get("/products", {
+        const response = await api.get("/products/latest-collection", {
           params: {
             limit: LIMIT_LATEST_COLLECTIONS,
           },
         });
 
-        setLatestProducts(response.data.data.products);
+        setLatestProducts(response.data.data);
       } catch (error) {
-        console.error(error);
+        console.error("Lỗi khi tải sản phẩm:", error);
+        setError(
+          "Không thể tải danh sách sản phẩm lúc này. Vui lòng kiểm tra lại kết nối hoặc phân quyền."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -44,63 +49,46 @@ const LatestCollection = () => {
         </p>
       </div>
 
-      {/* Rendering products */}
-      {/* <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 gap-y-6">
-        {latestProducts.map((product: IProduct) => (
-          <>
-            <ProductItem
-              key={product._id}
-              title={product.name}
-              media={product.media[0]}
-              price={product.price}
-            ></ProductItem>
-          </>
-        ))}
-      </div> */}
-      <Swiper
-        spaceBetween={20} // Khoảng cách giữa các sản phẩm
-        slidesPerView={2} // Mặc định hiển thị 2 sản phẩm (cho mobile)
-        breakpoints={{
-          // Khi màn hình >= 640px (Tablet)
-          640: {
-            slidesPerView: 3,
-            spaceBetween: 20,
-          },
-          // Khi màn hình >= 768px (Laptop nhỏ)
-          768: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-          // Khi màn hình >= 1024px (Desktop)
-          1024: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-        }}
-      >
-        {latestProducts.map((product) => (
-          <SwiperSlide key={product._id}>
-            {isLoading && (
-              <>
-                <ProductItem isLoading={isLoading} />
-              </>
-            )}
-
-            {!isLoading && latestProducts.length > 0 && (
-              <>
-                <ProductItem
-                  slug={product.slug}
-                  title={product.title}
-                  price={product.price}
-                  salePrice={product.salePrice}
-                  discountPercentage={product.discountPercentage}
-                  media={product.media[0]}
-                />
-              </>
-            )}
-          </SwiperSlide>
-        ))}
-      </Swiper>
+      {/* ĐIỀU KIỆN 1: ĐANG LOADING CHƯA CÓ DATA */}
+      {isLoading ? (
+        // Dùng CSS Grid khớp 100% với breakpoint của Swiper bên dưới
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 md:gap-7.5">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index}>
+              <ProductItem isLoading={true} />
+            </div>
+          ))}
+        </div>
+      ) : /* ĐIỀU KIỆN 2: LOAD XONG NHƯNG BỊ LỖI API (VÍ DỤ LỖI 401) */
+      error ? (
+        <div className="text-center text-red-500 py-10 font-medium">
+          {error}
+        </div>
+      ) : (
+        /* ĐIỀU KIỆN 3: LOAD XONG VÀ THÀNH CÔNG -> HIỂN THỊ SWIPER */
+        <Swiper
+          spaceBetween={20}
+          slidesPerView={2}
+          breakpoints={{
+            640: { slidesPerView: 3, spaceBetween: 20 },
+            768: { slidesPerView: 4, spaceBetween: 30 },
+            1024: { slidesPerView: 4, spaceBetween: 30 },
+          }}
+        >
+          {latestProducts.map((product) => (
+            <SwiperSlide key={product._id}>
+              <ProductItem
+                slug={product.slug}
+                title={product.title}
+                price={product.price}
+                salePrice={product.salePrice}
+                discountPercentage={product.discountPercentage}
+                media={product.productStyles?.[0]?.images?.[0] || ""}
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      )}
     </div>
   );
 };

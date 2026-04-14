@@ -144,15 +144,9 @@ export const postOrderClient = async (
 
 export const momoIPN = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Thông tin MoMo gửi sang
-    const { orderId, resultCode } = req.body; // vì bên trên mình để là orderId = orderCode
-
-    // Trong thực tế, bạn PHẢI lấy dữ liệu gửi về ghép lại thành chuỗi và tạo chữ ký
-    // bằng secretKey để so sánh với cái 'signature' MoMo gửi, tránh hacker giả mạo.
-    // Ở mức độ cơ bản, mình sẽ check resultCode trực tiếp:
+    const { orderId, resultCode } = req.body; 
 
     if (resultCode === 0) {
-      // 0 là thanh toán thành công -> Cập nhật trạng thái đơn hàng
       const updatedOrder = await updateOrderService(orderId);
 
       if (updatedOrder !== null) {
@@ -162,6 +156,7 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
             {
               _id: item.productId,
               "variants.size": item.size,
+              "variants.colorName": item.color
             },
             {
               $inc: { "variants.$.stock": -item.quantity, sold: item.quantity },
@@ -170,8 +165,6 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
         }
 
         const htmlContent = await emailTemplate(updatedOrder)
-
-        // send mail for customer
         await sendMail(
           updatedOrder.customer.email,
           `Thanh toán thành công đơn hàng #${updatedOrder.orderCode}`,
@@ -182,8 +175,6 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // Bắt buộc phải trả về HTTP 200 cho MoMo biết là Server của bạn đã nhận được tín hiệu
-    // Nếu không MoMo sẽ gọi lại liên tục (retry)
     res.status(200).json({ message: "Received IPN successfully" });
   } catch (error) {
     console.error("Lỗi khi xử lý MoMo IPN:", error);

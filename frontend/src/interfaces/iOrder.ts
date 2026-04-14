@@ -1,4 +1,18 @@
 // Định nghĩa Type dựa trên Model Backend của bạn
+export interface IOrderProductItem {
+  productId: string;
+  sku: string; // Thêm mã kho để quản lý thực tế
+  slug: string;
+  title: string;
+  price: number;
+  salePrice: number;
+  color: string; // Thêm màu sắc
+  size: string;
+  image: string;
+  quantity: number;
+  isOutOfStock?: boolean;
+}
+
 export interface IOrder {
   orderCode: string;
   totalAmount: number;
@@ -12,13 +26,5 @@ export interface IOrder {
     province: string;
     paymentMethod: string;
   };
-  items: {
-    productId: string;
-    title: string;
-    image: string;
-    size: string;
-    quantity: number;
-    price: number;
-    salePrice: number;
-  }[];
+  items: IOrderProductItem[]
 }

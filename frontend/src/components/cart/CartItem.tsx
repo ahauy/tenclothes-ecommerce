@@ -36,6 +36,7 @@ const CartItem = ({
   size,
   slug,
   productId,
+  color
 }: {
   title: string;
   mainImage: string;
@@ -44,6 +45,7 @@ const CartItem = ({
   size: string;
   slug: string;
   productId: string;
+  color: string
 }) => {
   const [quantity, setQuantity] = useState<number>(quantityProps);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -51,16 +53,16 @@ const CartItem = ({
   const currency: string = useShopStore((state) => state.currency)
 
   useEffect(() => {
-    updateQuantity(productId, size, quantity);
+    updateQuantity(productId, size, color, quantity);
     if(quantity == 0) {
-      removeFromCart(productId, size)
+      removeFromCart(productId, size, color)
     }
   }, [quantity]);
 
   return (
     <div className="w-full flex gap-3 sm:gap-5 border-b border-gray-300 py-4 sm:py-5">
       {/* Hình ảnh */}
-      <NavLink to={`/collection/${slug}`} className="w-[30%] sm:w-[25%]">
+      <NavLink to={`/product/${slug}`} className="w-[30%] sm:w-[25%]">
         <img
           src={mainImage}
           alt=""
@@ -73,12 +75,12 @@ const CartItem = ({
         <div className="flex justify-between items-start gap-5">
           {/* Tên & Size */}
           <div>
-            <NavLink to={`/collection/${slug}`}>
+            <NavLink to={`/product/${slug}`}>
               <h3 className="font-semibold text-[15px] sm:text-[18px] leading-tight">
                 {title}
               </h3>
             </NavLink>
-            <p className="text-sm text-gray-600 mt-1">Size / {size}</p>
+            <p className="text-sm text-gray-600 mt-1">{color} / {size}</p>
           </div>
           {/* Giá (Đưa lên góc phải trên cùng để không đè nút) */}
           <p className="font-semibold text-[15px] sm:text-[18px]">
@@ -121,7 +123,7 @@ const CartItem = ({
           <button
             className="cursor-pointer text-gray-500 hover:text-black hover:underline"
             onClick={() => {
-              removeFromCart(productId, size);
+              removeFromCart(productId, size, color);
             }}
           >
             Xóa

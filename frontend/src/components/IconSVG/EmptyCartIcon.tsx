@@ -1,4 +1,4 @@
-const EmptyCartIcon = ({ className = "w-16 h-16 text-gray-400" }) => (
+const EmptyCartIcon = ({ className = "w-16 h-16 text-gray-400 flex items-center justify-center" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="none"

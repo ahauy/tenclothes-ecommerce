@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ICartItem } from "./model.interfaces";
+import { ICartItem, IProductStyle } from "./model.interfaces";
 
 export interface ISyncCartBody {
   items: ICartItem[];
@@ -11,27 +11,32 @@ export interface IPopulatedCartItem {
   title: string;
   price: number;
   salePrice: number;
-  media: string[];
+  productStyles: IProductStyle[]
 }
 
-export interface IPopulatedCart {
-  _id: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
-  items: {
-    _id: mongoose.Types.ObjectId;
-    size: string;
-    quantity: number;
-    productId: IPopulatedCartItem;
-  }[];
-}
-
+// Cập nhật IFormattedCart (Dữ liệu trả về cho Frontend)
 export interface IFormattedCart {
-  productId: mongoose.Types.ObjectId;
+  productId: mongoose.Types.ObjectId | string;
+  sku: string;       // Bổ sung dòng này
   slug: string;
   title: string;
   price: number;
   salePrice: number;
-  image: string; // Định nghĩa rõ là string chứ không phải mảng media
+  color: string;     // Bổ sung dòng này
   size: string;
+  image: string;
   quantity: number;
+}
+
+// Nếu bạn có IPopulatedCart thì cũng cập nhật mảng items của nó
+export interface IPopulatedCart {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  items: {
+    productId: any; // Chứa nguyên object Product đã được populate
+    sku: string;    // Bổ sung
+    color: string;  // Bổ sung
+    size: string;
+    quantity: number;
+  }[];
 }

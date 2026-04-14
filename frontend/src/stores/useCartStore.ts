@@ -1,14 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import api from "../utils/axios"; // Hãy đảm bảo bạn import axios instance của dự án
+import api from "../utils/axios"; 
 import { useAuthStore } from "./useAuthStore";
 
+// 1. CẬP NHẬT INTERFACE: Thêm color và sku
 export interface ICartItem {
   productId: string;
+  sku: string; // Mã kho cực kỳ quan trọng khi đặt hàng
   slug: string;
   title: string;
   price: number;
   salePrice: number;
+  color: string; // Bổ sung màu sắc
   size: string;
   image: string;
   quantity: number;
@@ -20,12 +23,13 @@ export interface ShopState {
   setOpenModal: (open: boolean) => void;
   cartItems: ICartItem[];
 
-  // Chuyển các hàm thành async để gọi API
+  // 2. CẬP NHẬT THAM SỐ: Thêm color vào các hàm xử lý
   addToCart: (item: ICartItem) => Promise<void>;
-  removeFromCart: (productId: string, size: string) => Promise<void>;
+  removeFromCart: (productId: string, size: string, color: string) => Promise<void>;
   updateQuantity: (
     productId: string,
     size: string,
+    color: string,
     quantity: number
   ) => Promise<void>;
   setCart: (items: ICartItem[]) => void;
@@ -33,12 +37,9 @@ export interface ShopState {
 }
 
 // HÀM KIỂM TRA ĐĂNG NHẬP
-// Tùy thuộc vào dự án của bạn, bạn có thể lấy token từ localStorage
-// hoặc dùng store: useAuthStore.getState().isAuthenticated
 const isAuthenticated = () => {
   const accessToken = useAuthStore.getState().accessToken;
-
-  return accessToken ? accessToken : null
+  return accessToken ? accessToken : null;
 };
 
 export const useCartStore = create<ShopState>()(
@@ -47,15 +48,14 @@ export const useCartStore = create<ShopState>()(
       openModal: false,
       setOpenModal: (open) => set({ openModal: open }),
 
-      // STATE GIỎ HÀNG
       cartItems: [],
 
       // ACTION: Thêm vào giỏ
       addToCart: async (item) => {
-        // 1. Cập nhật State ngay lập tức cho UI mượt mà
         set((state) => {
+          // QUAN TRỌNG: Phải so sánh trùng khớp cả ID, Size VÀ Màu sắc
           const existingItemIndex = state.cartItems.findIndex(
-            (i) => i.productId === item.productId && i.size === item.size
+            (i) => i.productId === item.productId && i.size === item.size && i.color === item.color
           );
 
           if (existingItemIndex !== -1) {
@@ -67,19 +67,20 @@ export const useCartStore = create<ShopState>()(
           }
         });
 
-        // 2. Nếu đã đăng nhập, gọi API chạy ngầm lưu vào Database
+        // Gọi API lên Backend
         if (isAuthenticated()) {
           try {
             await api.post(
               "/cart/add",
               {
                 productId: item.productId,
+                sku: item.sku,
+                color: item.color, // Gửi màu sắc lên DB
                 size: item.size,
                 quantity: item.quantity,
               },
               {
                 headers: {
-                  // Nhét thủ công Access Token vào đúng cái định dạng mà verifyToken đang chờ đón
                   Authorization: `Bearer ${isAuthenticated()}`,
                 },
               }
@@ -91,25 +92,22 @@ export const useCartStore = create<ShopState>()(
       },
 
       // ACTION: Cập nhật số lượng
-      updateQuantity: async (productId, size, quantity) => {
-        // 1. Cập nhật State ngay lập tức
+      updateQuantity: async (productId, size, color, quantity) => {
         set((state) => ({
           cartItems: state.cartItems.map((item) =>
-            item.productId === productId && item.size === size
+            item.productId === productId && item.size === size && item.color === color
               ? { ...item, quantity: Math.max(1, quantity) }
               : item
           ),
         }));
 
-        // 2. Cập nhật lên Database nếu đã đăng nhập
         if (isAuthenticated()) {
           try {
             await api.patch(
               "/cart/update",
-              { productId, size, quantity },
+              { productId, size, color, quantity }, // Cập nhật có kèm color
               {
                 headers: {
-                  // Nhét thủ công Access Token vào đúng cái định dạng mà verifyToken đang chờ đón
                   Authorization: `Bearer ${isAuthenticated()}`,
                 },
               }
@@ -121,52 +119,50 @@ export const useCartStore = create<ShopState>()(
       },
 
       // ACTION: Xóa khỏi giỏ
-      removeFromCart: async (productId, size) => {
-        // 1. Cập nhật State ngay lập tức
+      removeFromCart: async (productId, size, color) => {
         set((state) => ({
           cartItems: state.cartItems.filter(
-            (item) => !(item.productId === productId && item.size === size)
+            (item) => !(item.productId === productId && item.size === size && item.color === color)
           ),
         }));
 
-        // 2. Xóa trên Database nếu đã đăng nhập
         if (isAuthenticated()) {
           try {
-            // Tùy theo backend bạn viết body như thế nào cho method DELETE
-            await api.patch("/cart/remove", { data: { productId, size } }, {
-              headers: {
-                Authorization: `Bearer ${isAuthenticated()}`,
-              },
-            });
+            await api.patch(
+              "/cart/remove", 
+              { data: { productId, size, color } }, 
+              {
+                headers: {
+                  Authorization: `Bearer ${isAuthenticated()}`,
+                },
+              }
+            );
           } catch (error) {
             console.error("Lỗi xóa sản phẩm trên Server", error);
           }
         }
       },
 
-      // ACTION: Cập nhật toàn bộ giỏ hàng (Dùng khi đăng nhập xong gọi hàm gộp giỏ)
       setCart: (items) => {
         set({ cartItems: items });
       },
 
-      // ACTION: Xóa toàn bộ giỏ (Dùng sau khi thanh toán thành công)
       clearCart: () => {
-        // Vì API Checkout bên backend đã tự động dọn Database của user rồi,
-        // nên ở đây ta chỉ cần dọn dẹp state local là đủ.
         set({ cartItems: [] });
       },
     }),
     {
-      name: "cart-storage", // Tên key lưu trong LocalStorage
+      name: "cart-storage",
       partialize: (state) => ({
-        // Chỉ lưu 3 trường cốt lõi xuống localStorage để chống hack giá
-        cartItems: state.cartItems.map((item) => {
-          return {
-            productId: item.productId,
-            size: item.size,
-            quantity: item.quantity,
-          };
-        }),
+        // Chỉ lưu các trường thiết yếu để phục hồi giỏ hàng
+        // Bổ sung sku và color để khi Backend validate lại giá không bị nhầm variant
+        cartItems: state.cartItems.map((item) => ({
+          productId: item.productId,
+          sku: item.sku,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity,
+        })),
       }),
     }
   )

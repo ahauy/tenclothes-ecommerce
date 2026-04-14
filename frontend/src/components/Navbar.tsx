@@ -5,6 +5,7 @@ import Search from "./Search";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useShopStore } from "../stores/useShopStore";
 import { useCartStore } from "../stores/useCartStore";
+import CategoryMenu from "./category/CategoryMenu";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
@@ -19,7 +20,7 @@ const Navbar = () => {
   const logOut = useAuthStore((state) => state.logOut)
 
   return (
-    <div className="sm:sticky sm:z-99 top-0 sm:bg-white sm:border-b sm:border-black">
+    <div className="sm:sticky sm:z-99 top-0 sm:bg-white sm:border-b">
       <Search />
       <div className="flex items-center justify-between py-5 font-medium">
         <Link to="/">
@@ -27,24 +28,15 @@ const Navbar = () => {
         </Link>
 
         <ul className="hidden sm:flex gap-5 text-sm text-gray-700">
-          <NavLink to="/" className="flex flex-col items-center gap-1">
-            <p>HOME</p>
-            <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
+          <NavLink to="/" className="flex flex-col items-center gap-1 py-4">
+            <p className="hover:text-[#ff4500]">TRANG CHỦ</p>
           </NavLink>
-          <NavLink
-            to="/collection"
-            className="flex flex-col items-center gap-1"
-          >
-            <p>COLLECTION</p>
-            <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
+          <CategoryMenu />
+          <NavLink to="/about" className="flex flex-col items-center gap-1 py-4">
+            <p className="hover:text-[#ff4500]">GIỚI THIỆU</p>
           </NavLink>
-          <NavLink to="/about" className="flex flex-col items-center gap-1">
-            <p>ABOUT</p>
-            <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-          </NavLink>
-          <NavLink to="/contact" className="flex flex-col items-center gap-1">
-            <p>CONTACT</p>
-            <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
+          <NavLink to="/contact" className="flex flex-col items-center gap-1 py-4">
+            <p className="hover:text-[#ff4500]">LIÊN HỆ</p>
           </NavLink>
         </ul>
 

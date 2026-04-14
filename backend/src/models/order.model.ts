@@ -39,10 +39,12 @@ const orderSchema = new Schema<IOrder>(
           ref: "Product", // Reference đến model Product của bạn
           required: true,
         },
+        sku: { type: String, required: true }, // Thêm trường SKU (Mã kho)
         slug: { type: String, required: true },
         title: { type: String, required: true },
         price: { type: Number, required: true },
         salePrice: { type: Number, required: true },
+        color: { type: String, required: true }, // Thêm trường Màu sắc
         size: { type: String, required: true },
         image: { type: String, required: true },
         quantity: { type: Number, required: true, min: 1 },

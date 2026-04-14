@@ -1,10 +1,25 @@
-import express, { Router } from 'express';
-import { getListProduct, getProductDetail } from '../../controllers/client/product.controller';
+import express, { Router } from "express";
+import {
+  getBestSelling,
+  getCategoryFilters,
+  getLatestCollection,
+  getListProduct,
+  getProductDetail,
+  getRelatedProducts,
+} from "../../controllers/client/product.controller";
 
-const productControllerClient: Router = express.Router()
+const productControllerClient: Router = express.Router();
 
-productControllerClient.get("/", getListProduct)
+productControllerClient.get("/category/:slug", getListProduct);
 
-productControllerClient.get("/:slug", getProductDetail)
+productControllerClient.get("/category/:slug/filters", getCategoryFilters);
+
+productControllerClient.get("/latest-collection", getLatestCollection);
+
+productControllerClient.get("/best-selling", getBestSelling);
+
+productControllerClient.get("/related-collection", getRelatedProducts)
+
+productControllerClient.get("/:slug", getProductDetail);
 
 export default productControllerClient;

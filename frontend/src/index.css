@@ -3,8 +3,13 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography"; /* Thêm dòng này là xong! */
 
-a.active hr {
-  display: block;
+/* a.active hr { */
+  /* display: block;
+  background: orangered;
+} */
+
+a.active {
+  color: #ff4500;
 }
 
 * {

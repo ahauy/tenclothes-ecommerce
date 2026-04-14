@@ -44,44 +44,83 @@ export interface IAccount extends Document {
 }
 
 // ---------------- PRODUCT MODEL ------------------
-interface IVariants {
-  sku?: string;
-  color?: string;
+export interface IProductStyle {
+  colorName: string;
+  colorHex: string;
+  images: string[];
+  isDefault: boolean;
+}
+
+export interface IProductVariant {
+  sku: string;
+  colorName: string;
   size: string;
   stock: number;
-  imageUrl?: string;
+  priceDifference: number;
 }
 
 export interface IProduct extends Document {
   title: string;
   slug: string;
-  description?: string;
-  categoryIds: string[];
+  description: string;
+  categoryId: mongoose.Types.ObjectId;
+  brand?: string;
+  tags: string[];
+
   price: number;
   currency: string;
-  discountPercentage?: number;
-  salePrice: number;
-  gender: string;
-  variants: IVariants[];
-  sold: number; // số lượng sản phẩm đã bán
-  media: string[];
+  discountPercentage: number;
+  salePrice: number; // Virtual field
+
+  gender: "male" | "female" | "unisex";
+
+  productStyles: IProductStyle[];
+  variants: IProductVariant[];
+
+  totalStock: number;
+  sold: number;
+
+  averageRating: number;
+  reviewCount: number;
+
+  weight: number; // Tính bằng gram để tính phí ship
+
   isActive: boolean;
   isFeatured: boolean;
   deleted: boolean;
-  updatedAt?: Date;
-  createdAt?: Date;
+  deletedAt: Date | null;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
+// --------------- ORDER & CART ITEMS ----------------
 export interface IOrderProductItem {
   productId: mongoose.Types.ObjectId;
+  sku: string; // Thêm mã kho để quản lý thực tế
   slug: string;
   title: string;
   price: number;
   salePrice: number;
+  color: string; // Thêm màu sắc
   size: string;
   image: string;
   quantity: number;
-  isOutOfStock?: boolean
+  isOutOfStock?: boolean;
+}
+
+// ----------------- CART MODEL -------------
+export interface ICartItem {
+  productId: mongoose.Types.ObjectId;
+  sku?: string; // Có thể optional vì khi thêm vào giỏ có thể chưa truyền ngay
+  color: string; // Bắt buộc phải có để phân biệt biến thể
+  size: string;
+  quantity: number;
+}
+
+export interface ICart extends Document {
+  userId?: mongoose.Types.ObjectId;
+  items: ICartItem[];
 }
 
 // --------------- ORDER MODEL --------------------
@@ -97,7 +136,7 @@ export interface IOrder extends Document {
     ward: string;
     detailAddress: string;
     note?: string;
-    paymentMethod: "cod" | "banking" | "momo"; // Thêm các method bạn hỗ trợ
+    paymentMethod: "cod" | "banking" | "momo";
   };
   items: IOrderProductItem[];
 
@@ -109,15 +148,21 @@ export interface IOrder extends Document {
   updatedAt: Date;
 }
 
+// ----------------- CATEGORY MODEL ------------------
+export interface ICategory extends Document {
+  title: string;
+  slug: string;
+  description?: string;
+  thumbnail?: string;
 
-// ----------------- CART MODEL -------------
-export interface ICartItem {
-  productId: mongoose.Types.ObjectId;
-  size: string;
-  quantity: number
-}
+  parentId?: mongoose.Types.ObjectId | null; // Trỏ đến ID của danh mục cha
 
-export interface ICart extends Document {
-  userId?: mongoose.Types.ObjectId;
-  items: ICartItem[];
+  level: number;
+
+  isActive: boolean;
+  deleted: boolean;
+  deletedAt?: Date | null;
+
+  createdAt: Date;
+  updatedAt: Date;
 }

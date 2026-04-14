@@ -1,12 +1,9 @@
 import { z } from "zod";
 
-// Regex cho số điện thoại Việt Nam (Giống với Frontend của bạn)
 const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-
-// Regex cho MongoDB ObjectId (Bắt buộc là 24 ký tự hex)
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
-export const PAYMENT_METHOD = ["cod", "momo"]
+export const PAYMENT_METHOD = ["cod", "momo"] as const
 
 export const orderSchema = z.object({
   body: z.object({
@@ -19,11 +16,13 @@ export const orderSchema = z.object({
       ward: z.string().min(1, "Vui lòng chọn Phường/Xã!"),
       detailAddress: z.string().min(1, "Vui lòng nhập địa chỉ chi tiết!"),
       note: z.string().optional(),
-      paymentMethod: z.enum(PAYMENT_METHOD, "Vui lòng chọn phương thức thanh toán!")
+      paymentMethod: z.enum(PAYMENT_METHOD, "Vui lòng chọn một phương thức thanh toán!")
     }),
     items: z.array(
       z.object({
-        productId: z.string().min(1, "Thiết ID sản phẩm").regex(objectIdRegex, "ID sản phẩm không hợp lê!"),
+        productId: z.string().min(1, "Thiếu ID sản phẩm").regex(objectIdRegex, "ID sản phẩm không hợp lệ!"),
+        sku: z.string().min(1, "Thiếu mã SKU của sản phẩm"),
+        color: z.string().min(1, "Vui lòng chọn màu sắc!"),
         size: z.string().min(1, "Vui lòng chọn size sản phẩm!"),
         quantity: z.number().int("Số lượng phải là số nguyên!").min(1, "Phải có ít nhất 1 sản phẩm!")
       })

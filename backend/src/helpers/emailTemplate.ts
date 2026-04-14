@@ -58,6 +58,9 @@ export const emailTemplate = async (order: IOrder) => {
               <p style="margin: 0; font-size: 12px; color: #666;">Size: <strong>${
                 item.size
               }</strong></p>
+              <p style="margin: 0; font-size: 12px; color: #666;">Color: <strong>${
+                item.color
+              }</strong></p>
             </td>
           </tr>
         </table>
@@ -116,7 +119,7 @@ export const emailTemplate = async (order: IOrder) => {
         </tr>
         <tr>
           <td style="padding: 8px 10px; color: #666666; font-size: 14px;">Tổng khuyến mãi</td>
-          <td style="padding: 8px 10px; text-align: right; font-size: 14px; font-weight: 600;">-${formatPrice(
+          <td style="padding: 8px 10px; text-align: right; font-size: 14px; font-weight: 600;">${formatPrice(
             totalDiscount
           )}đ</td>
         </tr>

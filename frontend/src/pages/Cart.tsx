@@ -156,6 +156,7 @@ const Cart = () => {
                     salePrice={item.salePrice}
                     quantityProps={item.quantity}
                     size={item.size}
+                    color={item.color}
                     slug={item.slug}
                     productId={item.productId}
                   />

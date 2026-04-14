@@ -83,6 +83,8 @@ export const syncCart = async (
 
 interface ICartActionBody {
   productId: string;
+  sku?: string;
+  color: string; // Thêm màu sắc
   size: string;
   quantity: number;
 }
@@ -93,41 +95,30 @@ export const addToCart = async (
 ): Promise<void> => {
   try {
     const userId = (req as AuthRequest).user?._id;
-    const { productId, size, quantity } = req.body;
+    const { productId, sku, color, size, quantity } = req.body;
 
-    if (!userId) {
-      res.status(401).json({ message: "Chưa xác thực người dùng!" });
-      return;
-    }
+    if (!userId) { res.status(401).json({ message: "Chưa xác thực người dùng!" }); return; }
 
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      // Nếu chưa có giỏ hàng -> Tạo mới
-      cart = new Cart({
-        userId,
-        items: [{ productId, size, quantity }],
-      });
+      cart = new Cart({ userId, items: [{ productId, sku, color, size, quantity }] });
       await cart.save();
     } else {
-      // Nếu đã có -> Kiểm tra xem món đồ đã tồn tại chưa
+      // Tìm theo cả 3 tham số
       const existingItemIndex = cart.items.findIndex(
-        (item) => String(item.productId) === String(productId) && item.size === size
+        (item) => String(item.productId) === String(productId) && item.size === size && item.color === color
       );
 
       if (existingItemIndex > -1) {
-        // Đã tồn tại -> Cộng dồn số lượng
         cart.items[existingItemIndex]!.quantity += quantity;
       } else {
-        // Chưa tồn tại -> Đẩy vào mảng
-        cart.items.push({ productId, size, quantity } as any);
+        cart.items.push({ productId, sku, color, size, quantity } as any);
       }
       await cart.save();
     }
-
     res.status(200).json({ status: true, message: "Thêm vào giỏ thành công" });
   } catch (error) {
-    console.error("Lỗi addToCart:", error);
     res.status(500).json({ message: "Lỗi Server" });
   }
 };
@@ -138,25 +129,18 @@ export const updateCart = async (
 ): Promise<void> => {
   try {
     const userId = (req as AuthRequest).user?._id;
-    const { productId, size, quantity } = req.body;
+    const { productId, color, size, quantity } = req.body;
 
-    if (!userId) {
-      res.status(401).json({ message: "Chưa xác thực người dùng!" });
-      return;
-    }
+    if (!userId) { res.status(401).json({ message: "Chưa xác thực người dùng!" }); return; }
 
     const cart = await Cart.findOne({ userId });
-    if (!cart) {
-      res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
-      return;
-    }
+    if (!cart) { res.status(404).json({ message: "Không tìm thấy giỏ hàng" }); return; }
 
     const itemIndex = cart.items.findIndex(
-      (item) => String(item.productId) === String(productId) && item.size === size
+      (item) => String(item.productId) === String(productId) && item.size === size && item.color === color
     );
 
     if (itemIndex > -1) {
-      // Ghi đè số lượng mới
       cart.items[itemIndex]!.quantity = quantity;
       await cart.save();
       res.status(200).json({ status: true, message: "Cập nhật thành công" });
@@ -164,14 +148,13 @@ export const updateCart = async (
       res.status(404).json({ message: "Không tìm thấy sản phẩm trong giỏ" });
     }
   } catch (error) {
-    console.error("Lỗi updateCart:", error);
     res.status(500).json({ message: "Lỗi Server" });
   }
 };
 
-
 interface IRemoveCartBody {
   productId: string;
+  color: string;
   size: string;
 }
 
@@ -181,32 +164,24 @@ export const removeFromCart = async (
 ): Promise<void> => {
   try {
     const userId = (req as AuthRequest).user?._id;
-    const { productId, size } = req.body;
+    const { productId, color, size } = req.body;
 
-    if (!userId) {
-      res.status(401).json({ message: "Chưa xác thực người dùng!" });
-      return;
-    }
+    if (!userId) { res.status(401).json({ message: "Chưa xác thực người dùng!" }); return; }
 
-    // Dùng toán tử $pull của MongoDB để gắp thẳng phần tử ra khỏi mảng cực nhanh
     const updatedCart = await Cart.findOneAndUpdate(
       { userId },
       { 
         $pull: { 
-          items: { productId: productId, size: size } 
+          items: { productId: productId, size: size, color: color } // Xóa chính xác variant
         } 
       },
-      { new: true } // Trả về document sau khi update (tùy chọn)
+      { new: true }
     );
 
-    if (!updatedCart) {
-      res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
-      return;
-    }
+    if (!updatedCart) { res.status(404).json({ message: "Không tìm thấy giỏ hàng" }); return; }
 
     res.status(200).json({ status: true, message: "Xóa sản phẩm thành công" });
   } catch (error) {
-    console.error("Lỗi removeFromCart:", error);
     res.status(500).json({ message: "Lỗi Server" });
   }
 };

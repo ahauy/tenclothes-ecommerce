@@ -14,15 +14,22 @@ const cartSchema = new Schema<ICart>(
         productId: {
           type: Schema.Types.ObjectId,
           ref: "Product",
-          require: true,
+          required: true, // Đã sửa từ require -> required
+        },
+        sku: {
+          type: String, // Thêm mã SKU
+        },
+        color: {
+          type: String,
+          required: true, // Bắt buộc phải lưu màu sắc
         },
         size: {
           type: String,
-          require: true,
+          required: true,
         },
         quantity: {
           type: Number,
-          require: true,
+          required: true,
           min: 1,
         },
       },

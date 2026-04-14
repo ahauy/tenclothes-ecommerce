@@ -5,6 +5,7 @@ import type { IProduct } from "../interfaces/iProduct";
 import { LIMIT_LATEST_COLLECTIONS } from "../constants/paginate";
 import api from "../utils/axios";
 import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
 
 const BestSeller = () => {
   const [bestSeller, setBestSeller] = useState<IProduct[]>([]);
@@ -15,14 +16,13 @@ const BestSeller = () => {
       try {
         setIsLoading(true);
 
-        const response = await api.get("/products", {
+        const response = await api.get("/products/best-selling", {
           params: {
             limit: LIMIT_LATEST_COLLECTIONS,
-            sort: "best-selling",
           },
         });
 
-        setBestSeller(response.data.data.products);
+        setBestSeller(response.data.data);
       } catch (error) {
         console.error(error);
       } finally {
@@ -46,48 +46,36 @@ const BestSeller = () => {
       </div>
 
       <Swiper
-        spaceBetween={20} // Khoảng cách giữa các sản phẩm
-        slidesPerView={2} // Mặc định hiển thị 2 sản phẩm (cho mobile)
+        spaceBetween={20}
+        slidesPerView={2}
         breakpoints={{
-          // Khi màn hình >= 640px (Tablet)
-          640: {
-            slidesPerView: 3,
-            spaceBetween: 20,
-          },
-          // Khi màn hình >= 768px (Laptop nhỏ)
-          768: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-          // Khi màn hình >= 1024px (Desktop)
-          1024: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
+          640: { slidesPerView: 3, spaceBetween: 20 },
+          768: { slidesPerView: 4, spaceBetween: 30 },
+          1024: { slidesPerView: 4, spaceBetween: 30 },
         }}
       >
-        {bestSeller.map((product) => (
-          <SwiperSlide key={product._id}>
-            {isLoading && (
-              <>
-                <ProductItem isLoading={isLoading} />
-              </>
-            )}
-
-            {!isLoading && bestSeller.length > 0 && (
-              <>
+        {/* LOGIC HIỂN THỊ MỚI */}
+        {isLoading
+          ? // Khi đang tải: Quét qua mảng ảo gồm 4 phần tử để render ra 4 cái Skeleton
+            Array.from({ length: 4 }).map((_, index) => (
+              <SwiperSlide key={index}>
+                <ProductItem isLoading={true} />
+              </SwiperSlide>
+            ))
+          : // Khi đã có data: Quét mảng dữ liệu thực
+            bestSeller.map((product) => (
+              <SwiperSlide key={product._id}>
                 <ProductItem
                   slug={product.slug}
                   title={product.title}
                   price={product.price}
                   salePrice={product.salePrice}
                   discountPercentage={product.discountPercentage}
-                  media={product.media[0]}
+                  // Lấy bức ảnh đầu tiên của Style đầu tiên
+                  media={product.productStyles?.[0]?.images?.[0] || ""}
                 />
-              </>
-            )}
-          </SwiperSlide>
-        ))}
+              </SwiperSlide>
+            ))}
       </Swiper>
     </div>
   );
