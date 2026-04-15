@@ -6,4 +6,5 @@ export interface IRequestQueryFilter {
   fit?: string;
   page?: string;
   limit?: string;
+  keyword?: string
 }

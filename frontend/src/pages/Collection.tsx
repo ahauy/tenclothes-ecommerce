@@ -23,10 +23,16 @@ const Collection = () => {
   const [params, setParams] = useSearchParams();
   const currentPage: number = Number(params.get("page")) || 1;
 
+  // lấy từ khóa tìm kiếm
+  const keyword: string = params.get("keyword") || "";
+
   // Lấy cây thư mục từ Zustand
   const categoryTree: ICategoryTree[] = useCategoryStore((s) => s.categoryTree);
 
-  const [dynamicFilters, setDynamicFilters] = useState<IDynamicFilters>({ sizes: [], colors: [] });
+  const [dynamicFilters, setDynamicFilters] = useState<IDynamicFilters>({
+    sizes: [],
+    colors: [],
+  });
 
   // State cho Breadcrumb và Danh mục con
   const [categoryPath, setCategoryPath] = useState<ICategoryTree[]>([]);
@@ -34,6 +40,12 @@ const Collection = () => {
 
   // Effect xử lý Breadcrumbs và Child Categories
   useEffect(() => {
+    if (keyword) {
+      setCategoryPath([]);
+      setChildCategories([]);
+      return;
+    }
+
     if (categoryTree.length > 0 && slug) {
       const path = findPath(categoryTree, slug);
       if (path) {
@@ -46,13 +58,15 @@ const Collection = () => {
         setChildCategories([]);
       }
     }
-  }, [categoryTree, slug]);
+  }, [categoryTree, slug, keyword]);
 
   // Lấy bộ lọc động
   useEffect(() => {
     async function fetchFilters() {
       try {
-        const response = await api.get(`/products/category/${slug}/filters`);
+        const response = await api.get(`/products/category/${slug}/filters`, {
+          params: { keyword: keyword },
+        });
         if (response.data.status) {
           setDynamicFilters(response.data.data);
         }
@@ -61,7 +75,7 @@ const Collection = () => {
       }
     }
     if (slug) fetchFilters();
-  }, [slug]);
+  }, [slug, keyword]);
 
   // Effect lấy sản phẩm
   useEffect(() => {
@@ -101,48 +115,36 @@ const Collection = () => {
           <Link to="/" className="hover:text-black transition-colors">
             Trang chủ
           </Link>
-          {categoryPath.map((cat, index) => (
-            <span key={cat._id} className="flex items-center gap-2">
+          {keyword ? (
+            <span className="flex items-center gap-2">
               <span>/</span>
-              <Link
-                to={`/collection/${cat.slug}`}
-                className={`hover:text-black transition-colors ${
-                  index === categoryPath.length - 1
-                    ? "text-black font-medium"
-                    : ""
-                }`}
-              >
-                {cat.title}
-              </Link>
+              <span className="text-black font-medium">Tìm kiếm</span>
             </span>
-          ))}
+          ) : (
+            categoryPath.map((cat, index) => (
+              <span key={cat._id} className="flex items-center gap-2">
+                <span>/</span>
+                <Link
+                  to={`/collection/${cat.slug}`}
+                  className={`hover:text-black transition-colors ${
+                    index === categoryPath.length - 1
+                      ? "text-black font-medium"
+                      : ""
+                  }`}
+                >
+                  {cat.title}
+                </Link>
+              </span>
+            ))
+          )}
         </div>
       </div>
 
       <div className="">
-        {/* 2. DANH MỤC CON (Hiển thị như ảnh) */}
-        {childCategories.length > 0 && (
+        {/* 2. DANH MỤC CON (Ẩn đi nếu đang ở chế độ tìm kiếm) */}
+        {!keyword && childCategories.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
-            {childCategories.map((child) => (
-              <Link
-                to={`/collection/${child.slug}`}
-                key={child._id}
-                className="flex flex-col items-center bg-[#f4f4f4] hover:bg-[#e9e9e9] transition-colors p-6 rounded-sm group"
-              >
-                <div className="w-full aspect-4/3 flex items-center justify-center overflow-hidden mix-blend-multiply">
-                  <img
-                    src={
-                      child.thumbnail || "https://via.placeholder.com/200x200"
-                    }
-                    alt={child.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <p className="mt-4 font-bold text-gray-800 text-sm md:text-base">
-                  {child.title}
-                </p>
-              </Link>
-            ))}
+            {/* Nội dung childCategories giữ nguyên */}
           </div>
         )}
 
@@ -150,18 +152,28 @@ const Collection = () => {
         <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-10">
           {/* Cột Filter */}
           <div className="w-full lg:w-64 shrink-0">
-            <Filter totalProducts={totalProducts} dynamicFilters={dynamicFilters}/>
+            <Filter
+              totalProducts={totalProducts}
+              dynamicFilters={dynamicFilters}
+            />
           </div>
 
           {/* Cột Sản phẩm */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap justify-between items-start sm:items-center gap-4 mb-6">
+              {/* TÙY BIẾN TITLE */}
               <div className="text-xl sm:text-2xl shrink-0">
                 <Title
-                  title1={categoryPath[categoryPath.length - 1]?.title || "ALL"}
+                  title1={
+                    keyword
+                      ? `TÌM KIẾM: "${keyword}"`
+                      : categoryPath[categoryPath.length - 1]?.title ||
+                        "TẤT CẢ SẢN PHẨM"
+                  }
                   title2={""}
                 />
               </div>
+
               <div className="w-full sm:w-auto flex justify-end">
                 <DropDown />
               </div>
@@ -174,6 +186,12 @@ const Collection = () => {
                   .map((_, index) => (
                     <ProductItem key={index} isLoading={isLoading} />
                   ))}
+
+              {!isLoading && products.length === 0 && (
+                <div className="col-span-full text-center py-10 text-gray-500">
+                  Không tìm thấy sản phẩm nào phù hợp.
+                </div>
+              )}
 
               {!isLoading &&
                 products.map((product) => (

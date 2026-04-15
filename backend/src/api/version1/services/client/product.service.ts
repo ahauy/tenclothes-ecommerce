@@ -1,7 +1,7 @@
 import { IProduct } from "./../../../../interfaces/model.interfaces";
 import { IRequestQueryFilter } from "../../../../interfaces/reqQuery.interface";
 import Product from "../../../../models/product.model";
-import { QueryFilter, SortOrder } from "mongoose";
+import mongoose, { QueryFilter, SortOrder } from "mongoose";
 import { IProductResponse } from "../../../../interfaces/response.interface";
 import { Category } from "../../../../models/category.model";
 
@@ -9,13 +9,32 @@ export const getListProductService = async (
   queryFilter: IRequestQueryFilter,
   categorySlug?: string
 ): Promise<IProductResponse> => {
-  const filterProducts: QueryFilter<IProduct> = {
+  const pipeline: any[] = [];
+
+  // tìm kiếm theo keyword
+  if (queryFilter.keyword) {
+    pipeline.push({
+      $search: {
+        index: "default",
+        text: {
+          query: queryFilter.keyword,
+          path: ["title", "tags", "description", "brand"],
+          fuzzy: {
+            maxEdits: 2,
+            prefixLength: 1,
+          },
+        },
+      },
+    });
+  }
+
+  // tạo bộ lọc cứng
+  const matchConditions: QueryFilter<IProduct> = {
     isActive: true,
     deleted: false,
   };
 
-  if (categorySlug) {
-    // 1. Tìm Category hiện tại dựa vào slug
+  if (categorySlug && categorySlug.trim() !== "all") {
     const targetCategory = await Category.findOne({
       slug: categorySlug,
       isActive: true,
@@ -23,46 +42,44 @@ export const getListProductService = async (
     });
 
     if (!targetCategory) {
-      // Nếu không tìm thấy category, trả về mảng rỗng luôn cho nhanh
-      return { products: [], currentPage: 1, totalPages: 0, totalProducts: 0 };
+      return {
+        products: [],
+        currentPage: 1,
+        totalPages: 0,
+        totalProducts: 0,
+      };
     }
 
-    // 2. Lấy ID của Category hiện tại và TẤT CẢ Category con cháu của nó
     const allCategories = await Category.find({
       isActive: true,
       deleted: false,
     }).select("_id parentId");
-
-    // Hàm đệ quy lấy ID các danh mục con
     const getSubCategoryIds = (parentId: string): string[] => {
       const subs = allCategories.filter(
         (cat) => String(cat.parentId) === String(parentId)
       );
       let subIds = subs.map((cat) => String(cat._id));
-
       for (const sub of subs) {
         subIds = [...subIds, ...getSubCategoryIds(String(sub._id))];
       }
       return subIds;
     };
 
-    // Mảng categoryIds bao gồm ID của danh mục hiện tại và các danh mục con cháu
+    // Ép kiểu sang ObjectId để dùng trong Aggregation
     const categoryIds = [
       String(targetCategory._id),
       ...getSubCategoryIds(String(targetCategory._id)),
-    ];
+    ].map((id) => new mongoose.Types.ObjectId(id));
 
-    // 3. Thêm điều kiện lọc vào query (Giả sử trường tham chiếu trong Product schema là categoryId)
-    filterProducts.categoryId = { $in: categoryIds };
+    matchConditions.categoryId = { $in: categoryIds };
   }
 
-  // ---------------- LỌC SẢN PHẨM ---------------------
   if (queryFilter.size) {
-    filterProducts["variants.size"] = queryFilter.size.toUpperCase();
+    matchConditions["variants.size"] = queryFilter.size.toUpperCase();
   }
 
   if (queryFilter.color) {
-    filterProducts["variants.colorName"] = queryFilter.color.trim();
+    matchConditions["variants.colorName"] = queryFilter.color.trim();
   }
 
   if (queryFilter.price_range) {
@@ -85,54 +102,56 @@ export const getListProductService = async (
     });
 
     // gom các điều kiện giá
-    priceConditions.length > 0 && (filterProducts.$or = priceConditions);
+    priceConditions.length > 0 && (matchConditions.$or = priceConditions);
   }
 
-  // sắp xếp sản phẩm
+  // đẩy bộ lọc vào ống pipeline
+  pipeline.push({ $match: matchConditions });
+
   let sortConditions: { [key: string]: SortOrder } = { createdAt: -1 };
+  if (queryFilter.sort === "best-selling") sortConditions = { sold: -1 };
+  else if (queryFilter.sort === "price-asc") sortConditions = { salePrice: 1 };
+  else if (queryFilter.sort === "price-desc")
+    sortConditions = { salePrice: -1 };
+  else if (!queryFilter.keyword) sortConditions = { createdAt: -1 };
 
-  if (queryFilter.sort) {
-    switch (queryFilter.sort) {
-      case "best-selling":
-        sortConditions = { sold: -1 };
-        break;
-      case "price-asc":
-        sortConditions = { price: 1 };
-        break;
-      case "price-desc":
-        sortConditions = { price: -1 };
-        break;
-      case "default":
-      default:
-        sortConditions = { createdAt: -1 };
-        break;
-    }
-  }
+  const page: number = Number(queryFilter.page) || 1;
+  const limit: number = Number(queryFilter.limit) || 12; // Mặc định 12 sản phẩm / trang
+  const skip: number = (page - 1) * limit;
 
-  // ------------------- PHÂN TRANG SẢN PHẨM ---------------
-  const page: number = Number(queryFilter.page) || 1; // trang hiện tại
-  const limit: number = Number(queryFilter.limit) || 9; // số sản phẩm trên 1 trang
+  // Tạo đường ống nhánh cho việc lấy Dữ liệu hiển thị (Data)
+  const dataPipeline: any[] = [];
+  if (sortConditions) dataPipeline.push({ $sort: sortConditions });
 
-  const skip: number = (page - 1) * limit; // số sản phẩm bỏ qua khi ở số trang là page
-
-  const [totalProducts, products] = await Promise.all([
-    Product.countDocuments(filterProducts),
-    Product.find(filterProducts)
-      .sort(sortConditions)
-      .limit(limit)
-      .skip(skip)
-      .select({
+  dataPipeline.push(
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
         _id: 1,
         title: 1,
         slug: 1,
         price: 1,
-        discountPercentage: 1,
         salePrice: 1,
-        productStyles: { $slice: 1 }, // Lấy Style đầu tiên để làm ảnh bìa
-      }),
-  ]);
+        discountPercentage: 1,
+        productStyles: { $slice: ["$productStyles", 1] }, // Chỉ lấy 1 object ảnh đầu tiên cho nhẹ
+      },
+    }
+  );
 
-  const totalPages: number = Math.ceil(totalProducts / limit);
+  // Đẩy nhánh Đếm tổng và nhánh Dữ liệu vào chung $facet
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: dataPipeline,
+    },
+  });
+
+  const result = await Product.aggregate(pipeline);
+
+  const totalProducts = result[0].metadata[0]?.total || 0;
+  const products = result[0].data;
+  const totalPages = Math.ceil(totalProducts / limit);
 
   return {
     products,
@@ -242,7 +261,7 @@ export const getLatestCollectionService = async (limit: number) => {
     .lean();
 
   if (!data) {
-    return []
+    return [];
   }
 
   return data;
@@ -267,7 +286,7 @@ export const getBestSellingService = async (limit: number) => {
     .lean();
 
   if (!data) {
-    return []
+    return [];
   }
 
   return data;
@@ -304,4 +323,124 @@ export const getRelatedProductsService = async (
     });
 
   return relatedProducts;
+};
+
+export const searchProductService = async (
+  keyword: string,
+  limit: number = 10
+) => {
+  const products = await Product.aggregate([
+    {
+      $search: {
+        index: "default",
+        text: {
+          query: keyword,
+          path: ["title", "tags", "description", "brand"],
+          fuzzy: {
+            maxEdits: 2, // Sức mạnh cốt lõi: Cho phép gõ sai tối đa 2 ký tự (VD: "ao somi" -> "áo sơ mi")
+            prefixLength: 1, // Ký tự đầu tiên phải gõ đúng để tăng hiệu năng
+          },
+        },
+      },
+    },
+    {
+      $match: {
+        isActive: true,
+        deleted: false,
+      },
+    },
+    {
+      $limit: limit,
+    },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        slug: 1,
+        price: 1,
+        salePrice: 1,
+        discountPercentage: 1,
+        productStyles: { $slice: ["$productStyles", 1] },
+      },
+    },
+  ]);
+
+  return products;
+};
+
+export const searchProductFilterService = async (keyword?: string) => {
+  const pipeline: any[] = [];
+
+  // 1. NẾU CÓ KEYWORD: Dùng Atlas Search để lọc ra các sản phẩm khớp từ khóa trước
+  if (keyword) {
+    pipeline.push({
+      $search: {
+        index: "default",
+        text: {
+          query: keyword,
+          path: ["title", "tags", "description", "brand"],
+          fuzzy: { maxEdits: 2, prefixLength: 1 },
+        },
+      },
+    });
+  }
+
+  // 2. LỌC CƠ BẢN
+  pipeline.push({
+    $match: {
+      isActive: true,
+      deleted: false,
+    },
+  });
+
+  // 3. DÙNG $FACET ĐỂ TÁCH 2 LUỒNG: LUỒNG LẤY SIZE VÀ LUỒNG LẤY MÀU
+  pipeline.push({
+    $facet: {
+      // --- LUỒNG 1: Gom nhóm SIZE ---
+      sizes: [
+        { $unwind: "$variants" }, // Tách mảng variants ra thành từng object riêng lẻ
+        {
+          $group: {
+            _id: { $toUpper: "$variants.size" }, // Gom nhóm theo size (chữ hoa)
+          },
+        },
+        { $match: { _id: { $ne: null } } }, // Bỏ qua các size null
+        { $sort: { _id: 1 } }, // Sắp xếp A-Z
+        {
+          $project: {
+            _id: 0,
+            label: "$_id",
+            value: "$_id",
+          },
+        },
+      ],
+
+      // --- LUỒNG 2: Gom nhóm MÀU SẮC ---
+      colors: [
+        { $unwind: "$productStyles" }, // Tách mảng productStyles
+        {
+          $group: {
+            _id: "$productStyles.colorName", // Gom nhóm theo Tên Màu
+            hexCode: { $first: "$productStyles.colorHex" }, // Lấy mã hex đầu tiên của màu đó
+          },
+        },
+        { $match: { _id: { $ne: null } } },
+        { $sort: { _id: 1 } },
+        {
+          $project: {
+            _id: 0,
+            label: "$_id",
+            value: "$_id",
+            hexCode: "$hexCode",
+          },
+        },
+      ],
+    },
+  });
+
+  // Chạy aggregation
+  const result = await Product.aggregate(pipeline);
+
+  // result[0] sẽ có dạng { sizes: [...], colors: [...] }
+  return result[0];
 };

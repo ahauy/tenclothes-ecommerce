@@ -6,6 +6,7 @@ import {
   getListProduct,
   getProductDetail,
   getRelatedProducts,
+  searchProducts,
 } from "../../controllers/client/product.controller";
 
 const productControllerClient: Router = express.Router();
@@ -19,6 +20,8 @@ productControllerClient.get("/latest-collection", getLatestCollection);
 productControllerClient.get("/best-selling", getBestSelling);
 
 productControllerClient.get("/related-collection", getRelatedProducts)
+
+productControllerClient.get("/search", searchProducts)
 
 productControllerClient.get("/:slug", getProductDetail);
 
