@@ -131,7 +131,7 @@ const Search = () => {
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
                     {/* Render 8 ô Skeleton */}
-                    {Array.from({ length: 8 }).map((_, idx) => (
+                    {Array.from({ length: 4 }).map((_, idx) => (
                       <div
                         key={idx}
                         className="flex flex-col h-full cursor-wait"

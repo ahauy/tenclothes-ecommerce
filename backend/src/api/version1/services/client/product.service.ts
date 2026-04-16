@@ -1,7 +1,7 @@
 import { IProduct } from "./../../../../interfaces/model.interfaces";
 import { IRequestQueryFilter } from "../../../../interfaces/reqQuery.interface";
 import Product from "../../../../models/product.model";
-import mongoose, { QueryFilter, SortOrder } from "mongoose";
+import mongoose, { QueryFilter } from "mongoose";
 import { IProductResponse } from "../../../../interfaces/response.interface";
 import { Category } from "../../../../models/category.model";
 
@@ -13,21 +13,37 @@ export const getListProductService = async (
 
   // tìm kiếm theo keyword
   if (queryFilter.keyword) {
+    // 1. Chuẩn hóa tiếng Việt và cắt thành mảng các từ
+    const normalizedKeyword = queryFilter.keyword.normalize("NFC").trim();
+    const searchTerms = normalizedKeyword.split(/\s+/);
+
+    // 2. Thuật toán linh hoạt số lượng từ cần khớp (Dynamic Match)
+    let minMatch = searchTerms.length;
+
+    // Nếu khách gõ từ 3 chữ trở lên (VD: "áo sơ mi"), cho phép thiếu 1 chữ
+    if (searchTerms.length >= 3) {
+      minMatch = searchTerms.length - 1;
+    }
+
+    // 3. Tạo mảng điều kiện cho từng từ
+    const shouldClauses = searchTerms.map((term) => ({
+      text: {
+        query: term,
+        path: ["title", "tags", "description", "brand"],
+      },
+    }));
+
+    // 4. Đưa vào pipeline với minimumShouldMatch
     pipeline.push({
       $search: {
         index: "default",
-        text: {
-          query: queryFilter.keyword,
-          path: ["title", "tags", "description", "brand"],
-          fuzzy: {
-            maxEdits: 2,
-            prefixLength: 1,
-          },
+        compound: {
+          should: shouldClauses,
+          minimumShouldMatch: minMatch, // Bắt buộc phải đạt đủ chỉ tiêu khớp lệnh
         },
       },
     });
   }
-
   // tạo bộ lọc cứng
   const matchConditions: QueryFilter<IProduct> = {
     isActive: true,
@@ -108,7 +124,8 @@ export const getListProductService = async (
   // đẩy bộ lọc vào ống pipeline
   pipeline.push({ $match: matchConditions });
 
-  let sortConditions: { [key: string]: SortOrder } = { createdAt: -1 };
+  let sortConditions: any = null;
+
   if (queryFilter.sort === "best-selling") sortConditions = { sold: -1 };
   else if (queryFilter.sort === "price-asc") sortConditions = { salePrice: 1 };
   else if (queryFilter.sort === "price-desc")
