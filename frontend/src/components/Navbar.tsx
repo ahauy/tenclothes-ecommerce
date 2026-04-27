@@ -12,9 +12,12 @@ const Navbar = () => {
   const setOpenModal = useShopStore((state) => state.setOpenModal)
   const cartItems = useCartStore((state) => state.cartItems)
 
-  const quantityProduct: number = cartItems.reduce((acc, cur) => {
-    return acc + cur.quantity
-  }, 0)
+  let quantityProduct: number = 0
+  if(cartItems) {
+    quantityProduct = cartItems.reduce((acc, cur) => {
+      return acc + cur.quantity
+    }, 0)
+  }
 
   const accessToken = useAuthStore((state) => state.accessToken)
   const logOut = useAuthStore((state) => state.logOut)
@@ -59,12 +62,17 @@ const Navbar = () => {
                   alt="Profile"
                 />
                 <div className="group-hover:block hidden absolute right-0 pt-4">
-                  <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-200 text-gray-600 rounded">
-                    <p className="cursor-pointer hover:text-black">
-                      My Profile
-                    </p>
-                    <p className="cursor-pointer hover:text-black">Orders</p>
-                    <p className="cursor-pointer hover:text-black" onClick={logOut}>Logout</p>
+                  <div className="flex flex-col gap-2 w-40 py-3 px-5 bg-slate-200 text-gray-600 rounded shadow-lg z-50">
+                    <Link to="/account/profile" className="cursor-pointer hover:text-black">
+                      Thông tin cá nhân
+                    </Link>
+                    <Link to="/account/orders" className="cursor-pointer hover:text-black">
+                      Lịch sử đặt hàng
+                    </Link>
+                    <Link to="/account/addresses" className="cursor-pointer hover:text-black">
+                      Sổ địa chỉ
+                    </Link>
+                    <p className="cursor-pointer hover:text-black" onClick={logOut}>Đăng xuất</p>
                   </div>
                 </div>
               </>

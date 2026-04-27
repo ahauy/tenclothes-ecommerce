@@ -107,6 +107,7 @@ export interface IOrderProductItem {
   image: string;
   quantity: number;
   isOutOfStock?: boolean;
+  isReviewed?: boolean;
 }
 
 // ----------------- CART MODEL -------------

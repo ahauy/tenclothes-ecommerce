@@ -16,6 +16,10 @@ import { useAuthStore } from "./stores/useAuthStore";
 import { useEffect } from "react";
 import MoMoReturn from "./pages/MomoReturn";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
+import AccountLayout from "./layouts/AccountLayout";
+import Profile from "./pages/account/Profile";
+import Addresses from "./pages/account/Addresses";
+import Orders from "./pages/account/Orders";
 
 const App = () => {
   const checkAuth = useAuthStore((state) => state.checkAuth);
@@ -43,6 +47,9 @@ const App = () => {
           <Route path="/momo-return" element={<MoMoReturn />}></Route>
           <Route path="/place-order" element={<PlaceOrder />}></Route>
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/account/profile" element={<AccountLayout><Profile /></AccountLayout>} />
+          <Route path="/account/addresses" element={<AccountLayout><Addresses /></AccountLayout>} />
+          <Route path="/account/orders" element={<AccountLayout><Orders /></AccountLayout>} />
         </Routes>
       </div>
       <Footer />

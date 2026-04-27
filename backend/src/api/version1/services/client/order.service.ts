@@ -3,9 +3,10 @@ import { randomCode } from "../../../../helpers/randomCode";
 import { IOrder, IOrderProductItem, IProduct } from "../../../../interfaces/model.interfaces";
 import { Order } from "../../../../models/order.model";
 import Product from "../../../../models/product.model";
+import Review from "../../../../models/review.model";
 import { IOrderReq } from "./../../validators/client/order.validator";
 
-export const postOrderServiceClient = async (payload: IOrderReq): Promise<IOrder> => {
+export const postOrderServiceClient = async (payload: IOrderReq, userId: string | null = null): Promise<IOrder> => {
   const { customer, items } = payload;
   let totalAmount: number = 0;
   const orderItems: IOrderProductItem[] = [];
@@ -36,6 +37,7 @@ export const postOrderServiceClient = async (payload: IOrderReq): Promise<IOrder
   }
 
   const newOrder = new Order({
+    userId: userId,
     orderCode: randomCode(8),
     customer: customer,
     items: orderItems,
@@ -72,4 +74,23 @@ export const updateOrderService = async (orderId: string): Promise<IOrder | null
     { new: true }
   );
   return updatedOrder;
+};
+
+export const getMyOrdersService = async (userId: string): Promise<IOrder[]> => {
+  const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 }).lean();
+  
+  // Find all reviews by this user to check which items have been reviewed
+  const userReviews = await Review.find({ userId: userId }).select("orderId productId").lean();
+  const reviewedSet = new Set(userReviews.map(r => `${r.orderId.toString()}-${r.productId.toString()}`));
+
+  // Attach isReviewed to each item
+  const ordersWithReviewStatus = orders.map(order => ({
+    ...order,
+    items: order.items.map(item => ({
+      ...item,
+      isReviewed: reviewedSet.has(`${order._id.toString()}-${item.productId.toString()}`)
+    }))
+  }));
+
+  return ordersWithReviewStatus as any;
 };

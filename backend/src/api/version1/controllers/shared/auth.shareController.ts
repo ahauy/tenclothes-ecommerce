@@ -12,8 +12,6 @@ export const loginShareController = (DataModel: Model<any>) => {
     try {
       const loginData = req.body;
 
-      console.log(loginData)
-
       const data = await loginShareService(DataModel, loginData);
 
       if (data) {

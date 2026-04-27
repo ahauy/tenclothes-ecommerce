@@ -29,7 +29,7 @@ export const uploadToCloudinary = async (
   try {
     const files: CloudinaryFile[] = req.files as CloudinaryFile[];
     if (!files || files.length === 0) {
-      return next(new Error("No files provided"));
+      return next();
     }
     const cloudinaryUrls: string[] = [];
     for (const file of files) {

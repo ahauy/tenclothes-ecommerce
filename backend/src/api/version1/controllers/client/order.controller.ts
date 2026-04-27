@@ -3,12 +3,14 @@ import { IOrderReq } from "../../validators/client/order.validator";
 import {
   postOrderServiceClient,
   updateOrderService,
+  getMyOrdersService,
 } from "../../services/client/order.service";
 import ApiError from "../../../../helpers/ApiError";
 import axios from "axios";
 import Product from "../../../../models/product.model";
 import { sendMail } from "../../../../helpers/sendMail";
 import { emailTemplate } from "../../../../helpers/emailTemplate";
+import jwt from "jsonwebtoken";
 
 export const postOrderClient = async (
   req: Request<{}, {}, IOrderReq, {}>,
@@ -17,7 +19,19 @@ export const postOrderClient = async (
   try {
     const payload: IOrderReq = req.body;
 
-    const data = await postOrderServiceClient(payload);
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1] as string;
+      try {
+        const decode = jwt.verify(token, process.env["ACCESS_TOKEN_SECRET"]!) as any;
+        userId = decode._id;
+      } catch (err) {
+        console.error("Token verification failed in postOrderClient:", err);
+      }
+    }
+
+    const data = await postOrderServiceClient(payload, userId);
 
     const paymentMethod: string = payload.customer.paymentMethod;
 
@@ -179,5 +193,26 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
   } catch (error) {
     console.error("Lỗi khi xử lý MoMo IPN:", error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getMyOrdersClient = async (req: Request | any, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      res.status(401).json({ message: "Không tìm thấy userId người dùng!" });
+      return;
+    }
+
+    const orders = await getMyOrdersService(userId);
+    
+    res.status(200).json({
+      status: true,
+      message: "Lấy danh sách đơn hàng thành công!",
+      data: orders,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đơn hàng: ", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };

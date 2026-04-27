@@ -5,6 +5,7 @@ import orderRouterClient from "./order.routes"
 import checkoutRouter from "./checkout.routes"
 import cartRouter from "./cart.routes"
 import categoryRouter from "./category.routes"
+import reviewRouter from "./review.routes"
 
 const mainV1RoutesClient = (app: Express): void => {
   const apiVersion1 = "/api/version1"
@@ -20,6 +21,8 @@ const mainV1RoutesClient = (app: Express): void => {
   app.use(`${apiVersion1}/cart`, cartRouter)
 
   app.use(`${apiVersion1}/category`, categoryRouter)
+
+  app.use(`${apiVersion1}/reviews`, reviewRouter)
 }
 
 export default mainV1RoutesClient

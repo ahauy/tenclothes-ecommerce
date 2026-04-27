@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import api from "../utils/axios";
 import { NavLink, useNavigate } from "react-router-dom";
 import EmptyCartIcon from "../components/IconSVG/EmptyCartIcon";
+import { useAuthStore } from "../stores/useAuthStore";
 
 
 const Cart = () => {
@@ -83,7 +84,10 @@ const Cart = () => {
         totalAmount: totalSalePrice + delivery_fee, 
       };
 
-      const response = await api.post(`/orders`, orderPayload);
+      const token = useAuthStore.getState().accessToken;
+      const response = await api.post(`/orders`, orderPayload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
 
       if (response.status === 201 || response.status === 200) {
         const paymentMethod: string = data.paymentMethod;

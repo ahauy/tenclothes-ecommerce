@@ -30,6 +30,7 @@ const Login = () => {
 
       if (res.data?.status) {
         setAccessToken(res.data.accessToken);
+        console.log(res.data.accessToken)
         toast.success("Đăng nhập thành công!");
 
         if (localCartItems.length > 0) {
@@ -51,21 +52,6 @@ const Login = () => {
         navigate("/");
       }
     } catch {
-      // if (axios.isAxiosError<IJsonFail>(error) && error.response?.data) {
-      //   const serverDataError = error.response.data;
-
-      //   if (serverDataError.errors && serverDataError.errors.length > 0) {
-      //     serverDataError.errors.forEach((err) => {
-      //       setError(err.field as keyof loginFormValue, {
-      //         type: "server",
-      //         message: err.message,
-      //       });
-      //     });
-      //     toast.error("Vui lòng kiểm tra lại dữ liệu!");
-      //   } else {
-      //     toast.error(serverDataError.message || "Đăng nhập thất bại!");
-      //   }
-      // }
       toast.error("Email hoặc mật khẩu không hợp lệ!");
     }
   };

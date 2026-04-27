@@ -5,6 +5,7 @@ import { assets } from "../assets/assets";
 import RelatedProduct from "../components/RelatedProduct";
 import Skeleton from "../components/skeleton/Skeleton";
 import ToastAddToCart from "../components/toast/ToastAddToCart";
+import ProductReviews from "../components/ProductReviews";
 import type { IProduct, IProductStyle } from "../interfaces/iProduct";
 import { useCartStore, type ICartItem } from "../stores/useCartStore";
 import { useShopStore } from "../stores/useShopStore";
@@ -28,6 +29,7 @@ const Product = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [mainImage, setMainImage] = useState<string>("");
   const [showDescription, setShowDescription] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"description" | "reviews">("description");
 
   // --- FETCH DATA ---
   useEffect(() => {
@@ -216,16 +218,11 @@ const Product = () => {
           </h1>
 
           <div className="flex items-center gap-1 mt-3">
-            {[...Array(4)].map((_, i) => (
-              <img
-                key={i}
-                src={assets.star_icon}
-                alt="star"
-                className="w-3.5"
-              />
-            ))}
-            <img src={assets.star_dull_icon} alt="star" className="w-3.5" />
-            <p className="pl-2 text-gray-500 text-sm">(122 đánh giá)</p>
+            <div className="flex text-yellow-400 gap-1 text-sm">
+              <span className="font-bold text-black">{data.averageRating > 0 ? data.averageRating : 5.0}</span>
+              <img src={assets.star_icon} alt="star" className="w-4 h-4 mt-0.5" />
+            </div>
+            <p className="pl-2 text-gray-500 text-sm">| Đã bán {data.sold} | {data.reviewCount} đánh giá</p>
           </div>
 
           <div className="mt-6">
@@ -383,41 +380,57 @@ const Product = () => {
       {/* TABS: MÔ TẢ & ĐÁNH GIÁ */}
       <div className="mt-20">
         <div className="flex border-b border-gray-200">
-          <button className="px-8 py-4 text-sm font-bold border-b-2 border-black bg-gray-50">
+          <button 
+            className={`px-8 py-4 text-sm font-bold transition-all ${activeTab === "description" ? "border-b-2 border-black bg-gray-50 text-black" : "text-gray-400 hover:text-black"}`}
+            onClick={() => setActiveTab("description")}
+          >
             Mô tả sản phẩm
           </button>
-          <button className="px-8 py-4 text-sm font-medium text-gray-400 hover:text-black transition-all">
-            Đánh giá (122)
+          <button 
+            className={`px-8 py-4 text-sm font-bold transition-all ${activeTab === "reviews" ? "border-b-2 border-black bg-gray-50 text-black" : "text-gray-400 hover:text-black"}`}
+            onClick={() => setActiveTab("reviews")}
+          >
+            Đánh giá ({data.reviewCount})
           </button>
         </div>
 
-        <div className="relative py-10">
-          <div
-            className={`overflow-hidden transition-all duration-700 ease-in-out ${
-              showDescription ? "" : "max-h-60"
-            }`}
-          >
+        {activeTab === "description" ? (
+          <div className="relative py-10">
             <div
-              className="prose prose-sm max-w-none h-full overflow-hidden"
-              dangerouslySetInnerHTML={{
-                __html: data.description || "Chưa có mô tả!",
-              }}
+              className={`overflow-hidden transition-all duration-700 ease-in-out ${
+                showDescription ? "" : "max-h-60"
+              }`}
+            >
+              <div
+                className="prose prose-sm max-w-none h-full overflow-hidden"
+                dangerouslySetInnerHTML={{
+                  __html: data.description || "Chưa có mô tả!",
+                }}
+              ></div>
+            </div>
+            <div
+              className={`absolute bottom-0 left-0 w-full h-30 bg-linear-to-t from-white to-transparent pointer-events-none transition-opacity duration-500 ${
+                showDescription ? "opacity-0" : "opacity-100"
+              }`}
             ></div>
+            <button
+              className="border border-black rounded-full outline-none px-6 py-2 absolute left-[50%] bottom-0 -translate-x-[50%] translate-y-[50%] z-10 bg-white text-black text-sm font-medium cursor-pointer hover:bg-black hover:text-white transition-all ease-in"
+              onClick={() => {
+                setShowDescription(!showDescription);
+              }}
+            >
+              {showDescription ? "Thu gọn nội dung" : "Xem thêm mô tả"}
+            </button>
           </div>
-          <div
-            className={`absolute bottom-0 left-0 w-full h-30 bg-linear-to-t from-white to-transparent pointer-events-none transition-opacity duration-500 ${
-              showDescription ? "opacity-0" : "opacity-100"
-            }`}
-          ></div>
-          <button
-            className="border border-black rounded-full outline-none px-6 py-2 absolute left-[50%] bottom-0 -translate-x-[50%] translate-y-[50%] z-10 bg-white text-black text-sm font-medium cursor-pointer hover:bg-black hover:text-white transition-all ease-in"
-            onClick={() => {
-              setShowDescription(!showDescription);
-            }}
-          >
-            {showDescription ? "Thu gọn nội dung" : "Xem thêm mô tả"}
-          </button>
-        </div>
+        ) : (
+          <div className="py-6 bg-gray-50 border-t border-gray-100">
+            <ProductReviews 
+              productId={data._id} 
+              averageRating={data.averageRating > 0 ? data.averageRating : 5.0}
+              reviewCount={data.reviewCount}
+            />
+          </div>
+        )}
       </div>
 
       {/* SẢN PHẨM LIÊN QUAN */}

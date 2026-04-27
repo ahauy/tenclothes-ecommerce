@@ -49,6 +49,9 @@ export interface IProduct {
   currency?: string;
   discountPercentage?: number;
   salePrice?: number;
-  productStyles: IProductStyle[]; // Thay thế cho mảng media cũ
+  productStyles: IProductStyle[];
   variants: IVariants[];
+  averageRating: number;
+  reviewCount: number;
+  sold: number;
 }
