@@ -16,6 +16,9 @@ export interface IOrderProductItem {
 export interface IOrder {
   orderCode: string;
   totalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+  couponCode: string;
   customer: {
     fullName: string;
     email: string;

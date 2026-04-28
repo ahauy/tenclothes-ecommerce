@@ -26,7 +26,8 @@ export const orderSchema = z.object({
         size: z.string().min(1, "Vui lòng chọn size sản phẩm!"),
         quantity: z.number().int("Số lượng phải là số nguyên!").min(1, "Phải có ít nhất 1 sản phẩm!")
       })
-    ).min(1, "Giỏ hàng trống, không thể tiến hành đặt hàng!")
+    ).min(1, "Giỏ hàng trống, không thể tiến hành đặt hàng!"),
+    couponCode: z.string().optional().nullable(),
   }),
 });
 

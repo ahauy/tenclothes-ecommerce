@@ -145,9 +145,32 @@ export interface IOrder extends Document {
   items: IOrderProductItem[];
 
   // Các trường Backend tự sinh ra để quản lý
-  totalAmount: number;
+  totalAmount: number;      // Tổng giá trước giảm
+  discountAmount?: number;  // Số tiền được giảm bởi coupon
+  finalAmount?: number;     // Số tiền thực tế phải trả = totalAmount - discountAmount
+  couponCode?: string;      // Mã coupon đã dùng
+
   orderStatus: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "unpaid" | "paid" | "refunded";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// --------------- COUPON MODEL --------------------
+export type DiscountType = "fixed" | "percentage";
+
+export interface ICoupon extends Document {
+  code: string;                         // Mã giảm giá (UPPERCASE, unique)
+  discountType: DiscountType;           // Loại giảm: fixed (tiền) | percentage (%)
+  discountValue: number;                // Giá trị: 50000 (fixed) hoặc 20 (%)
+  maxDiscountAmount?: number;           // Giới hạn tối đa khi type=percentage
+  minOrderAmount: number;               // Đơn tối thiểu để áp dụng
+  maxUsage: number;                     // Tổng số lần dùng tối đa
+  usageCount: number;                   // Đã dùng bao nhiêu lần (atomic)
+  usedBy: mongoose.Types.ObjectId[];    // Danh sách userId đã dùng
+  applicableProducts: mongoose.Types.ObjectId[]; // Rỗng = áp dụng tất cả
+  expiresAt: Date;                      // Ngày hết hạn
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

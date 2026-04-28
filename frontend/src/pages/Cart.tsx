@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import CartItem, { CartItemSkeleton } from "../components/cart/CartItem";
 import Skeleton from "../components/skeleton/Skeleton";
 import { useCartStore, type ICartItem } from "../stores/useCartStore";
-import { convertPrice } from "../utils/convertPrice";
 import { useShopStore } from "../stores/useShopStore";
 import FormCheckoutInfo from "../components/checkoutInfo/FormCheckoutInfo";
 import type { CheckoutInfoValue } from "../validators/checkoutInforStore.validate";
@@ -13,273 +12,305 @@ import EmptyCartIcon from "../components/IconSVG/EmptyCartIcon";
 import { useAuthStore } from "../stores/useAuthStore";
 
 const Cart = () => {
-  // isLoading để hiển thị Skeleton khi đang gọi API lấy data giỏ hàng
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  // isSubmitting để khóa nút bấm khi đang gửi đơn hàng
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  
-  // State lưu dữ liệu ĐẦY ĐỦ (có tên, ảnh, giá, ....) trả về từ Backend
   const [validatedCart, setValidatedCart] = useState<ICartItem[]>([]);
 
-  const currency: string = useShopStore((state) => state.currency);
-  const delivery_fee: number = useShopStore((state) => state.delivery_fee);
+  // --- State cho Coupon ---
+  const [couponCode, setCouponCode] = useState<string>("");
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState<boolean>(false);
 
-  // Lấy danh sách 3 trường (productId, size, quantity) từ LocalStorage
-  const cartItems: ICartItem[] = useCartStore((state) => state.cartItems);
+  const delivery_fee: number = useShopStore((s) => s.delivery_fee);
+  const cartItems: ICartItem[] = useCartStore((s) => s.cartItems);
   const clearCart = useCartStore((s) => s.clearCart);
   const navigate = useNavigate();
 
-  // Gọi API lấy dữ liệu tươi mỗi khi vào trang hoặc khi giỏ hàng thay đổi số lượng/xóa món
   useEffect(() => {
     const fetchValidatedCart = async () => {
-      // Nếu giỏ hàng local trống, không cần gọi API
       if (!cartItems || cartItems.length === 0) {
         setValidatedCart([]);
         setIsLoading(false);
         return;
       }
-
       try {
-        // setIsLoading(true);
-        // Gọi API lên Backend để lấy thông tin giá, ảnh, tên mới nhất
         const response = await api.post("/cart/local-validate", { items: cartItems });
-        
-        if (response.data.status) {
-          setValidatedCart(response.data.data);
-        }
-      } catch (error) {
-        console.error("Lỗi đồng bộ giỏ hàng:", error);
+        if (response.data.status) setValidatedCart(response.data.data);
+      } catch {
         toast.error("Không thể cập nhật thông tin giỏ hàng lúc này!");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchValidatedCart();
-  }, [cartItems]); // useEffect sẽ chạy lại nếu cartItems thay đổi (vd: xóa sp, tăng giảm SL)
+  }, [cartItems]);
 
-  // Tính tiền DỰA TRÊN DỮ LIỆU TỪ BACKEND TRẢ VỀ (chống hack giá local)
-  const totalSalePrice: number = (validatedCart).reduce((acc, cur) => {
-    return acc + (cur.salePrice * cur.quantity);
-  }, 0);
+  // Tính toán các con số tổng quát
+  const totalSalePrice: number = validatedCart.reduce((acc, cur) => acc + cur.salePrice * cur.quantity, 0);
+  const totalPrice: number = validatedCart.reduce((acc, cur) => acc + cur.price * cur.quantity, 0);
+  
+  // Tổng thanh toán cuối cùng = (Tạm tính + Ship) - Giảm giá
+  const totalFinal: number = Math.max(0, totalSalePrice + (validatedCart.length > 0 ? delivery_fee : 0) - discountAmount);
+  const savedAmount: number = (totalPrice - totalSalePrice) + discountAmount;
 
-  const totalPrice: number = (validatedCart).reduce((acc, cur) => {
-    return acc + (cur.price * cur.quantity);
-  }, 0);
+  // Tự động reset mã giảm giá nếu giỏ hàng thay đổi để đảm bảo tính đúng đắn của cartTotal
+  useEffect(() => {
+    if (appliedCoupon) {
+      setDiscountAmount(0);
+      setAppliedCoupon(null);
+      toast.info("Giỏ hàng đã thay đổi, vui lòng áp dụng lại mã giảm giá.");
+    }
+  }, [totalSalePrice]);
 
-  const handleSubmitSuccess = async (data: CheckoutInfoValue) => {
-    if (!cartItems.length) {
-      toast.warning("Giỏ hàng của bạn đang bị trống!");
+  // Hàm xử lý áp dụng mã giảm giá
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.warning("Vui lòng nhập mã giảm giá!");
       return;
     }
 
     try {
-      setIsSubmitting(true); // Khóa nút bấm
-
-      const orderPayload = {
-        customer: data,
-        // Chỉ gửi 3 trường lên Backend cho nhẹ, vì Backend đã tự tính tiền rồi
-        items: cartItems, 
-        totalAmount: totalSalePrice + delivery_fee, 
-      };
-
+      setIsApplyingCoupon(true);
+      const productIds = validatedCart.map(item => item.productId);
       const token = useAuthStore.getState().accessToken;
-      const response = await api.post(`/orders`, orderPayload, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+
+      // Gửi code, cartTotal và productIds lên Server
+      const response = await api.post("/coupons/validate", {
+        code: couponCode.trim(),
+        cartTotal: totalSalePrice,
+        productIds: productIds
+      }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
+      if (response.data.status) {
+        toast.success("Áp dụng mã giảm giá thành công!");
+        setDiscountAmount(response.data.data.discountAmount);
+        setAppliedCoupon(response.data.data.code);
+      }
+    } catch (error: any) {
+      setDiscountAmount(0);
+      setAppliedCoupon(null);
+      toast.error(error.response?.data?.message || "Mã giảm giá không hợp lệ!");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleSubmitSuccess = async (data: CheckoutInfoValue) => {
+    if (!cartItems.length) { toast.warning("Giỏ hàng của bạn đang bị trống!"); return; }
+    try {
+      setIsSubmitting(true);
+      const orderPayload = {
+        customer: data,
+        items: cartItems,
+        totalAmount: totalFinal, // Gửi tổng tiền đã trừ khuyến mãi
+        couponCode: appliedCoupon,
+        discountAmount: discountAmount
+      };
+      const token = useAuthStore.getState().accessToken;
+      const response = await api.post(`/orders`, orderPayload, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (response.status === 201 || response.status === 200) {
-        const paymentMethod: string = data.paymentMethod;
-
-        if (paymentMethod === "cod") {
+        if (data.paymentMethod === "cod") {
           toast.success("Đặt hàng thành công!");
-          navigate("/checkout/success", {
-            state: { orderId: response.data.data._id },
-          });
+          navigate("/checkout/success", { state: { orderId: response.data.data._id } });
           clearCart();
-        } else if (paymentMethod === "momo") {
+        } else if (data.paymentMethod === "momo") {
           const payUrl: string = response.data.payUrl;
-
-          if (payUrl) {
-            window.location.href = payUrl;
-          } else {
-            toast.error("Không thể khởi tạo thanh toán Momo!");
-          }
+          if (payUrl) window.location.href = payUrl;
+          else toast.error("Không thể khởi tạo thanh toán Momo!");
         }
       }
-    } catch (error) {
-      console.log("Lỗi khi đặt hàng: ", error);
+    } catch {
       toast.error("Đã xảy ra lỗi khi đặt hàng!");
     } finally {
-      setIsSubmitting(false); // Mở lại nút bấm
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <>
-      {/* Định nghĩa CSS Animation giống hệt Profile.tsx */}
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(16px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+    <div className="flex flex-col lg:grid lg:grid-cols-5 py-10 sm:py-16 gap-8 lg:gap-14">
+      {/* ── LEFT: Checkout form ── */}
+      <div className="lg:col-span-3 animate-fade-in-up">
+        <FormCheckoutInfo onSubmitSuccess={handleSubmitSuccess} />
+      </div>
 
-        .animate-fade-in-up {
-          animation: fadeInUp 0.5s ease-out forwards;
-        }
+      {/* ── RIGHT: Order summary ── */}
+      <div className="lg:col-span-2 order-first lg:order-none animate-fade-in-up animate-delay-1">
+        <div className="lg:sticky lg:top-24 flex flex-col gap-0 bg-white rounded-2xl border border-neutral-100 overflow-hidden shadow-sm">
 
-        .animate-delay-1 {
-          animation-delay: 0.1s;
-          opacity: 0;
-        }
-
-        .animate-delay-2 {
-          animation-delay: 0.2s;
-          opacity: 0;
-        }
-      `}</style>
-
-      <div className="flex flex-col lg:grid lg:grid-cols-5 py-8 sm:py-15 gap-8 lg:gap-12">
-        {/* CỘT BÊN TRÁI: FORM ĐIỀN THÔNG TIN (Hiệu ứng xuất hiện đầu tiên) */}
-        <div className="lg:col-span-3 animate-fade-in-up">
-          <FormCheckoutInfo onSubmitSuccess={handleSubmitSuccess} />
-        </div>
-
-        {/* CỘT BÊN PHẢI: GIỎ HÀNG (Hiệu ứng delay 1 chút so với form) */}
-        <div className="flex flex-col lg:col-span-2 order-1 lg:order-2 bg-white rounded-lg lg:sticky lg:top-20 h-fit animate-fade-in-up animate-delay-1">
-          <div className="w-full mb-8">
-            <h1 className="font-semibold text-xl sm:text-2xl">GIỎ HÀNG</h1>
-
-            <div className="w-full pr-2 mt-4">
-              {!isLoading && validatedCart.length === 0 && (
-                <div className="w-full flex flex-col justify-center items-center">
-                  <EmptyCartIcon />
-                  <p className="text-gray-500 font-semibold text-2xl mt-2">
-                    Không có sản phẩm!
-                  </p>
-                  <NavLink
-                    to="/collection"
-                    className="cursor-pointer px-4 py-3 border border-black mt-4 rounded hover:bg-black hover:text-white transition ease-in duration-200"
-                  >
-                    MUA SẮM NGAY
-                  </NavLink>
-                </div>
-              )}
-              
-              {isLoading ? (
-                // Hiển thị 3 skeleton làm mẫu trong lúc đợi dữ liệu từ API
-                <>
-                  <CartItemSkeleton />
-                  <CartItemSkeleton />
-                  <CartItemSkeleton />
-                </>
-              ) : (
-                // Render dữ liệu thật từ Backend trả về
-                <>
-                  {(validatedCart).map((item) => (
-                    <CartItem
-                      key={`${item.productId}-${item.size}`}
-                      title={item.title}
-                      mainImage={item.image}
-                      salePrice={item.salePrice}
-                      quantityProps={item.quantity}
-                      size={item.size}
-                      color={item.color}
-                      slug={item.slug}
-                      productId={item.productId}
-                    />
-                  ))}
-                </>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-5 border-b border-neutral-100">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-black tracking-wide">
+                Giỏ hàng
+              </h2>
+              {!isLoading && validatedCart.length > 0 && (
+                <span className="text-xs font-semibold text-neutral-400 bg-neutral-100 px-2.5 py-1 rounded-full">
+                  {validatedCart.length} sản phẩm
+                </span>
               )}
             </div>
+          </div>
 
-            {/* MÃ GIẢM GIÁ */}
-            <h2 className="font-semibold text-lg sm:text-xl mb-4 mt-6">
-              MÃ GIẢM GIÁ
-            </h2>
-            <div className="flex flex-col sm:flex-row items-center gap-2">
+          {/* Cart items */}
+          <div className="px-6 max-h-[380px] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+            {!isLoading && validatedCart.length === 0 && (
+              <div className="flex flex-col items-center py-12 gap-4 text-center">
+                <EmptyCartIcon />
+                <p className="text-base font-semibold text-black">Giỏ hàng trống</p>
+                <p className="text-sm text-neutral-400">Hãy thêm sản phẩm để tiếp tục.</p>
+                <NavLink
+                  to="/collection/all"
+                  className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-black border-b border-black pb-0.5 hover:opacity-60 transition-opacity"
+                >
+                  Mua sắm ngay →
+                </NavLink>
+              </div>
+            )}
+
+            {isLoading && (
+              <>
+                <CartItemSkeleton />
+                <CartItemSkeleton />
+                <CartItemSkeleton />
+              </>
+            )}
+
+            {!isLoading && validatedCart.map((item) => (
+              <CartItem
+                key={`${item.productId}-${item.size}-${item.color}`}
+                title={item.title}
+                mainImage={item.image}
+                salePrice={item.salePrice}
+                quantityProps={item.quantity}
+                size={item.size}
+                color={item.color}
+                slug={item.slug}
+                productId={item.productId}
+              />
+            ))}
+          </div>
+
+          {/* Coupon Input Area */}
+          <div className="px-6 pt-5 pb-5 border-t border-neutral-100">
+            <p className="text-[11px] font-semibold tracking-widest uppercase text-neutral-400 mb-3">
+              Mã giảm giá
+            </p>
+            <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Nhập mã giảm giá"
-                className="outline-none p-2 px-4 border border-gray-400 rounded focus:border-black transition-colors w-full sm:flex-1"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Nhập mã voucher..."
+                disabled={validatedCart.length === 0 || isApplyingCoupon}
+                className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-neutral-200 outline-none focus:border-black transition-colors placeholder-neutral-300 disabled:bg-neutral-50"
               />
-              <button className="p-2 px-4 border outline-none border-gray-800 rounded cursor-pointer hover:bg-gray-800 hover:text-white transition-all duration-300 ease-in-out whitespace-nowrap w-full sm:w-auto">
-                Áp dụng
+              <button 
+                onClick={handleApplyCoupon}
+                disabled={!couponCode || isApplyingCoupon || validatedCart.length === 0}
+                className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-black hover:text-white text-sm font-semibold text-neutral-700 transition-all duration-200 whitespace-nowrap disabled:opacity-50"
+              >
+                {isApplyingCoupon ? "Đang xử lý..." : "Áp dụng"}
               </button>
             </div>
+          </div>
 
-            {/* CHI TIẾT ĐƠN HÀNG */}
-            <h2 className="font-semibold text-lg sm:text-xl mb-4 mt-8">
-              CHI TIẾT ĐƠN HÀNG
-            </h2>
-            <div className="w-full space-y-2 text-sm sm:text-base">
-              <div className="flex justify-between items-center">
-                <p>Tạm tính</p>
-                {isLoading ? (
-                  <Skeleton className="w-20 h-5" />
-                ) : (
-                  <p>{convertPrice(totalSalePrice)}{currency}</p>
-                )}
+          {/* Order summary details */}
+          <div className="px-6 pt-1 pb-5 border-t border-neutral-100">
+            <p className="text-[11px] font-semibold tracking-widest uppercase text-neutral-400 mb-4 pt-4">
+              Chi tiết đơn hàng
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between text-neutral-500">
+                <span>Tạm tính</span>
+                {isLoading
+                  ? <Skeleton className="w-20 h-4 rounded" />
+                  : <span className="text-black font-medium">{totalSalePrice.toLocaleString("vi-VN")}đ</span>
+                }
               </div>
-              <div className="flex justify-between items-center">
-                <p>Phí giao hàng</p>
-                {isLoading ? (
-                  <Skeleton className="w-16 h-5" />
-                ) : (
-                  <p>{delivery_fee}{currency}</p>
-                )}
+              <div className="flex justify-between text-neutral-500">
+                <span>Phí giao hàng</span>
+                {isLoading
+                  ? <Skeleton className="w-16 h-4 rounded" />
+                  : <span className="text-black font-medium">{validatedCart.length > 0 ? `${delivery_fee.toLocaleString("vi-VN")}đ` : "—"}</span>
+                }
               </div>
-              <div className="flex justify-between items-center">
-                <p>Voucher giảm giá</p>
-                {isLoading ? <Skeleton className="w-10 h-5" /> : <p>0đ</p>}
+              <div className="flex justify-between text-neutral-500">
+                <span className="flex items-center gap-1">
+                  Voucher giảm giá 
+                  {appliedCoupon && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">({appliedCoupon})</span>}
+                </span>
+                {isLoading 
+                  ? <Skeleton className="w-10 h-4 rounded" /> 
+                  : <span className={discountAmount > 0 ? "text-emerald-600 font-bold" : ""}>
+                      {discountAmount > 0 ? `-${discountAmount.toLocaleString("vi-VN")}đ` : "—"}
+                    </span>
+                }
               </div>
             </div>
 
-            <div className="w-full h-px bg-gray-300 my-5"></div>
+            <div className="my-4 h-px bg-neutral-100" />
 
-            <div className="w-full flex justify-between items-start">
-              <h3 className="text-xl sm:text-2xl font-semibold">Tổng</h3>
+            <div className="flex items-end justify-between">
+              <span className="text-sm font-semibold text-black">Tổng cộng</span>
               <div className="text-right">
-                {isLoading ? (
-                  <Skeleton className="w-28 h-7 mb-1 float-right" />
-                ) : (
-                  <p className="font-bold text-xl sm:text-2xl mb-1 text-red-600">
-                    {convertPrice(totalSalePrice + (validatedCart.length > 0 ? delivery_fee : 0))}
-                    {currency}
-                  </p>
-                )}
-                <div className="clear-both"></div>
-                {validatedCart.length > 0 && !isLoading && (
-                  <p className="text-xs sm:text-sm text-gray-500 italic mt-1">
-                    (Đã tiết kiệm được: {convertPrice(totalPrice - totalSalePrice)}{currency})
-                  </p>
-                )}
+                {isLoading
+                  ? <Skeleton className="w-28 h-6 rounded mb-1" />
+                  : (
+                    <>
+                      <p className="text-xl font-bold text-black">
+                        {totalFinal.toLocaleString("vi-VN")}đ
+                      </p>
+                      {savedAmount > 0 && (
+                        <p className="text-xs text-emerald-600 font-medium mt-0.5">
+                          Tiết kiệm {savedAmount.toLocaleString("vi-VN")}đ
+                        </p>
+                      )}
+                    </>
+                  )
+                }
               </div>
             </div>
           </div>
 
-          {/* Nút Đặt hàng với trạng thái Loading */}
-          <button
-            type="submit"
-            form="checkout-info-form"
-            disabled={isSubmitting || isLoading || validatedCart.length === 0}
-            className={`p-4 w-full text-white font-semibold text-lg border outline-none rounded transition-all duration-300 ease-in-out ${
-              isSubmitting || isLoading || validatedCart.length === 0
-                ? "bg-gray-400 border-gray-400 cursor-not-allowed"
-                : "bg-black border-gray-800 hover:bg-gray-800 cursor-pointer"
-            }`}
-          >
-            {isSubmitting ? "ĐANG XỬ LÝ..." : "ĐẶT HÀNG"}
-          </button>
+          <div className="px-6 pb-6">
+            <button
+              type="submit"
+              form="checkout-info-form"
+              disabled={isSubmitting || isLoading || validatedCart.length === 0}
+              className={`w-full py-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+                isSubmitting || isLoading || validatedCart.length === 0
+                  ? "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                  : "bg-black text-white hover:bg-neutral-800 active:scale-[0.99] cursor-pointer"
+              }`}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Đang xử lý...
+                </span>
+              ) : "Đặt hàng ngay"}
+            </button>
+
+            {validatedCart.length > 0 && !isLoading && (
+              <p className="text-center text-[11px] text-neutral-400 mt-3 flex items-center justify-center gap-1.5">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Thanh toán được mã hóa & bảo mật
+              </p>
+            )}
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

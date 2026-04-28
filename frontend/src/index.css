@@ -1,23 +1,11 @@
 /* ./src/index.css */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
 @import "tailwindcss";
-@plugin "@tailwindcss/typography"; /* Thêm dòng này là xong! */
+@plugin "@tailwindcss/typography";
 
-/* a.active hr { */
-  /* display: block;
-  background: orangered;
-} */
-
+/* ── Active nav link ── */
 a.active {
   color: #ff4500;
-}
-
-* {
-  font-family: "Outfit", sans-serif;
-}
-
-.prata-regular {
-  font-family: "Prata", serif;
 }
 
 @media (max-width: 640px) {
@@ -27,16 +15,55 @@ a.active {
   }
 }
 
+/* ── Global typography ── */
+* {
+  font-family: "Outfit", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.prata-regular {
+  font-family: "Prata", serif;
+}
+
+/* ── Smooth scrolling ── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Hide scrollbar (keep functionality) ── */
 ::-webkit-scrollbar {
   display: none;
 }
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-/* Ép Swiper wrapper dãn đều các item và cho phép slide tự động ôm content */
+/* ── Swiper ── */
 .swiper-wrapper {
   align-items: stretch !important;
 }
-
 .swiper-slide {
   height: auto !important;
   display: flex !important;
+}
+
+/* ── Page section entrance animation ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.animate-delay-1 { animation-delay: 0.1s;  opacity: 0; }
+.animate-delay-2 { animation-delay: 0.22s; opacity: 0; }
+.animate-delay-3 { animation-delay: 0.34s; opacity: 0; }
+.animate-delay-4 { animation-delay: 0.46s; opacity: 0; }
+
+/* ── Swiper hide default navigation ── */
+.swiper-button-prev,
+.swiper-button-next {
+  display: none !important;
 }

@@ -11,13 +11,16 @@ import Product from "../../../../models/product.model";
 import { sendMail } from "../../../../helpers/sendMail";
 import { emailTemplate } from "../../../../helpers/emailTemplate";
 import jwt from "jsonwebtoken";
+import { Coupon } from "../../../../models/coupon.model";
+import mongoose from "mongoose";
+import { Order } from "../../../../models/order.model";
 
 export const postOrderClient = async (
   req: Request<{}, {}, IOrderReq, {}>,
   res: Response
 ): Promise<void> => {
   try {
-    const payload: IOrderReq = req.body;
+    const payload: IOrderReq = req.body
 
     let userId = null;
     const authHeader = req.headers.authorization;
@@ -73,7 +76,7 @@ export const postOrderClient = async (
       let ipnUrl =
         "https://raven-urchin-apply.ngrok-free.dev/api/version1/orders/momo-ipn";
       // let ipnUrl = redirectUrl = "https://webhook.site/454e7b77-f177-4ece-8236-ddf1c26ba7f8";
-      let amount = data.totalAmount;
+      let amount = data.finalAmount;
       let requestType = "captureWallet";
       let extraData = ""; //pass empty value if your merchant does not have stores
 
@@ -160,13 +163,11 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
   try {
     const { orderId, resultCode } = req.body; 
 
-    console.log(orderId)
-
     if (resultCode === 0) {
       const updatedOrder = await updateOrderService(orderId);
 
       if (updatedOrder !== null) {
-        // tiến hành trừ số lượng sản phẩm trong kho
+        // 1. Tiến hành trừ số lượng sản phẩm trong kho
         for (const item of updatedOrder.items) {
           await Product.updateOne(
             {
@@ -180,15 +181,30 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
           );
         }
 
+        // 2. CHÍNH THỨC TRỪ LƯỢT DÙNG COUPON SAU KHI THANH TOÁN THÀNH CÔNG
+        if (updatedOrder.couponCode) {
+          const updateQuery: any = { $inc: { usageCount: 1 } };
+          // Lưu ý: updatedOrder.userId có thể là string hoặc ObjectId, nên kiểm tra kĩ
+          if (updatedOrder.userId) {
+            updateQuery["$push"] = { usedBy: new mongoose.Types.ObjectId(updatedOrder.userId.toString()) };
+          }
+          await Coupon.findOneAndUpdate({ code: updatedOrder.couponCode }, updateQuery);
+        }
+
         const htmlContent = await emailTemplate(updatedOrder)
         await sendMail(
           updatedOrder.customer.email,
           `Thanh toán thành công đơn hàng #${updatedOrder.orderCode}`,
           htmlContent
         );
-      } else {
-        return;
       }
+    } else {
+      // NẾU KHÁCH HÀNG BẤM HỦY THANH TOÁN MOMO HOẶC LỖI THẺ
+      // Đánh dấu đơn hàng là đã hủy để không bị treo và khách có thể dùng lại mã để đặt lại
+      await Order.findOneAndUpdate(
+        { orderCode: orderId },
+        { orderStatus: "cancelled", paymentStatus: "failed" }
+      );
     }
 
     res.status(200).json({ message: "Received IPN successfully" });

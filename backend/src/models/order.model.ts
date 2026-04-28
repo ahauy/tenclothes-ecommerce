@@ -55,6 +55,19 @@ const orderSchema = new Schema<IOrder>(
       type: Number,
       required: true,
     },
+    // Fields liên quan đến coupon
+    couponCode: {
+      type: String,
+      default: null,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    finalAmount: {
+      type: Number,
+      default: null,
+    },
     orderStatus: {
       type: String,
       enum: ["pending", "processing", "shipped", "delivered", "cancelled"],

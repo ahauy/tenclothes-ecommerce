@@ -7,24 +7,19 @@ const formatPrice = (price: number) => {
 };
 
 export const emailTemplate = async (order: IOrder) => {
-  // Tính toán lại giá trị
-  const totalOriginalPrice = order.items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
-  const totalDiscount = totalOriginalPrice - order.totalAmount;
-  const deliveryFee = 0;
+  // Lấy các giá trị tính toán đã lưu trên Backend
+  const totalProductValue = order.totalAmount || 0;
+  const discountAmount = order.discountAmount || 0;
+  const finalAmount = order.finalAmount || order.totalAmount;
+  const couponCode = order.couponCode || null;
+  const deliveryFee = 0; // Giả sử freeship
 
   // 1. Lấy tên Tỉnh/Huyện/Xã từ mã code
   let fullAddress = "";
   try {
     const [pRes, dRes, wRes] = await Promise.all([
-      axios.get(
-        `https://provinces.open-api.vn/api/p/${order.customer.province}`
-      ),
-      axios.get(
-        `https://provinces.open-api.vn/api/d/${order.customer.district}`
-      ),
+      axios.get(`https://provinces.open-api.vn/api/p/${order.customer.province}`),
+      axios.get(`https://provinces.open-api.vn/api/d/${order.customer.district}`),
       axios.get(`https://provinces.open-api.vn/api/w/${order.customer.ward}`),
     ]);
 
@@ -34,11 +29,10 @@ export const emailTemplate = async (order: IOrder) => {
 
     fullAddress = `${order.customer.detailAddress}, ${wardName}, ${districtName}, ${provinceName}`;
   } catch (error) {
-    // Nếu API lỗi, hiển thị tạm mã code để không làm sập luồng gửi mail
     fullAddress = `${order.customer.detailAddress}, Mã xã: ${order.customer.ward}, Mã huyện: ${order.customer.district}, Mã tỉnh: ${order.customer.province}`;
   }
 
-  // Render danh sách sản phẩm (Có kèm ảnh và căn lỉnh an toàn cho Email)
+  // Render danh sách sản phẩm
   const itemsHtml = order.items
     .map(
       (item: IOrderProductItem) => `
@@ -76,7 +70,14 @@ export const emailTemplate = async (order: IOrder) => {
     )
     .join("");
 
-  // Xác định phương thức thanh toán hiển thị
+  // Chuỗi HTML cho dòng mã giảm giá (chỉ hiện khi có dùng mã)
+  const discountHtmlRow = discountAmount > 0 ? `
+    <tr>
+      <td style="padding: 8px 10px; color: #666666; font-size: 14px;">Voucher giảm giá ${couponCode ? `(<strong>${couponCode}</strong>)` : ''}</td>
+      <td style="padding: 8px 10px; text-align: right; font-size: 14px; font-weight: 600; color: #059669;">-${formatPrice(discountAmount)}đ</td>
+    </tr>
+  ` : '';
+
   const paymentMethodText =
     order.customer.paymentMethod === "cod"
       ? "Thanh toán khi nhận hàng (COD)"
@@ -89,9 +90,7 @@ export const emailTemplate = async (order: IOrder) => {
         <h1 style="font-size: 28px; font-weight: 800; text-transform: uppercase; color: #000000; margin-bottom: 10px; letter-spacing: -0.5px;">ĐẶT HÀNG THÀNH CÔNG!</h1>
         <p style="font-size: 14px; color: #555555; margin: 0;">
           Cảm ơn bạn đã lựa chọn mua sắm tại <strong>TenClothes Store</strong>.<br/>
-          Đơn hàng <strong>#${
-            order.orderCode
-          }</strong> của bạn đã được tiếp nhận và đang được xử lý.
+          Đơn hàng <strong>#${order.orderCode}</strong> của bạn đã được tiếp nhận và đang được xử lý.
         </p>
       </div>
 
@@ -113,27 +112,16 @@ export const emailTemplate = async (order: IOrder) => {
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
         <tr>
           <td style="padding: 8px 10px; color: #666666; font-size: 14px;">Tổng giá trị sản phẩm</td>
-          <td style="padding: 8px 10px; text-align: right; font-size: 14px; font-weight: 600;">${formatPrice(
-            totalOriginalPrice
-          )}đ</td>
+          <td style="padding: 8px 10px; text-align: right; font-size: 14px; font-weight: 600;">${formatPrice(totalProductValue)}đ</td>
         </tr>
-        <tr>
-          <td style="padding: 8px 10px; color: #666666; font-size: 14px;">Tổng khuyến mãi</td>
-          <td style="padding: 8px 10px; text-align: right; font-size: 14px; font-weight: 600;">${formatPrice(
-            totalDiscount
-          )}đ</td>
-        </tr>
+        ${discountHtmlRow}
         <tr>
           <td style="padding: 8px 10px; border-bottom: 1px solid #eeeeee; color: #666666; font-size: 14px;">Phí giao hàng</td>
-          <td style="padding: 8px 10px; border-bottom: 1px solid #eeeeee; text-align: right; font-size: 14px; font-weight: 600;">${formatPrice(
-            deliveryFee
-          )}đ</td>
+          <td style="padding: 8px 10px; border-bottom: 1px solid #eeeeee; text-align: right; font-size: 14px; font-weight: 600;">${formatPrice(deliveryFee)}đ</td>
         </tr>
         <tr>
           <td style="background-color: #000000; color: #ffffff; padding: 15px 10px; font-size: 16px; font-weight: 700; text-transform: uppercase;">Tổng thanh toán</td>
-          <td style="background-color: #000000; color: #facc15; padding: 15px 10px; text-align: right; font-size: 18px; font-weight: 800;">${formatPrice(
-            order.totalAmount
-          )}đ</td>
+          <td style="background-color: #000000; color: #facc15; padding: 15px 10px; text-align: right; font-size: 18px; font-weight: 800;">${formatPrice(finalAmount)}đ</td>
         </tr>
       </table>
 
