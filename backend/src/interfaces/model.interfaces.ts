@@ -1,7 +1,7 @@
 import mongoose, { Document } from "mongoose";
 
 // -------------------- USER MODEL ------------------
-interface IAddresses {
+export interface IAddresses extends mongoose.Types.Subdocument {
   name: string; // Tên người nhận hàng
   phone: string; // Điện thoại người nhận hàng
   province: string; // Tỉnh/thành phố
@@ -14,8 +14,10 @@ interface IAddresses {
 interface IInfo {
   height?: string;
   weight?: string;
-  dob?: Date;
+  dob?: string;
 }
+
+type IGender = "male" | "female" | "other";
 
 export interface IUser extends Document {
   fullName: string;
@@ -23,8 +25,9 @@ export interface IUser extends Document {
   password: string; // có thể để là optional nếu đăng nhập bằng fb hoặc gg nhưng trong dự án này chỉ cho đăng nhập bằng email và phải có mật khẩu
   deleted: boolean;
   phone?: string;
+  gender?: IGender;
   info?: IInfo;
-  addresses?: IAddresses[];
+  addresses?: mongoose.Types.DocumentArray<IAddresses>;
   isActive: boolean; // Trạng thái tài khoản của khách hàng
   deletedAt?: Date;
   createdAt?: Date; // auto nhờ có timestamps: true

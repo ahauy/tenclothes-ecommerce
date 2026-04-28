@@ -23,11 +23,30 @@ const Contact = () => {
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+
+        /* Thêm hiệu ứng Animation */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .animate-delay-1 { 
+          animation-delay: 0.2s; 
+          opacity: 0; 
+        }
       `}</style>
 
       <main className="w-full font-sans max-w-[1440px] mx-auto px-[40px] py-[64px] md:py-[96px]">
-        {/* Header Section */}
-        <div className="mb-[64px]">
+        {/* Header Section - Áp dụng hiệu ứng xuất hiện đầu tiên */}
+        <div className="mb-[64px] animate-fade-in-up">
           <span className="text-[14px] leading-[1.4] font-semibold text-[#7e7576] uppercase tracking-[0.05em] block mb-[8px]">Dịch Vụ Khách Hàng</span>
           <h1 className="font-serif text-[48px] md:text-[64px] leading-[1.1] text-[#000000] max-w-2xl">
             Liên Hệ Với Chúng Tôi
@@ -37,7 +56,8 @@ const Contact = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[64px]">
+        {/* Cột Form và Sidebar - Áp dụng hiệu ứng xuất hiện trễ hơn một chút */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-[64px] animate-fade-in-up animate-delay-1">
           {/* Contact Form */}
           <div className="lg:col-span-7">
             <div className="bg-[#ffffff] border border-[#cfc4c5]/30 p-[32px] md:p-[48px]">

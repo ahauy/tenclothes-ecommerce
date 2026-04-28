@@ -127,9 +127,14 @@ const mockCategories: ICategoryTree[] = [
   },
 ];
 
-const CategoryMenu = () => {
-  // State lưu id của danh mục level 2 đang được mở rộng (để xem level 3
+interface CategoryMenuProps {
+  isMobile?: boolean;
+  setVisible?: (visible: boolean) => void;
+}
+
+const CategoryMenu = ({ isMobile = false, setVisible }: CategoryMenuProps) => {
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [expandedMobileId, setExpandedMobileId] = useState<string | null>(null);
 
   const categoryTree: ICategoryTree[] = useCategoryStore((s) => s.categoryTree);
   const setCategoryTree = useCategoryStore((s) => s.setCategoryTree);
@@ -153,21 +158,109 @@ const CategoryMenu = () => {
     getCategories();
   }, [categoryTree.length, setCategoryTree]);
 
+  const categoriesToRender = categoryTree.length > 0 ? categoryTree : mockCategories;
+
+  // ==== RENDER CHO MOBILE ====
+  if (isMobile) {
+    return (
+      <>
+        {categoriesToRender.map((level1) => (
+          <div key={level1._id} className="flex flex-col">
+            <NavLink
+              to={`/collection/${level1.slug}`}
+              onClick={(e) => {
+                // Nếu có danh mục con thì xổ dropdown, không thì chuyển hướng luôn
+                if (level1.children && level1.children.length > 0) {
+                  e.preventDefault();
+                  setExpandedMobileId(expandedMobileId === level1._id ? null : level1._id);
+                } else {
+                  if (setVisible) setVisible(false);
+                }
+              }}
+              className={({ isActive }) =>
+                `mobile-nav-item flex items-center justify-between px-6 py-3.5 text-sm text-neutral-600 hover:text-black ${
+                  isActive && (!level1.children || level1.children.length === 0)
+                    ? "bg-neutral-50 text-black border-l-2 border-black"
+                    : "border-l-2 border-transparent"
+                }`
+              }
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span className="font-medium tracking-wide uppercase text-xs">
+                  {level1.title}
+                </span>
+              </div>
+              
+              {/* Icon mũi tên xổ xuống cho mobile */}
+              {level1.children && level1.children.length > 0 && (
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    expandedMobileId === level1._id ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </NavLink>
+
+            {/* Dropdown menu level 2 trên mobile */}
+            {expandedMobileId === level1._id && level1.children && (
+              <div className="flex flex-col bg-neutral-50/50 py-1">
+                <NavLink
+                  to={`/collection/${level1.slug}`}
+                  onClick={() => setVisible && setVisible(false)}
+                  className="pl-14 pr-6 py-2.5 text-xs font-semibold text-neutral-800 hover:text-black"
+                >
+                  Tất cả {level1.title}
+                </NavLink>
+                {level1.children.map((level2) => (
+                  <div key={level2._id} className="flex flex-col">
+                    <NavLink
+                      to={`/collection/${level2.slug}`}
+                      onClick={() => setVisible && setVisible(false)}
+                      className="pl-14 pr-6 py-2 text-xs text-neutral-600 hover:text-black"
+                    >
+                      {level2.title}
+                    </NavLink>
+                    {/* Render level 3 (Nếu có) */}
+                    {level2.children && level2.children.length > 0 && level2.children.map((level3) => (
+                      <NavLink
+                        key={level3._id}
+                        to={`/collection/${level3.slug}`}
+                        onClick={() => setVisible && setVisible(false)}
+                        className="pl-16 pr-6 py-1.5 text-[11px] text-neutral-400 hover:text-black"
+                      >
+                        - {level3.title}
+                      </NavLink>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  // ==== RENDER CHO DESKTOP (Giữ nguyên logic MegaMenu) ====
   return (
     <>
-      {(categoryTree.length > 0 ? categoryTree : mockCategories).map((level1) => (
-        // Dùng list-none và KHÔNG dùng relative ở đây để MegaMenu bung full width màn hình
+      {categoriesToRender.map((level1) => (
         <li key={level1._id} className="group list-none cursor-pointer">
-          {/* Menu Item Level 1 (Hiển thị trên thanh Navbar) */}
           <NavLink
             to={`/collection/${level1.slug}`}
             className="flex flex-col items-center gap-1 py-4"
           >
             <p className="uppercase hover:text-[#ff4500]">{level1.title}</p>
-            {/* Thanh gạch dưới khi hover (giữ nguyên style của bạn) */}
           </NavLink>
 
-          {/* Mega Menu Dropdown (Chỉ hiện khi hover vào level 1 có danh mục con) */}
           {level1.children && level1.children.length > 0 && (
             <div className="absolute left-0 w-full bg-white shadow-md border-t border-gray-100 hidden group-hover:flex z-50 cursor-default">
               <div className="flex w-full max-w-300 mx-auto p-10 gap-10">
@@ -178,7 +271,6 @@ const CategoryMenu = () => {
 
                   <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                     {level1.children.map((level2) => (
-                      // 1. THÊM class "group/level2" VÀO THẺ BAO NGOÀI CÙNG CỦA LEVEL 2
                       <div
                         key={level2._id}
                         className="flex flex-col group/level2"
@@ -194,18 +286,8 @@ const CategoryMenu = () => {
                             <span>{level2.title}</span>
 
                             {level2.children && level2.children.length > 0 && (
-                              // 2. XOAY MŨI TÊN KHI HOVER: Dùng group-hover/level2:rotate-180
                               <span className="px-2 text-gray-400 group-hover/level2:text-black group-hover/level2:rotate-180 transition-transform duration-300">
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                   <path d="m6 9 6 6 6-6" />
                                 </svg>
                               </span>
@@ -214,7 +296,6 @@ const CategoryMenu = () => {
                         </div>
 
                         {level2.children && level2.children.length > 0 && (
-                          // 3. HIỆN DANH MỤC CẤP 3 KHI HOVER: Đổi từ việc check state sang dùng "hidden group-hover/level2:flex"
                           <div className="hidden group-hover/level2:flex flex-col gap-2 mt-2 ml-3">
                             {level2.children.map((level3) => (
                               <NavLink
@@ -236,7 +317,6 @@ const CategoryMenu = () => {
                   </div>
                 </div>
 
-                {/* --- CỘT PHẢI: ẢNH BANNER --- */}
                 <div className="w-1/2 flex items-center justify-center">
                   <div className="w-full h-87.5 bg-gray-50 rounded-md overflow-hidden relative">
                     <img

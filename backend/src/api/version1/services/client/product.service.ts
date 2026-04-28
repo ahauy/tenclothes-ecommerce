@@ -346,43 +346,79 @@ export const searchProductService = async (
   keyword: string,
   limit: number = 10
 ) => {
-  const products = await Product.aggregate([
-    {
-      $search: {
-        index: "default",
-        text: {
-          query: keyword,
-          path: ["title", "tags", "description", "brand"],
-          fuzzy: {
-            maxEdits: 2, // Sức mạnh cốt lõi: Cho phép gõ sai tối đa 2 ký tự (VD: "ao somi" -> "áo sơ mi")
-            prefixLength: 1, // Ký tự đầu tiên phải gõ đúng để tăng hiệu năng
+  try {
+    // --- Cách 1: Dùng Atlas Search (Full-text, Fuzzy) ---
+    // Yêu cầu: Search Index "default" phải được tạo trên MongoDB Atlas
+    const products = await Product.aggregate([
+      {
+        $search: {
+          index: "default",
+          text: {
+            query: keyword,
+            path: ["title", "tags", "description", "brand"],
+            fuzzy: {
+              maxEdits: 2, // Cho phép gõ sai tối đa 2 ký tự
+              prefixLength: 1, // Ký tự đầu phải đúng để tăng hiệu năng
+            },
           },
         },
       },
-    },
-    {
-      $match: {
-        isActive: true,
-        deleted: false,
+      {
+        $match: {
+          isActive: true,
+          deleted: false,
+        },
       },
-    },
-    {
-      $limit: limit,
-    },
-    {
-      $project: {
+      { $limit: limit },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          slug: 1,
+          price: 1,
+          salePrice: 1,
+          discountPercentage: 1,
+          productStyles: { $slice: ["$productStyles", 1] },
+        },
+      },
+    ]);
+
+    return products;
+  } catch (error: any) {
+    // --- Cách 2: Fallback dùng Regex ---
+    // Tự động kích hoạt khi Atlas Search Index chưa được cấu hình
+    // (thường gặp ở môi trường dev local hoặc khi index chưa active)
+    console.warn(
+      "[Search] Atlas Search không khả dụng, fallback sang Regex:",
+      error?.message
+    );
+
+    const regexKeyword = new RegExp(keyword.trim(), "i");
+
+    const products = await Product.find({
+      isActive: true,
+      deleted: false,
+      $or: [
+        { title: regexKeyword },
+        { tags: regexKeyword },
+        { brand: regexKeyword },
+        { description: regexKeyword },
+      ],
+    })
+      .limit(limit)
+      .select({
         _id: 1,
         title: 1,
         slug: 1,
         price: 1,
         salePrice: 1,
         discountPercentage: 1,
-        productStyles: { $slice: ["$productStyles", 1] },
-      },
-    },
-  ]);
+        productStyles: { $slice: 1 },
+      })
+      .lean();
 
-  return products;
+    return products;
+  }
 };
 
 export const searchProductFilterService = async (keyword?: string) => {

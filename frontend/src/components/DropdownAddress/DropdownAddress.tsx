@@ -6,16 +6,24 @@ import type {
   ILocation,
   IProvinceResponse,
 } from "../../interfaces/iAddress";
-import ErrorMessage from "../errorMessage/ErrorMessage";
+import ErrorMessage from "../errorMessage/ErrorMessage"; // Nhớ import đúng đường dẫn của bạn
 
 interface IDropdownAddressProps {
   province: number | string;
   district: number | string;
   ward: number | string;
 
-  onChangeProvince: (val: string | number) => void;
-  onChangeDistrict: (val: string | number) => void;
-  onChangeWard: (val: string | number) => void;
+  // Cập nhật: Trả về cả code và name để Modal có thể gửi lên Backend
+  onChangeProvince: (code: string | number, name: string) => void;
+  onChangeDistrict: (code: string | number, name: string) => void;
+  onChangeWard: (code: string | number, name: string) => void;
+
+  // Cập nhật: Thêm placeholder để hỗ trợ hiển thị dữ liệu cũ khi ở chế độ Edit
+  placeholders?: {
+    province?: string;
+    district?: string;
+    ward?: string;
+  };
 
   errors: {
     province?: string;
@@ -31,9 +39,9 @@ const DropdownAddress = ({
   onChangeProvince,
   onChangeDistrict,
   onChangeWard,
+  placeholders,
   errors,
 }: IDropdownAddressProps) => {
-  // lấy danh sách các tình thành phố
   const [provinces, setProvinces] = useState<ILocation[]>([]);
   const [districts, setDistricts] = useState<ILocation[]>([]);
   const [wards, setWards] = useState<ILocation[]>([]);
@@ -41,29 +49,33 @@ const DropdownAddress = ({
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
-        const response = await axios.get("https://provinces.open-api.vn/api/p/")
-        setProvinces(response.data)
+        const response = await axios.get(
+          "https://provinces.open-api.vn/api/p/"
+        );
+        setProvinces(response.data);
       } catch (e) {
-        console.log("Lỗi khi tải danh sách Tỉnh/Thành phố: ", e)
+        console.log("Lỗi khi tải danh sách Tỉnh/Thành phố: ", e);
       }
-    }
-
-    fetchProvinces()
-  }, [])
+    };
+    fetchProvinces();
+  }, []);
 
   useEffect(() => {
-    if(province) {
+    if (province) {
       const fetchDistrict = async () => {
         try {
-          const response = await axios.get<IProvinceResponse>(`https://provinces.open-api.vn/api/p/${province}?depth=2`)
-          setDistricts(response.data.districts)
+          const response = await axios.get<IProvinceResponse>(
+            `https://provinces.open-api.vn/api/p/${province}?depth=2`
+          );
+          setDistricts(response.data.districts);
         } catch (error) {
-          console.error("Lỗi khi tải danh sách Quận/Huyện: ", error)
+          console.error("Lỗi khi tải danh sách Quận/Huyện: ", error);
         }
-      }
-      fetchDistrict()
-    } 
-  }, [province])
+      };
+      fetchDistrict();
+    }
+    // Đã xóa khối else { setDistricts([]) }
+  }, [province]);
 
   useEffect(() => {
     if (district) {
@@ -79,55 +91,79 @@ const DropdownAddress = ({
       };
       fetchWards();
     }
+    // Đã xóa khối else { setWards([]) }
   }, [district]);
 
+  // Tìm tên tương ứng với code để truyền ngược lên cha
   const handleChangeProvince = (provinceCode: number | string) => {
-    onChangeProvince(provinceCode)
-    onChangeDistrict("")
-    onChangeWard("")
-  }
+    const name =
+      provinces.find((p) => String(p.code) === String(provinceCode))?.name ||
+      "";
+    onChangeProvince(provinceCode, name);
+    // Reset quận/huyện và phường/xã khi đổi tỉnh
+    onChangeDistrict("", "");
+    onChangeWard("", "");
+  };
 
   const handleChangeDistrict = (districtCode: number | string) => {
-    onChangeDistrict(districtCode)
-    onChangeWard("")
-  }
+    const name =
+      districts.find((d) => String(d.code) === String(districtCode))?.name ||
+      "";
+    onChangeDistrict(districtCode, name);
+    // Reset phường/xã khi đổi quận
+    onChangeWard("", "");
+  };
 
   const handleChangeWard = (wardCode: number | string) => {
-    onChangeWard(wardCode)
-  }
+    const name =
+      wards.find((w) => String(w.code) === String(wardCode))?.name || "";
+    onChangeWard(wardCode, name);
+  };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      <div className="sm:col-span-2 md:col-span-1">
+    <div className="flex flex-col gap-4 w-full">
+      {" "}
+      {/* Thay grid bằng flex-col để xếp chồng */}
+      {/* Tỉnh / Thành phố */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280]">
+          Tỉnh / Thành phố
+        </label>
         <DropdownItem
-          placeholder="Chọn Tỉnh/Thành phố"
+          placeholder={placeholders?.province || "Chọn Tỉnh/Thành phố"}
           listLocation={provinces}
           selectedValue={province}
           handle={handleChangeProvince}
         />
-        <ErrorMessage message={errors.province} />
+        {errors.province && <ErrorMessage message={errors.province} />}
       </div>
-
-      <div className="col-span-1">
+      {/* Quận / Huyện */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280]">
+          Quận / Huyện
+        </label>
         <DropdownItem
-          placeholder="Chọn Quận/Huyện"
+          placeholder={placeholders?.district || "Chọn Quận/Huyện"}
           listLocation={districts}
           selectedValue={district}
           handle={handleChangeDistrict}
-          disabled={!province}
+          disabled={!province && !placeholders?.province}
         />
-        <ErrorMessage message={errors.district} />
+        {errors.district && <ErrorMessage message={errors.district} />}
       </div>
-
-      <div className="col-span-1">
+      {/* Phường / Xã */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280]">
+          Phường / Xã
+        </label>
         <DropdownItem
-          placeholder="Chọn Phường/Xã"
+          placeholder={placeholders?.ward || "Chọn Phường/Xã"}
           listLocation={wards}
           selectedValue={ward}
           handle={handleChangeWard}
-          disabled={!district}
+          disabled={!district && !placeholders?.district}
         />
-        <ErrorMessage message={errors.ward} />
+        {errors.ward && <ErrorMessage message={errors.ward} />}
       </div>
     </div>
   );

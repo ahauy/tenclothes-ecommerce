@@ -160,6 +160,8 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
   try {
     const { orderId, resultCode } = req.body; 
 
+    console.log(orderId)
+
     if (resultCode === 0) {
       const updatedOrder = await updateOrderService(orderId);
 

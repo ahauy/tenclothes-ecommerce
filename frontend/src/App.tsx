@@ -20,6 +20,7 @@ import AccountLayout from "./layouts/AccountLayout";
 import Profile from "./pages/account/Profile";
 import Addresses from "./pages/account/Addresses";
 import Orders from "./pages/account/Orders";
+import Search from "./components/Search";
 
 const App = () => {
   const checkAuth = useAuthStore((state) => state.checkAuth);
@@ -31,6 +32,7 @@ const App = () => {
   return (
     <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] flex flex-col min-h-screen">
       <Toaster richColors position="top-right" expand={false} />
+      <Search />
       <Navbar></Navbar>
       <div className="grow">
         <Routes>

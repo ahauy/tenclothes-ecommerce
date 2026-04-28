@@ -7,18 +7,22 @@ import {
   type CheckoutInfoValue,
 } from "../../validators/checkoutInforStore.validate";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCheckoutInforStore } from "../../stores/useAddressStore";
+import { useCheckoutInforStore } from "../../stores/useCheckoutInforStore";
+import { useAuthStore } from "../../stores/useAuthStore"; // Import thêm AuthStore
 import ErrorMessage from "../errorMessage/ErrorMessage";
 import { getInputClassName } from "../../utils/getInputClassName";
-
 
 const FormCheckoutInfo = ({
   onSubmitSuccess,
 }: {
   onSubmitSuccess: (data: CheckoutInfoValue) => void;
 }) => {
+  // Lấy thông tin user đang đăng nhập (Bạn tự điều chỉnh state.user cho khớp với Store của bạn nhé)
+  const currentUser = useAuthStore((s) => s.user); 
+
   const fullName = useCheckoutInforStore((s) => s.fullName);
-  const email = useCheckoutInforStore((s) => s.email);
+  // LOGIC LẤY EMAIL: Ưu tiên email đã nhập trước đó trong giỏ hàng, nếu không có thì lấy email của tài khoản đang đăng nhập
+  const email = useCheckoutInforStore((s) => s.email) || currentUser?.email || "";
   const phone = useCheckoutInforStore((s) => s.phone);
   const province = useCheckoutInforStore((s) => s.province);
   const district = useCheckoutInforStore((s) => s.district);
@@ -39,7 +43,7 @@ const FormCheckoutInfo = ({
     resolver: zodResolver(checkoutInfoSchema),
     defaultValues: {
       fullName,
-      email,
+      email, // Truyền email lấy được vào giá trị mặc định của Form
       phone,
       province,
       district,
@@ -53,15 +57,15 @@ const FormCheckoutInfo = ({
   const formChangeValue = watch();
 
   useEffect(() => {
-    if (formChangeValue.fullName) setField("fullName", formChangeValue.fullName);
-    if (formChangeValue.email) setField("email", formChangeValue.email);
-    if (formChangeValue.phone) setField("phone", formChangeValue.phone);
-    if (formChangeValue.province) setField("province", formChangeValue.province);
-    if (formChangeValue.district) setField("district", formChangeValue.district);
-    if (formChangeValue.ward) setField("ward", formChangeValue.ward);
-    if (formChangeValue.detailAddress) setField("detailAddress", formChangeValue.detailAddress);
-    if (formChangeValue.note) setField("note", formChangeValue.note);
-    if (formChangeValue.paymentMethod) setField("paymentMethod", formChangeValue.paymentMethod);
+    if (formChangeValue.fullName !== undefined) setField("fullName", formChangeValue.fullName);
+    if (formChangeValue.email !== undefined) setField("email", formChangeValue.email);
+    if (formChangeValue.phone !== undefined) setField("phone", formChangeValue.phone);
+    if (formChangeValue.province !== undefined) setField("province", formChangeValue.province);
+    if (formChangeValue.district !== undefined) setField("district", formChangeValue.district);
+    if (formChangeValue.ward !== undefined) setField("ward", formChangeValue.ward);
+    if (formChangeValue.detailAddress !== undefined) setField("detailAddress", formChangeValue.detailAddress);
+    if (formChangeValue.note !== undefined) setField("note", formChangeValue.note);
+    if (formChangeValue.paymentMethod !== undefined) setField("paymentMethod", formChangeValue.paymentMethod);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formChangeValue]);
 
@@ -71,51 +75,69 @@ const FormCheckoutInfo = ({
 
   return (
     <form
-      className="flex flex-col lg:col-span-3 order-2 lg:order-1"
+      className="flex flex-col lg:col-span-3 order-2 lg:order-1 font-manrope"
       id="checkout-info-form"
       onSubmit={handleSubmit(onSubmitForm)}
     >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+        * { font-family: 'Manrope', sans-serif; }
+      `}</style>
+
       {/* THÔNG TIN GIAO HÀNG */}
       <div className="w-full">
-        <h1 className="font-semibold text-xl sm:text-2xl mb-6">
+        <h1 className="font-semibold text-xl sm:text-2xl mb-6 text-[#1a1a1a] tracking-tight">
           THÔNG TIN GIAO HÀNG
         </h1>
         
-        <div className="w-full mb-4">
+        {/* Họ tên */}
+        <div className="w-full mb-5">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280] mb-2">
+            Họ và tên người nhận <span className="text-rose-500">*</span>
+          </label>
           <input
             type="text"
-            placeholder="Họ và tên"
+            placeholder="Ví dụ: Nguyễn Văn A"
             {...register("fullName")}
-            className={getInputClassName(!!errors.fullName)}
+            className={`${getInputClassName(!!errors.fullName)} w-full py-3`}
             defaultValue={fullName}
           />
           <ErrorMessage message={errors.fullName?.message} />
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+        {/* Cụm Email & SĐT */}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-5 mb-5">
           <div className="w-full">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280] mb-2">
+              Email <span className="text-rose-500">*</span>
+            </label>
             <input
               type="text"
-              placeholder="Email"
+              placeholder="Ví dụ: email@domain.com"
               {...register("email")}
-              className={getInputClassName(!!errors.email)}
+              className={`${getInputClassName(!!errors.email)} w-full py-3 ${currentUser?.email ? 'bg-gray-50' : ''}`}
               defaultValue={email}
             />
             <ErrorMessage message={errors.email?.message} />
           </div>
           <div className="w-full">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280] mb-2">
+              Số điện thoại <span className="text-rose-500">*</span>
+            </label>
             <input
               type="text"
-              placeholder="Số điện thoại"
+              placeholder="0912 345 678"
               {...register("phone")}
-              className={getInputClassName(!!errors.phone)}
+              className={`${getInputClassName(!!errors.phone)} w-full py-3`}
               defaultValue={phone}
             />
             <ErrorMessage message={errors.phone?.message} />
           </div>
         </div>
 
-        <div className="mb-4">
+        {/* Chọn Tỉnh/Quận/Phường */}
+        <div className="mb-5">
+          {/* Label tổng cho khu vực đã được bỏ vì bên trong DropdownAddress bạn đã tách Label từng ô theo dòng rồi */}
           <DropdownAddress
             province={formChangeValue.province}
             district={formChangeValue.district}
@@ -137,29 +159,37 @@ const FormCheckoutInfo = ({
           />
         </div>
 
-        <div className="w-full mb-4">
+        {/* Địa chỉ chi tiết */}
+        <div className="w-full mb-5">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280] mb-2">
+            Địa chỉ chi tiết <span className="text-rose-500">*</span>
+          </label>
           <input
             type="text"
-            placeholder="Địa chỉ chi tiết (Số nhà, tên đường...)"
+            placeholder="Số nhà, tên đường, tòa nhà, căn hộ..."
             {...register("detailAddress")}
-            className={getInputClassName(!!errors.detailAddress)}
+            className={`${getInputClassName(!!errors.detailAddress)} w-full py-3`}
             defaultValue={detailAddress}
           />
           <ErrorMessage message={errors.detailAddress?.message} />
         </div>
 
-        <div className="w-full mb-6">
+        {/* Ghi chú */}
+        <div className="w-full mb-8">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280] mb-2">
+            Ghi chú đơn hàng
+          </label>
           <textarea
             {...register("note")}
-            placeholder="Ghi chú thêm (cơ quan làm việc, giao trong giờ hành chính, ...)"
-            className="outline-none py-3 px-3 border border-gray-300 hover:border-gray-400 focus:border-gray-800 w-full rounded min-h-25 transition-all duration-200 resize-y"
+            placeholder="Ví dụ: Giao trong giờ hành chính, gọi trước khi giao..."
+            className="outline-none py-3 px-4 border border-gray-300 hover:border-gray-400 focus:border-gray-800 w-full rounded min-h-[100px] transition-all duration-200 resize-y text-sm placeholder:text-gray-400"
           ></textarea>
         </div>
       </div>
 
       {/* PHƯƠNG THỨC THANH TOÁN */}
-      <div className="w-full mt-2">
-        <h1 className="font-semibold text-xl sm:text-2xl mb-5">
+      <div className="w-full mt-2 border-t border-gray-200 pt-8">
+        <h1 className="font-semibold text-xl sm:text-2xl mb-5 text-[#1a1a1a] tracking-tight">
           PHƯƠNG THỨC THANH TOÁN
         </h1>
         {PAYMENT_METHOD.map((payment) => {
@@ -168,18 +198,18 @@ const FormCheckoutInfo = ({
             <label
               htmlFor={payment.id}
               key={payment.id}
-              className={`w-full flex items-center gap-4 border rounded-lg px-4 py-3.5 mb-3 cursor-pointer transition-all duration-200 ${
+              className={`w-full flex items-center gap-4 border rounded-lg px-5 py-4 mb-3 cursor-pointer transition-all duration-200 ${
                 isChecked
-                  ? "bg-gray-50 border-gray-800 shadow-sm"
+                  ? "bg-gray-50 border-gray-800 shadow-sm ring-1 ring-gray-800"
                   : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/50"
               }`}
             >
               <input
                 type="radio"
                 id={payment.id}
-                defaultValue={payment.id}
+                value={payment.id}
                 {...register("paymentMethod")}
-                className="w-4 h-4 text-black focus:ring-black accent-black"
+                className="w-4 h-4 text-black focus:ring-black accent-black cursor-pointer"
               />
               <img
                 src={payment.image}
@@ -191,7 +221,7 @@ const FormCheckoutInfo = ({
           );
         })}
         {/* Validation cho phương thức thanh toán nếu cần */}
-        <ErrorMessage message={errors.paymentMethod?.message} />
+        {errors.paymentMethod && <ErrorMessage message={errors.paymentMethod?.message} />}
       </div>
     </form>
   );

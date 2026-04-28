@@ -12,31 +12,50 @@ const About = () => {
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+
+        /* Định nghĩa Animation */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(24px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.7s ease-out forwards;
+        }
+        .animate-delay-1 { animation-delay: 0.2s; opacity: 0; }
+        .animate-delay-2 { animation-delay: 0.4s; opacity: 0; }
+        .animate-delay-3 { animation-delay: 0.6s; opacity: 0; }
       `}</style>
       
       <main className="w-full font-sans">
         {/* Hero Section */}
-        <section className="w-full h-[600px] md:h-[819px] relative flex items-center justify-center overflow-hidden">
+        <section className="w-full h-[600px] md:h-[819px] relative flex items-center justify-center overflow-hidden animate-fade-in-up">
           <div className="absolute inset-0 w-full h-full">
             <img 
               alt="Hero Background" 
               className="w-full h-full object-cover object-center opacity-90" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcEU8mFDb4vEuWIUTX1picIRdS4DbqJX8JKuLMq5f2W1uWg8yJv0qpLBs9Y5RfCWlhRyRd4bW0x2sxBcspyWIor-QIaddCorLf2xVRoGJ6o7IUEGa_6puwm1CeArH72FARxWydwrtEJydE5drB38Svdb1hg7WHb4zmxG9i_Vojo49JxgiKTjg6-oqyTlKXwR2d1AaJwZbTDJJ8l4iKncfdIBHXu_mMrB8lQGD-gCun2qfnmdx_4i0-pS4zpUxYeWpXTZAE1wkUZRG_"
+              src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=2070"
             />
             <div className="absolute inset-0 bg-[#ffffff]/30 backdrop-blur-[2px]"></div>
           </div>
           <div className="relative z-10 max-w-[1440px] mx-auto px-[40px] text-center flex flex-col items-center">
+            <span className="text-[14px] leading-[1.4] font-semibold text-[#151c25] uppercase tracking-[0.05em] block mb-[16px]">Về Chúng Tôi</span>
             <h1 className="font-serif text-[48px] md:text-[64px] leading-[1.1] text-[#000000] mb-[24px] max-w-4xl tracking-tight">
               Nghệ Thuật Chế Tác Tinh Tế
             </h1>
-            <p className="text-[16px] md:text-[18px] leading-[1.6] text-[#4c4546] max-w-2xl font-light">
+            <p className="text-[16px] md:text-[18px] leading-[1.6] text-[#4c4546] max-w-2xl font-medium">
               Nơi thiết kế vượt thời gian giao thoa cùng chất lượng không thỏa hiệp. Chúng tôi tạo ra những trang phục bền bỉ, được chế tác bằng tâm huyết và sự tôn trọng tuyệt đối dành cho môi trường.
             </p>
           </div>
         </section>
 
-        {/* Our Story - Asymmetric Layout */}
-        <section className="py-[64px] my-[64px] max-w-[1440px] mx-auto px-[40px]">
+        {/* Our Story Section */}
+        <section className="py-[64px] my-[64px] max-w-[1440px] mx-auto px-[40px] animate-fade-in-up animate-delay-1">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-[24px] items-center">
             <div className="col-span-1 md:col-span-5 md:col-start-2 flex flex-col justify-center space-y-[24px]">
               <span className="text-[14px] leading-[1.4] font-semibold text-[#7e7576] uppercase tracking-[0.05em]">Khởi Nguồn</span>
@@ -44,31 +63,31 @@ const About = () => {
                 Bắt đầu từ khao khát về sự tối giản trong một thế giới phức tạp.
               </h2>
               <p className="text-[16px] leading-[1.6] text-[#4c4546]">
-                TENCLOTHES ra đời như một sự phản kháng thầm lặng chống lại tính chất phù du của thời trang hiện đại. Chúng tôi mong muốn xây dựng một tủ quần áo dựa trên nền tảng vững chắc, thay vì chạy theo xu hướng nhất thời. Mỗi sản phẩm là một quá trình tinh giản—loại bỏ những thứ không cần thiết để tôn vinh phom dáng và công năng.
+                TENCLOTHES ra đời như một sự phản kháng thầm lặng chống lại tính chất phù du của thời trang hiện đại. Chúng tôi mong muốn xây dựng một tủ quần áo dựa trên nền tảng vững chắc, thay vì chạy theo xu hướng nhất thời. 
               </p>
               <p className="text-[16px] leading-[1.6] text-[#4c4546]">
-                Hành trình của chúng tôi bắt đầu trong một xưởng may nhỏ, với sự ám ảnh về độ rủ của một chiếc sơ mi lụa. Ngày nay, chính sự tỉ mỉ đến từng chi tiết đó định hình toàn bộ bộ sưu tập của chúng tôi. Chúng tôi không chỉ thiết kế quần áo; chúng tôi kiến tạo nên sự tự tin tĩnh lặng.
+                Mỗi sản phẩm là một quá trình tinh giản — loại bỏ những thứ không cần thiết để tôn vinh phom dáng, công năng và chất liệu chân thực nhất.
               </p>
               <div className="pt-[8px]">
-                <button className="h-12 px-8 border border-[#7e7576] text-[#000000] text-[14px] font-semibold tracking-[0.05em] uppercase hover:bg-[#eef4ff] transition-colors duration-300">
+                <button className="h-12 px-8 border border-[#7e7576] text-[#000000] text-[14px] font-semibold tracking-[0.05em] uppercase hover:bg-[#151c25] hover:text-white transition-colors duration-300">
                   ĐỌC TUYÊN NGÔN CỦA CHÚNG TÔI
                 </button>
               </div>
             </div>
             <div className="col-span-1 md:col-span-5 md:col-start-8 mt-[24px] md:mt-0">
-              <div className="aspect-[3/4] w-full relative group overflow-hidden">
+              <div className="aspect-[3/4] w-full relative group overflow-hidden border border-[#cfc4c5]/30">
                 <img 
                   alt="Chi tiết xưởng may" 
                   className="w-full h-full object-cover grayscale transition-transform duration-700 group-hover:scale-105" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnYdQnEqTW-PN_CToHmr2okT2HErHKKwHfZWeCPF2-PIYyV4S62nrJFa8eQnuyK50QHPrj8uKZEG2yy58fd8uQoHLMYlujvsQ1feDD4pcN2dfREUz705GtHB8P1mIsWnUiLXssQ6ardp5CCKFymZf7Xw75PSE0aL-7co0jTUN_vqNJHSA2VkJogmEaK4-mXyZrpgvzXj1fjyNmz5VgZQa_gYNrzi6gBslDKSXouekioAgN_IYzVPvY6q7foOtqmQsDltYA1mYFV1yr"
+                  src="https://images.unsplash.com/photo-1612423284934-2850a4ea6b0f?auto=format&fit=crop&q=80&w=2070"
                 />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Values - Bento Grid */}
-        <section className="py-[64px] bg-[#f8f9ff] px-[40px]">
+        {/* Values - Bento Grid (Đã bổ sung đầy đủ) */}
+        <section className="py-[64px] bg-[#f8f9ff] px-[40px] animate-fade-in-up animate-delay-2">
           <div className="max-w-[1440px] mx-auto">
             <div className="text-center mb-[64px]">
               <span className="text-[14px] leading-[1.4] font-semibold text-[#7e7576] uppercase tracking-[0.05em] block mb-[4px]">Triết Lý</span>
@@ -76,51 +95,67 @@ const About = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] auto-rows-[400px]">
-              {/* Value 1: Large Feature */}
+              {/* Card 1 */}
               <div className="col-span-1 md:col-span-2 relative overflow-hidden group border border-[#cfc4c5]/30 bg-[#ffffff] p-8 flex flex-col justify-end">
                 <img 
-                  alt="Chất liệu" 
+                  alt="Chất liệu minh bạch" 
                   className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNQ1_rSlYmu-k-fFdo1aN9oKDARxk44_rn10NuuvsVS9NCaKRhQGRKFlkTG5xjIN4-C9Zg_1_4lURg-gSe3MWj1V65JokK-65lfI16Z9Pzaw6RjpLgLGM-JuYWatRR7eAMkaeMZu1BI9l32VK3C8TsaDaT9ETU95YRm5QyjxlwTrtmnum_Rq-tD1WAdp2zKJ7UsCGgAx2uuvf1pAncejKuLLORqh5IGNXT6cCJmET14hkz-gpvOFNaP_MoMUOjirbtJn6Yz1Lrb3KW"
+                  src="https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&q=80&w=2070"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#ffffff] via-[#ffffff]/50 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#ffffff] via-[#ffffff]/70 to-transparent"></div>
                 <div className="relative z-10 max-w-md">
-                  <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3] text-[#000000] mb-[4px]">Chất Liệu Minh Bạch</h3>
-                  <p className="text-[16px] leading-[1.6] text-[#4c4546]">Chúng tôi chỉ sử dụng các loại sợi hữu cơ, tái chế hoặc tái sinh. Mỗi sợi chỉ đều có nguồn gốc rõ ràng, đảm bảo dấu chân sinh thái của chúng tôi luôn ở mức tối thiểu nhất.</p>
+                  <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3] text-[#000000] mb-[8px]">Chất Liệu Minh Bạch</h3>
+                  <p className="text-[16px] leading-[1.6] text-[#4c4546] font-medium">Chúng tôi chỉ sử dụng các loại sợi hữu cơ, tái chế hoặc tái sinh có nguồn gốc rõ ràng nhằm giảm thiểu tác động đến môi trường.</p>
                 </div>
               </div>
 
-              {/* Value 2: Text Card */}
-              <div className="col-span-1 border border-[#cfc4c5]/30 bg-[#ffffff] p-8 flex flex-col justify-center space-y-[8px] hover:shadow-[0_20px_40px_rgba(0,0,0,0.05)] transition-shadow duration-300">
-                <span className="material-symbols-outlined text-4xl text-[#7e7576] font-light mb-[4px]">recycling</span>
+              {/* Card 2 */}
+              <div className="col-span-1 border border-[#cfc4c5]/30 bg-[#ffffff] p-8 flex flex-col justify-center space-y-[12px] hover:shadow-[0_20px_40px_rgba(0,0,0,0.05)] transition-shadow duration-300">
+                <span className="material-symbols-outlined text-5xl text-[#7e7576] font-light mb-[4px]">recycling</span>
                 <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3] text-[#000000]">Thiết Kế Tuần Hoàn</h3>
-                <p className="text-[16px] leading-[1.6] text-[#4c4546]">Trang phục được thiết kế không chỉ cho cuộc sống hiện tại, mà còn cho cả vòng đời của chúng. Chúng tôi cung cấp dịch vụ sửa chữa và chương trình thu hồi để hạn chế tối đa rác thải.</p>
+                <p className="text-[16px] leading-[1.6] text-[#4c4546]">Trang phục được thiết kế không chỉ cho cuộc sống hiện tại mà còn hướng tới vòng đời tái chế trong tương lai.</p>
               </div>
 
-              {/* Value 3: Image Card */}
-              <div className="col-span-1 relative overflow-hidden group border border-[#cfc4c5]/30">
+              {/* Card 3 (Bổ sung thêm) */}
+              <div className="col-span-1 border border-[#cfc4c5]/30 bg-[#ffffff] p-8 flex flex-col justify-center space-y-[12px] hover:shadow-[0_20px_40px_rgba(0,0,0,0.05)] transition-shadow duration-300">
+                <span className="material-symbols-outlined text-5xl text-[#7e7576] font-light mb-[4px]">handshake</span>
+                <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3] text-[#000000]">Đạo Đức Lao Động</h3>
+                <p className="text-[16px] leading-[1.6] text-[#4c4546]">Chúng tôi hợp tác độc quyền với các nhà máy đảm bảo môi trường làm việc an toàn, công bằng và tôn trọng người lao động.</p>
+              </div>
+
+              {/* Card 4 (Bổ sung thêm) */}
+              <div className="col-span-1 md:col-span-2 relative overflow-hidden group border border-[#cfc4c5]/30 bg-[#ffffff] p-8 flex flex-col justify-end">
                 <img 
-                  alt="Sự tinh xảo" 
-                  className="w-full h-full object-cover grayscale opacity-90 group-hover:scale-105 transition-transform duration-700" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPh8i7SDF0R16ZEtByYd3KIXPth3ds4LccjGnYkSfEsaEmEj35KaimiXxHru3RxgtfA-I_H8l1rD7NXCiPsC9z2mBaCPuWxdvWdbnVYoOQ9hLUsjbcI_AW3Ts2zfltQB_vAxt3V22yTDkNmwKXZYGKg7EK2aRexab3L3_smTUAd3iHv2rq986arqjpK1Od2tPn7qRiQNP8N4QN0rVV6A9u7zBcKzn8JkbI3Jd2LQ_QubA2TfzTHy5dTsd1XnyUXjEPK-krPQnsWFO3"
+                  alt="Dấu chân Carbon" 
+                  className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" 
+                  src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=2074"
                 />
-                <div className="absolute inset-0 bg-black/20"></div>
-                <div className="absolute bottom-8 left-8 right-8 text-[#ffffff]">
-                  <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3]">Sản Xuất Đạo Đức</h3>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#ffffff] via-[#ffffff]/70 to-transparent"></div>
+                <div className="relative z-10 max-w-md">
+                  <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3] text-[#000000] mb-[8px]">Dấu Chân Carbon Bằng 0</h3>
+                  <p className="text-[16px] leading-[1.6] text-[#4c4546] font-medium">Từ khâu vận chuyển đến bao bì, chúng tôi không ngừng tối ưu hóa quy trình để hướng tới mục tiêu phát thải ròng bằng 0.</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
 
-              {/* Value 4: Wide Text Card */}
-              <div className="col-span-1 md:col-span-2 border border-[#cfc4c5]/30 bg-[#ffffff] p-12 flex flex-col md:flex-row items-start md:items-center justify-between hover:shadow-[0_20px_40px_rgba(0,0,0,0.05)] transition-shadow duration-300">
-                <div className="max-w-lg mb-8 md:mb-0">
-                  <span className="material-symbols-outlined text-4xl text-[#7e7576] font-light mb-[4px]">handshake</span>
-                  <h3 className="font-serif text-[24px] md:text-[32px] leading-[1.3] text-[#000000] mb-[4px]">Đối Tác Công Bằng</h3>
-                  <p className="text-[16px] leading-[1.6] text-[#4c4546]">Chúng tôi tự hào hợp tác với các xưởng may gia đình uy tín, nơi luôn cam kết mức lương công bằng, điều kiện làm việc an toàn và sự tôn trọng tuyệt đối dành cho các nghệ nhân.</p>
-                </div>
-                <button className="h-12 w-12 rounded-full border border-[#7e7576] flex items-center justify-center hover:bg-[#eef4ff] transition-colors duration-300">
-                  <span className="material-symbols-outlined text-[#000000]">arrow_forward</span>
-                </button>
-              </div>
+        {/* Call to Action Section (Bổ sung phần kết) */}
+        <section className="py-[96px] bg-[#151c25] text-[#ffffff] px-[40px] text-center animate-fade-in-up animate-delay-3">
+          <div className="max-w-[800px] mx-auto space-y-[32px]">
+            <h2 className="font-serif text-[36px] md:text-[48px] leading-[1.2]">
+              Cùng Chúng Tôi Thay Đổi Cách Bạn Ăn Mặc
+            </h2>
+            <p className="text-[16px] md:text-[18px] leading-[1.6] text-[#cfc4c5] font-light">
+              Khám phá bộ sưu tập mới nhất và trải nghiệm sự khác biệt từ những thiết kế được tạo ra bằng cả tâm huyết.
+            </p>
+            <div className="pt-[16px] flex flex-col sm:flex-row items-center justify-center gap-[16px]">
+              <button className="h-12 px-8 bg-[#ffffff] text-[#151c25] text-[14px] font-semibold tracking-[0.05em] uppercase hover:bg-[#eef4ff] transition-colors duration-300 w-full sm:w-auto">
+                MUA SẮM NGAY
+              </button>
+              <button className="h-12 px-8 border border-[#cfc4c5] text-[#ffffff] text-[14px] font-semibold tracking-[0.05em] uppercase hover:bg-[#ffffff] hover:text-[#151c25] transition-colors duration-300 w-full sm:w-auto">
+                TÌM HIỂU THÊM
+              </button>
             </div>
           </div>
         </section>
