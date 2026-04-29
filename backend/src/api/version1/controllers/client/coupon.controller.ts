@@ -1,7 +1,26 @@
 import { type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
 import ApiError from "../../../../helpers/ApiError";
-import { validateCouponService } from "../../services/client/coupon.service";
+import { validateCouponService, getAvailableCouponsService } from "../../services/client/coupon.service";
+
+/**
+ * GET /api/version1/coupons
+ */
+export const getCouponsController = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const coupons = await getAvailableCouponsService();
+    res.status(200).json({
+      status: true,
+      data: coupons,
+    });
+  } catch (error) {
+    console.error("Lỗi getCoupons:", error);
+    res.status(500).json({ status: false, message: "Lỗi hệ thống!" });
+  }
+};
 
 /**
  * POST /api/version1/coupons/validate

@@ -95,3 +95,19 @@ export const validateCouponService = async (
 
   return { coupon, discountAmount, finalAmount };
 };
+
+/**
+ * Lấy danh sách coupon đang hoạt động và còn hạn.
+ */
+export const getAvailableCouponsService = async (): Promise<ICoupon[]> => {
+  const now = new Date();
+  // Lấy tất cả coupon active trước, sau đó lọc date ở JS để tránh lỗi type String vs Date trong MongoDB
+  const coupons = await Coupon.find({ isActive: true }).sort({ createdAt: -1 });
+  
+  const availableCoupons = coupons.filter(coupon => {
+    const expiryDate = new Date(coupon.expiresAt);
+    return expiryDate > now;
+  });
+
+  return availableCoupons;
+};

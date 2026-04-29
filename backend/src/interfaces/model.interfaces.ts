@@ -161,6 +161,7 @@ export type DiscountType = "fixed" | "percentage";
 
 export interface ICoupon extends Document {
   code: string;                         // Mã giảm giá (UPPERCASE, unique)
+  description: string;                  // Mô tả mã giảm giá (VD: Giảm 50k cho đơn từ 200k)
   discountType: DiscountType;           // Loại giảm: fixed (tiền) | percentage (%)
   discountValue: number;                // Giá trị: 50000 (fixed) hoặc 20 (%)
   maxDiscountAmount?: number;           // Giới hạn tối đa khi type=percentage

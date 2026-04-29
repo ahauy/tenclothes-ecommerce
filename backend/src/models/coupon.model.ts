@@ -10,6 +10,10 @@ const couponSchema = new Schema<ICoupon>(
       uppercase: true,
       trim: true,
     },
+    description: {
+      type: String,
+      required: true,
+    },
     discountType: {
       type: String,
       enum: ["fixed", "percentage"],

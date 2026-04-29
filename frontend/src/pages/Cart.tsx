@@ -10,6 +10,7 @@ import api from "../utils/axios";
 import { NavLink, useNavigate } from "react-router-dom";
 import EmptyCartIcon from "../components/IconSVG/EmptyCartIcon";
 import { useAuthStore } from "../stores/useAuthStore";
+import CouponList, { type ICoupon } from "../components/cart/CouponList";
 
 const Cart = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -17,6 +18,8 @@ const Cart = () => {
   const [validatedCart, setValidatedCart] = useState<ICartItem[]>([]);
 
   // --- State cho Coupon ---
+  const [coupons, setCoupons] = useState<ICoupon[]>([]);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState<boolean>(true);
   const [couponCode, setCouponCode] = useState<string>("");
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
@@ -46,6 +49,25 @@ const Cart = () => {
     fetchValidatedCart();
   }, [cartItems]);
 
+  // Fetch danh sách coupon khả dụng
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        setIsLoadingCoupons(true);
+        const response = await api.get("/coupons");
+        if (response.data.status) {
+          console.log("Coupons fetched:", response.data.data);
+          setCoupons(response.data.data);
+        }
+      } catch (error) {
+        console.error("Lỗi fetch coupons:", error);
+      } finally {
+        setIsLoadingCoupons(false);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
   // Tính toán các con số tổng quát
   const totalSalePrice: number = validatedCart.reduce((acc, cur) => acc + cur.salePrice * cur.quantity, 0);
   const totalPrice: number = validatedCart.reduce((acc, cur) => acc + cur.price * cur.quantity, 0);
@@ -64,8 +86,12 @@ const Cart = () => {
   }, [totalSalePrice]);
 
   // Hàm xử lý áp dụng mã giảm giá
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) {
+  const handleApplyCoupon = async (codeOverride?: string | React.MouseEvent) => {
+    // Nếu là click event từ button "Áp dụng", codeOverride sẽ là MouseEvent.
+    // Nếu là chọn từ CouponList, codeOverride sẽ là string.
+    const codeToApply = typeof codeOverride === "string" ? codeOverride : couponCode;
+    
+    if (!codeToApply || !codeToApply.trim()) {
       toast.warning("Vui lòng nhập mã giảm giá!");
       return;
     }
@@ -77,7 +103,7 @@ const Cart = () => {
 
       // Gửi code, cartTotal và productIds lên Server
       const response = await api.post("/coupons/validate", {
-        code: couponCode.trim(),
+        code: codeToApply.trim(),
         cartTotal: totalSalePrice,
         productIds: productIds
       }, {
@@ -88,11 +114,13 @@ const Cart = () => {
         toast.success("Áp dụng mã giảm giá thành công!");
         setDiscountAmount(response.data.data.discountAmount);
         setAppliedCoupon(response.data.data.code);
+        setCouponCode(response.data.data.code);
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Lỗi khi áp dụng mã giảm giá:", error);
       setDiscountAmount(0);
       setAppliedCoupon(null);
-      toast.error(error.response?.data?.message || "Mã giảm giá không hợp lệ!");
+      toast.error("Mã giảm giá không hợp lệ!");
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -195,28 +223,15 @@ const Cart = () => {
             ))}
           </div>
 
-          {/* Coupon Input Area */}
-          <div className="px-6 pt-5 pb-5 border-t border-neutral-100">
-            <p className="text-[11px] font-semibold tracking-widest uppercase text-neutral-400 mb-3">
-              Mã giảm giá
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="Nhập mã voucher..."
-                disabled={validatedCart.length === 0 || isApplyingCoupon}
-                className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-neutral-200 outline-none focus:border-black transition-colors placeholder-neutral-300 disabled:bg-neutral-50"
-              />
-              <button 
-                onClick={handleApplyCoupon}
-                disabled={!couponCode || isApplyingCoupon || validatedCart.length === 0}
-                className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-black hover:text-white text-sm font-semibold text-neutral-700 transition-all duration-200 whitespace-nowrap disabled:opacity-50"
-              >
-                {isApplyingCoupon ? "Đang xử lý..." : "Áp dụng"}
-              </button>
-            </div>
+          {/* Coupon List Area */}
+          <div className="px-6 py-5 border-t border-neutral-100">
+            <CouponList
+              coupons={coupons}
+              cartTotal={totalSalePrice}
+              isLoading={isLoadingCoupons}
+              appliedCoupon={appliedCoupon}
+              onSelect={(code) => handleApplyCoupon(code)}
+            />
           </div>
 
           {/* Order summary details */}
