@@ -23,7 +23,7 @@ export interface IAuthState {
 
 export interface IJsonFail {
   status: false;
-  message: string;
+  message?: string;
   errors?: Array<{
     field: string;
     message: string;

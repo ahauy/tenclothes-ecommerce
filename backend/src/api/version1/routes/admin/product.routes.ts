@@ -8,6 +8,8 @@ import { upload, uploadToCloudinary } from "../../../../helpers/uploadToCloudina
 
 const productRouter: Router = express.Router()
 
+productRouter.get("/", verifyToken, authorizationRole(['admin']), controller.getListProductAdminController)
+
 productRouter.post("/create", verifyToken, authorizationRole(['admin']), upload.array("media", 5), validate(createProductSchema), uploadToCloudinary, controller.createProductController)
 
 export default productRouter

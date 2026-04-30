@@ -16,10 +16,11 @@ app.use(cookieparser());
 
 // Lấy URL frontend từ biến môi trường (ví dụ: https://tenclothes-frontend.vercel.app)
 const FRONTEND_URL = process.env["FRONTEND_URL"] || "http://localhost:5173";
+const FRONTEND_URL_ADMIN = process.env["FRONTEND_URL_ADMIN"] || "http://localhost:5174";
 
 // Cấu hình cors linh hoạt
 app.use(cors({ 
-  origin: [FRONTEND_URL, "http://localhost:5173"], 
+  origin: [FRONTEND_URL, FRONTEND_URL_ADMIN, "http://localhost:5173", "http://localhost:5174"], // Cho phép cả URL frontend và localhost
   credentials: true 
 }));
 

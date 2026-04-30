@@ -2,7 +2,7 @@ import { type Request, type Response } from "express";
 import { IRegisterReqBody } from "../../validators/client/auth.validator";
 import {
   registerService,
-  verifyRefreshTokenService,
+  // verifyRefreshTokenService,
 } from "../../services/client/auth.service";
 import ApiError from "../../../../helpers/ApiError";
 
@@ -53,56 +53,56 @@ export const registerController = async (
   }
 };
 
-export const refreshController = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const refreshToken = req.cookies["jwt"];
+// export const refreshController = async (
+//   req: Request,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     const refreshToken = req.cookies["jwt"];
 
-    if (!refreshToken) {
-      res.status(401).json({
-        message: "Không tìm thấy quyền truy cập. Vui lòng đăng nhập lại!",
-      });
-      return;
-    }
+//     if (!refreshToken) {
+//       res.status(401).json({
+//         message: "Không tìm thấy quyền truy cập. Vui lòng đăng nhập lại!",
+//       });
+//       return;
+//     }
 
-    const newAccessToken: string = verifyRefreshTokenService(
-      refreshToken
-    ) as string;
+//     const newAccessToken: string = verifyRefreshTokenService(
+//       refreshToken
+//     ) as string;
 
-    res.status(200).json({
-      message: "Tạo mới accessToken thành công!",
-      accessToken: newAccessToken,
-    });
-  } catch (error) {
-    console.error("Có lỗi trong refreshController: ", error);
+//     res.status(200).json({
+//       message: "Tạo mới accessToken thành công!",
+//       accessToken: newAccessToken,
+//     });
+//   } catch (error) {
+//     console.error("Có lỗi trong refreshController: ", error);
 
-    // Kiểm tra xem lỗi này có phải là Error object do mình chủ động throw ra không
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({
-        status: false,
-        message: error.message,
-      });
-      return;
-    }
+//     // Kiểm tra xem lỗi này có phải là Error object do mình chủ động throw ra không
+//     if (error instanceof ApiError) {
+//       res.status(error.statusCode).json({
+//         status: false,
+//         message: error.message,
+//       });
+//       return;
+//     }
 
-    // Nếu là các lỗi không lường trước được (rớt mạng, sập DB...) thì mới trả 500
-    res.status(500).json({ message: "Lỗi hệ thống!" });
-  }
-};
+//     // Nếu là các lỗi không lường trước được (rớt mạng, sập DB...) thì mới trả 500
+//     res.status(500).json({ message: "Lỗi hệ thống!" });
+//   }
+// };
 
-export const logoutController = (_req: Request, res: Response): void => {
-  try {
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-    });
-    res.status(200).json({ message: "Đăng xuất thành công!" });
-  } catch (error) {
-    console.log("Có lỗi trong loginController: ", error);
+// export const logoutController = (_req: Request, res: Response): void => {
+//   try {
+//     res.clearCookie("jwt", {
+//       httpOnly: true,
+//       sameSite: "lax",
+//       secure: false,
+//     });
+//     res.status(200).json({ message: "Đăng xuất thành công!" });
+//   } catch (error) {
+//     console.log("Có lỗi trong loginController: ", error);
 
-    res.status(500).json({ message: "Lỗi hệ thống!" });
-  }
-};
+//     res.status(500).json({ message: "Lỗi hệ thống!" });
+//   }
+// };

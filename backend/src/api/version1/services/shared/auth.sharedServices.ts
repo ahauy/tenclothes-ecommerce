@@ -3,14 +3,15 @@ import { ILoginReqBody } from "../../validators/shared/loginSchema.validate";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import ApiError from "../../../../helpers/ApiError";
+import { IDecodeToken } from "../../../../interfaces/auth.interfaces";
 
 export const loginShareService = async (
   DataModal: Model<any>,
   dataLogin: ILoginReqBody
-): Promise<{ accessToken: string; refreshToken: string } | null> => {
+): Promise<{ accessToken: string; refreshToken: string; user: any } | null> => {
   const { email, password } = dataLogin;
-  
-  const userByEmail = await DataModal.findOne({ email: email });
+
+  const userByEmail = await DataModal.findOne({ email: email, deleted: false });
 
   // kiểm tra các điều kiện đăng nhập
   if (userByEmail) {
@@ -35,8 +36,28 @@ export const loginShareService = async (
         { expiresIn: "1d" }
       );
 
-      return { accessToken, refreshToken };
+      const { password, ...userWithoutPassword } = userByEmail.toObject();
+
+      return { accessToken, refreshToken, user: userWithoutPassword };
     }
   }
   throw new ApiError(406, "Thông tin đăng nhập không hợp lệ");
 };
+
+export const verifyRefreshTokenShareService = (refreshToken: string): (string | Error) => {
+  try {
+    const decode = jwt.verify(refreshToken, process.env["REFRESH_TOKEN_SECRET"]!) as IDecodeToken
+
+    const newAccessToken = jwt.sign(
+      {
+        _id: decode._id,
+        email: decode.email,
+      },
+      process.env["ACCESS_TOKEN_SECRET"]!,
+      { expiresIn: "10m" }
+    );
+    return newAccessToken;
+  } catch (error) {
+    throw new ApiError(403, "Xác thực refreshToken thất bại!")
+  }
+}

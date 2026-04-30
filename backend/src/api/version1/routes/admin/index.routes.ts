@@ -7,7 +7,7 @@ const mainV1RoutesAdmin = (app: Express): void => {
 
   app.use(`${apiVersion1Admin}/auth`, authRoutesAdmin)
 
-  app.use(`${apiVersion1Admin}/product`, productRouter)
+  app.use(`${apiVersion1Admin}/products`, productRouter)
 }
 
 export default mainV1RoutesAdmin
