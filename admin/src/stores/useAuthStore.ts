@@ -17,8 +17,8 @@ export const useAuthStore = create<IAdminAuthState>((set) => ({
   },
 
   checkAuth: async () => {
-    set({ isAuthLoading: true });
     try {
+      set({ isAuthLoading: true });
       const response = await authService.refreshToken();
       // Backend returns: { status, message, accessToken, data: user }
       set({ 
@@ -27,7 +27,10 @@ export const useAuthStore = create<IAdminAuthState>((set) => ({
         isAuthLoading: false 
       });
     } catch (error) {
+      console.error("Lỗi xác thực:", error);
       set({ accessToken: "", admin: null, isAuthLoading: false });
+    } finally {
+      set({ isAuthLoading: false });
     }
   },
 

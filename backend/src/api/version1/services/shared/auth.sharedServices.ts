@@ -11,7 +11,7 @@ export const loginShareService = async (
 ): Promise<{ accessToken: string; refreshToken: string; user: any } | null> => {
   const { email, password } = dataLogin;
 
-  const userByEmail = await DataModal.findOne({ email: email, deleted: false });
+  const userByEmail = await DataModal.findOne({ email: email, deleted: false })
 
   // kiểm tra các điều kiện đăng nhập
   if (userByEmail) {
@@ -52,6 +52,7 @@ export const verifyRefreshTokenShareService = (refreshToken: string): (string | 
       {
         _id: decode._id,
         email: decode.email,
+        ...(decode.role && { role: decode.role })
       },
       process.env["ACCESS_TOKEN_SECRET"]!,
       { expiresIn: "10m" }

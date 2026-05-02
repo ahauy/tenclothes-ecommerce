@@ -15,3 +15,15 @@ export const createProductService = async (
 
   return newProduct;
 };
+
+export const changeStatusProductService = async (
+  id: string,
+  status: boolean
+): Promise<IProduct | null> => {
+  const product = await Product.findByIdAndUpdate(
+    id,
+    { isActive: status },
+    { new: true }
+  );
+  return product;
+};

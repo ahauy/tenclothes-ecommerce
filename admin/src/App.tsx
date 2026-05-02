@@ -3,6 +3,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Orders from "./pages/Orders";
+import Customers from "./pages/Customers";
+import Staff from "./pages/Staff";
+import Permissions from "./pages/Permissions";
 import MainLayout from "./layouts/MainLayout";
 import { useAuthStore } from "./stores/useAuthStore";
 import { Loader2 } from "lucide-react";
@@ -42,6 +46,10 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/products" element={<Products />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/staff" element={<Staff />} />
+                <Route path="/permissions" element={<Permissions />} />
                 {/* Fallback cho các trang chưa làm */}
                 <Route path="*" element={
                   <div className="flex flex-col items-center justify-center h-[60vh]">

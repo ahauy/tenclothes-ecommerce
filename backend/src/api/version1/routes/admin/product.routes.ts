@@ -12,4 +12,6 @@ productRouter.get("/", verifyToken, authorizationRole(['admin']), controller.get
 
 productRouter.post("/create", verifyToken, authorizationRole(['admin']), upload.array("media", 5), validate(createProductSchema), uploadToCloudinary, controller.createProductController)
 
+productRouter.patch("/change-status/:id", verifyToken, authorizationRole(['admin']), controller.changeStatusProductController)
+
 export default productRouter

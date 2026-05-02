@@ -14,4 +14,9 @@ export const productService = {
     });
     return response.data;
   },
+
+  changeStatus: async (id: string, status: boolean) => {
+    const response = await api.patch(`/product/change-status/${id}`, { status });
+    return response.data;
+  },
 };
