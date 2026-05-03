@@ -6,17 +6,28 @@ export const productService = {
     return response.data;
   },
 
-  createProduct: async (formData: FormData) => {
-    const response = await api.post(`/product/create`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+  createProduct: async (data: any) => {
+    const response = await api.post(`/products/create`, data);
     return response.data;
   },
 
-  changeStatus: async (id: string, status: boolean) => {
-    const response = await api.patch(`/product/change-status/${id}`, { status });
+  updateProduct: async (slug: string, data: any) => {
+    const response = await api.patch(`/products/update/${slug}`, data);
+    return response.data;
+  },
+
+  changeStatus: async (slug: string, status: boolean) => {
+    const response = await api.patch(`/products/change-status/${slug}`, { status });
+    return response.data;
+  },
+
+  changeFeatured: async (slug: string, isFeatured: boolean) => {
+    const response = await api.patch(`/products/change-featured/${slug}`, { isFeatured });
+    return response.data;
+  },
+
+  deleteProduct: async (slug: string) => {
+    const response = await api.delete(`/products/delete/${slug}`);
     return response.data;
   },
 };

@@ -6,8 +6,7 @@ import { ICreateProductReqBody } from "../../validators/admin/product.validator"
 export const createProductService = async (
   productData: ICreateProductReqBody
 ): Promise<IProduct> => {
-  // Ép kiểu 'as any' ở đây để vượt qua lỗi exactOptionalPropertyTypes của Mongoose
-  // Zod đã làm nhiệm vụ gác cổng an toàn cho chúng ta rồi.
+
   const newProduct = await Product.create({
     ...productData,
     slug: slug(productData.title),
@@ -16,14 +15,55 @@ export const createProductService = async (
   return newProduct;
 };
 
+export const updateProductService = async (
+  slugKey: string,
+  productData: ICreateProductReqBody
+): Promise<IProduct | null> => {
+  const updatedData = { ...productData } as any;
+  if (productData.title) {
+    updatedData.slug = slug(productData.title);
+  }
+  
+  const product = await Product.findOneAndUpdate(
+    { slug: slugKey, deleted: false },
+    updatedData,
+    { new: true }
+  );
+  return product;
+};
+
 export const changeStatusProductService = async (
-  id: string,
+  slug: string,
   status: boolean
 ): Promise<IProduct | null> => {
-  const product = await Product.findByIdAndUpdate(
-    id,
+  const product = await Product.findOneAndUpdate(
+    { slug },
     { isActive: status },
     { new: true }
   );
+  return product;
+};
+
+export const changeFeaturedProductService = async (
+  slug: string,
+  isFeatured: boolean
+): Promise<IProduct | null> => {
+  const product = await Product.findOneAndUpdate(
+    { slug },
+    { isFeatured },
+    { new: true }
+  );
+  return product;
+};
+
+export const deleteProductService = async (
+  slug: string
+): Promise<IProduct | null> => {
+  const product = await Product.findOneAndUpdate(
+    { slug },
+    { deleted: true },
+    { new: true }
+  );
+
   return product;
 };

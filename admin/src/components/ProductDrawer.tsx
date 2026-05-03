@@ -1,28 +1,41 @@
 import React, { useState, useEffect } from "react";
-import { X, Upload, Plus, Info, Tag, DollarSign, Layers, Check, Trash2, Image as ImageIcon, Box } from "lucide-react";
+import { X, Plus, Trash2, Image as ImageIcon, Box, ChevronDown, Check, Upload, Info, DollarSign, Wand2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema, type ProductFormData } from "../validators/product.validator";
 import { categoryService } from "../services/category.service";
-import { productService } from "../services/product.service";
 import { toast } from "sonner";
 import { cn } from "../utils/cn";
+import { uploadService } from "../services/upload.service";
+import { productService } from "../services/product.service";
+import type { IProductAdmin } from "../interfaces/product.interface";
 
 interface ProductDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  productToEdit?: IProductAdmin | null;
 }
 
 interface ICategory {
   _id: string;
   title: string;
+  children?: ICategory[];
 }
 
-const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [categories, setCategories] = useState<ICategory[]>([]);
+interface IFlatCategory {
+  _id: string;
+  title: string;
+  level: number;
+}
+
+const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSuccess, productToEdit }) => {
+  const [categories, setCategories] = useState<IFlatCategory[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [openVariantDropdown, setOpenVariantDropdown] = useState<number | null>(null);
+  const [styleFiles, setStyleFiles] = useState<{ [key: number]: File[] }>({});
 
   const {
     register,
@@ -34,16 +47,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
-      isActive: true,
-      isFeatured: false,
-      gender: "unisex",
-      weight: 0,
-      price: 0,
-      discountPercentage: 0,
-      productStyles: [{ colorName: "", colorHex: "#000000", images: [], isDefault: true }],
-      variants: [{ sku: "", colorName: "", size: "", stock: 0, priceDifference: 0 }],
-    },
   });
 
   const { fields: styleFields, append: appendStyle, remove: removeStyle } = useFieldArray({
@@ -57,33 +60,154 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
   });
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryService.getCategories();
+        const cats = response.data || [];
+        const flatCategories: IFlatCategory[] = [];
+        const flatten = (items: ICategory[], level = 0) => {
+          items.forEach((cat) => {
+            flatCategories.push({ _id: cat._id, title: cat.title, level });
+            if (cat.children && cat.children.length > 0) {
+              flatten(cat.children, level + 1);
+            }
+          });
+        };
+        flatten(cats);
+        setCategories(flatCategories);
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+      }
+    };
+
     if (isOpen) {
-      const fetchCategories = async () => {
-        try {
-          const res = await categoryService.getCategories();
-          setCategories(res.data);
-        } catch (error) {
-          console.error("Failed to fetch categories", error);
-        }
-      };
       fetchCategories();
-    } else {
-      reset();
+      
+      if (productToEdit) {
+        reset({
+          title: productToEdit.title,
+          description: productToEdit.description,
+          brand: productToEdit.brand || "",
+          categoryIds: productToEdit.categoryIds ? productToEdit.categoryIds.map((c: any) => c._id || c) : [],
+          gender: productToEdit.gender,
+          weight: productToEdit.weight,
+          price: productToEdit.price,
+          discountPercentage: productToEdit.discountPercentage,
+          isActive: productToEdit.isActive,
+          isFeatured: productToEdit.isFeatured,
+          productStyles: productToEdit.productStyles.map(s => ({
+            colorName: s.colorName,
+            colorHex: s.colorHex,
+            images: s.images || [],
+            isDefault: s.isDefault
+          })),
+          variants: productToEdit.variants.map(v => ({
+            sku: v.sku,
+            colorName: v.colorName,
+            size: v.size,
+            stock: v.stock,
+            priceDifference: v.priceDifference
+          }))
+        });
+      } else {
+        reset({
+          isActive: true,
+          isFeatured: false,
+          gender: "unisex",
+          weight: 0,
+          price: 0,
+          discountPercentage: 0,
+          categoryIds: [],
+          productStyles: [{ colorName: "", colorHex: "#000000", images: [], isDefault: true }],
+          variants: [{ sku: "", colorName: "", size: "", stock: 0, priceDifference: 0 }],
+        });
+        setStyleFiles({});
+      }
     }
-  }, [isOpen, reset]);
+  }, [isOpen, productToEdit, reset]);
 
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
-      console.log("Submitting Product Data:", data);
+      const uploadedStyles = await Promise.all(
+        data.productStyles.map(async (style, index) => {
+          const files = styleFiles[index] || [];
+          if (files.length > 0) {
+            return await uploadService.uploadImages(files);
+          }
+          return [];
+        })
+      );
+
+      const payload = {
+        ...data,
+        productStyles: data.productStyles.map((style, index) => {
+          const existingImages = style.images || [];
+          return {
+            ...style,
+            images: [...existingImages, ...(uploadedStyles[index] || [])],
+          };
+        }),
+      };
+
+      if (productToEdit) {
+        await productService.updateProduct(productToEdit.slug, payload);
+        toast.success("Cập nhật sản phẩm thành công!");
+      } else {
+        await productService.createProduct(payload);
+        toast.success("Thêm sản phẩm thành công!");
+      }
       
-      toast.success("Sản phẩm đã được tạo thành công");
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error(error?.message || "Đã xảy ra lỗi khi tạo sản phẩm");
+      toast.error(error?.message || "Đã xảy ra lỗi khi lưu sản phẩm");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleFileSelect = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files).filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`Ảnh ${file.name} vượt quá dung lượng 5MB`);
+          return false;
+        }
+        return true;
+      });
+      if (newFiles.length > 0) {
+        setStyleFiles((prev) => {
+          const currentFiles = prev[index] || [];
+          const combined = [...currentFiles, ...newFiles].slice(0, 5); // Tối đa 5 ảnh
+          return { ...prev, [index]: combined };
+        });
+      }
+    }
+    // Xóa value để có thể chọn lại cùng một file
+    if (e.target) e.target.value = "";
+  };
+
+  const generateSku = (index: number) => {
+    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+    setValue(`variants.${index}.sku`, `SKU-${randomStr}`);
+  };
+
+  const removeFile = (styleIndex: number, fileIndex: number) => {
+    setStyleFiles((prev) => {
+      const currentFiles = prev[styleIndex] || [];
+      const updated = [...currentFiles];
+      updated.splice(fileIndex, 1);
+      return { ...prev, [styleIndex]: updated };
+    });
+  };
+
+  const removeExistingImage = (styleIndex: number, imageIndex: number) => {
+    const currentStyles = watch("productStyles");
+    const updatedStyles = [...currentStyles];
+    if (updatedStyles[styleIndex].images) {
+      updatedStyles[styleIndex].images.splice(imageIndex, 1);
+      setValue(`productStyles.${styleIndex}.images`, updatedStyles[styleIndex].images);
     }
   };
 
@@ -106,16 +230,16 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 180 }}
-            className="fixed right-0 top-0 h-full w-full max-w-3xl bg-white shadow-[0_0_50px_rgba(0,0,0,0.08)] z-[70] flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-4xl bg-white shadow-[0_0_50px_rgba(0,0,0,0.08)] z-[70] flex flex-col"
           >
             {/* Header */}
             <div className="px-10 py-8 border-b border-neutral-100 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-md z-20">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.3em] block">
-                  Add New Item
+                  {productToEdit ? "Sửa thông tin" : "Add New Item"}
                 </span>
                 <h3 className="text-2xl font-light text-neutral-900 tracking-tight">
-                  Sản phẩm mới
+                  {productToEdit ? "Cập nhật sản phẩm" : "Sản phẩm mới"}
                 </h3>
               </div>
               <div className="flex items-center gap-4">
@@ -126,17 +250,46 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                   Hủy bỏ
                 </button>
                 <button
-                  onClick={handleSubmit(onSubmit)}
+                  onClick={handleSubmit(
+                    onSubmit,
+                    (errors) => {
+                      console.log("Lỗi form:", errors);
+                      toast.error("Vui lòng kiểm tra lại! Bạn chưa điền đủ các thông tin bắt buộc.");
+                    }
+                  )}
                   disabled={isSubmitting}
                   className="px-8 py-3 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-200"
                 >
-                  {isSubmitting ? "Đang xử lý..." : "Xuất bản sản phẩm"}
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Đang xử lý...
+                    </span>
+                  ) : (
+                    "Xuất bản sản phẩm"
+                  )}
                 </button>
               </div>
             </div>
 
+            {/* Loading Overlay */}
+            <AnimatePresence>
+              {isSubmitting && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-50 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center"
+                >
+                  <Loader2 className="w-8 h-8 animate-spin text-neutral-900 mb-4" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-900">Đang tạo sản phẩm...</p>
+                  <p className="text-[10px] font-medium tracking-wide text-neutral-500 mt-2">Vui lòng đợi trong giây lát</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Scrollable Form */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 overflow-y-auto custom-scrollbar relative">
               <form className="p-10 space-y-16 pb-20">
                 
                 {/* 1. Basic Information */}
@@ -153,8 +306,8 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                       <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Tên sản phẩm</label>
                       <input
                         {...register("title")}
-                        className="w-full bg-neutral-50 border-b border-transparent px-0 py-3 text-lg font-light outline-none focus:border-neutral-900 transition-all placeholder:text-neutral-200"
-                        placeholder="VD: Premium Silk Collection Shirt"
+                        className="w-full bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm font-light outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
+                        placeholder="VD: Áo Thun Nam Cổ Tròn"
                       />
                       {errors.title && <p className="text-[10px] text-red-500 font-medium tracking-wide uppercase mt-1">{errors.title.message}</p>}
                     </div>
@@ -164,8 +317,8 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                       <textarea
                         {...register("description")}
                         rows={4}
-                        className="w-full bg-neutral-50 border-none p-4 text-sm font-light outline-none focus:ring-1 focus:ring-neutral-900 transition-all placeholder:text-neutral-200 resize-none"
-                        placeholder="Mô tả về chất liệu, form dáng và phong cách thiết kế..."
+                        className="w-full bg-white border border-neutral-200 rounded-sm p-4 text-sm font-light outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all  resize-none"
+                        placeholder="Mô tả chi tiết về chất liệu, kiểu dáng và cách bảo quản..."
                       />
                       {errors.description && <p className="text-[10px] text-red-500 font-medium tracking-wide uppercase mt-1">{errors.description.message}</p>}
                     </div>
@@ -173,32 +326,87 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                     <div className="grid grid-cols-3 gap-8">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Danh mục</label>
-                        <select
-                          {...register("categoryId")}
-                          className="w-full bg-neutral-50 border-none px-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all appearance-none cursor-pointer"
-                        >
-                          <option value="">Chọn danh mục</option>
-                          {categories.map((cat) => (
-                            <option key={cat._id} value={cat._id}>
-                              {cat.title}
-                            </option>
-                          ))}
-                        </select>
-                        {errors.categoryId && <p className="text-[10px] text-red-500 font-medium tracking-wide uppercase mt-1">{errors.categoryId.message}</p>}
+                        <div className="relative">
+                          <div 
+                            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                            className={cn(
+                              "w-full bg-white border rounded-sm px-4 py-3 text-sm transition-all flex items-center justify-between cursor-pointer gap-2",
+                              isCategoryDropdownOpen ? "border-neutral-900 ring-1 ring-neutral-900" : "border-neutral-200 hover:border-neutral-300",
+                              (!watch("categoryIds") || watch("categoryIds").length === 0) ? "text-neutral-300 font-light" : "font-medium text-neutral-900"
+                            )}
+                          >
+                            <span className="truncate flex-1 text-left pr-2">
+                              {watch("categoryIds") && watch("categoryIds").length > 0
+                                ? watch("categoryIds")
+                                    .map((id: string) => categories.find((c) => c._id === id)?.title)
+                                    .filter(Boolean)
+                                    .join(", ") 
+                                : "Chọn danh mục"}
+                            </span>
+                            <ChevronDown className={cn("w-4 h-4 text-neutral-400 transition-transform shrink-0", isCategoryDropdownOpen && "rotate-180")} />
+                          </div>
+
+                          <AnimatePresence>
+                            {isCategoryDropdownOpen && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={() => setIsCategoryDropdownOpen(false)} 
+                                />
+                                <motion.div
+                                  initial={{ opacity: 0, y: -5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -5 }}
+                                  className="absolute left-0 right-0 top-full mt-2 bg-white border border-neutral-100 shadow-xl rounded-sm z-50 max-h-60 overflow-y-auto custom-scrollbar p-2"
+                                >
+                                  {categories.length === 0 ? (
+                                    <div className="p-3 text-xs text-neutral-400 text-center">Không có danh mục</div>
+                                  ) : (
+                                    categories.map((cat) => (
+                                      <div
+                                        key={cat._id}
+                                        onClick={() => {
+                                          const currentIds = watch("categoryIds") || [];
+                                          const newIds = currentIds.includes(cat._id)
+                                            ? currentIds.filter((id: string) => id !== cat._id)
+                                            : [...currentIds, cat._id];
+                                          setValue("categoryIds", newIds, { shouldValidate: true });
+                                        }}
+                                        className={cn(
+                                          "px-3 py-2.5 text-sm cursor-pointer transition-colors rounded-sm flex items-center group gap-2",
+                                          (watch("categoryIds") || []).includes(cat._id) ? "bg-neutral-900 text-white font-medium" : "hover:bg-neutral-50 text-neutral-600",
+                                          cat.level === 1 && !(watch("categoryIds") || []).includes(cat._id) && "font-medium text-neutral-900"
+                                        )}
+                                        style={{ paddingLeft: `${(cat.level - 1) * 1.5 + 0.75}rem` }}
+                                      >
+                                        {cat.level > 1 && <span className={cn("mr-2 opacity-40 group-hover:opacity-100 transition-opacity shrink-0", (watch("categoryIds") || []).includes(cat._id) && "opacity-100 text-white/50")}>└</span>}
+                                        <span className="truncate flex-1 text-left">{cat.title}</span>
+                                        <div className={cn("w-4 h-4 rounded-sm border flex items-center justify-center shrink-0", (watch("categoryIds") || []).includes(cat._id) ? "border-white bg-white" : "border-neutral-300")}>
+                                          {(watch("categoryIds") || []).includes(cat._id) && <span className="w-2 h-2 bg-neutral-900 rounded-sm" />}
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        {errors.categoryIds && <p className="text-[10px] text-red-500 font-medium tracking-wide uppercase mt-1">{errors.categoryIds.message}</p>}
                       </div>
 
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Giới tính</label>
-                        <div className="flex bg-neutral-50 p-1 rounded-sm gap-1">
+                        <div className="flex bg-neutral-50 p-1 rounded-sm gap-1 border border-neutral-200">
                           {["male", "female", "unisex"].map((g) => (
                             <button
                               key={g}
                               type="button"
                               onClick={() => setValue("gender", g as any)}
                               className={cn(
-                                "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-all",
+                                "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-all rounded-sm",
                                 watch("gender") === g
-                                  ? "bg-white text-neutral-900 shadow-sm"
+                                  ? "bg-white text-neutral-900 shadow-sm border border-neutral-200/60"
                                   : "text-neutral-400 hover:text-neutral-600"
                               )}
                             >
@@ -212,8 +420,8 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                         <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Thương hiệu</label>
                         <input
                           {...register("brand")}
-                          className="w-full bg-neutral-50 border-none px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
-                          placeholder="TenClothes"
+                          className="w-full bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
+                          placeholder="VD: TenClothes"
                         />
                       </div>
                     </div>
@@ -231,12 +439,12 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
 
                   <div className="grid grid-cols-3 gap-8">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Giá niêm yết ($)</label>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Giá niêm yết (VND)</label>
                       <input
                         type="number"
                         {...register("price", { valueAsNumber: true })}
-                        className="w-full bg-neutral-50 border-none px-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
-                        placeholder="0.00"
+                        className="w-full bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
+                        placeholder="VD: 59"
                       />
                       {errors.price && <p className="text-[10px] text-red-500 font-medium tracking-wide uppercase mt-1">{errors.price.message}</p>}
                     </div>
@@ -246,8 +454,8 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                       <input
                         type="number"
                         {...register("discountPercentage", { valueAsNumber: true })}
-                        className="w-full bg-neutral-50 border-none px-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
-                        placeholder="0"
+                        className="w-full bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
+                        placeholder="VD: 10"
                       />
                     </div>
 
@@ -256,8 +464,8 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                       <input
                         type="number"
                         {...register("weight", { valueAsNumber: true })}
-                        className="w-full bg-neutral-50 border-none px-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
-                        placeholder="500"
+                        className="w-full bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
+                        placeholder="VD: 350"
                       />
                     </div>
                   </div>
@@ -299,41 +507,91 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                             <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Tên màu sắc</label>
                             <input
                               {...register(`productStyles.${index}.colorName` as const)}
-                              placeholder="VD: Midnight Black"
-                              className="w-full bg-white border-none px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
+                              placeholder="VD: Trắng Sữa"
+                              className="w-full bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
                             />
                           </div>
                           <div className="space-y-2">
                             <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Mã màu (Hex)</label>
-                            <div className="flex gap-4">
+                            <div className="flex gap-2">
                               <input
-                                {...register(`productStyles.${index}.colorHex` as const)}
                                 type="color"
-                                className="h-11 w-20 p-1 bg-white border-none cursor-pointer outline-none"
+                                value={watch(`productStyles.${index}.colorHex`) || "#000000"}
+                                onChange={(e) => setValue(`productStyles.${index}.colorHex`, e.target.value, { shouldValidate: true })}
+                                className="h-[46px] w-14 p-1 bg-white border border-neutral-200 rounded-sm cursor-pointer outline-none"
                               />
                               <input
                                 {...register(`productStyles.${index}.colorHex` as const)}
-                                className="flex-1 bg-white border-none px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-neutral-900 transition-all uppercase"
-                                placeholder="#000000"
+                                className="flex-1 bg-white border border-neutral-200 rounded-sm px-4 py-3 text-sm outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all uppercase "
+                                placeholder="VD: #FFFFFF"
                               />
                             </div>
                           </div>
                         </div>
 
                         <div className="space-y-4">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">Hình ảnh (Sắp xếp theo thứ tự hiển thị)</label>
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">Hình ảnh (Tối đa 5 ảnh)</label>
                           <div className="grid grid-cols-5 gap-4">
-                            <div className="aspect-[3/4] bg-white border border-dashed border-neutral-200 flex flex-col items-center justify-center cursor-pointer hover:border-neutral-900 hover:bg-neutral-50 transition-all group/upload">
-                              <Upload className="w-5 h-5 text-neutral-300 group-hover/upload:text-neutral-900 transition-colors" />
-                              <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-400 mt-2">Upload</span>
-                            </div>
-                            {[1, 2].map((i) => (
-                              <div key={i} className="aspect-[3/4] bg-neutral-100 rounded-sm relative group/img overflow-hidden">
+                            {/* Hiện ảnh đã có (từ database) */}
+                            {(watch(`productStyles.${index}.images`) || []).map((imgUrl: string, imgIndex: number) => (
+                              <div key={`existing-${imgIndex}`} className="aspect-[3/4] bg-neutral-100 rounded-sm relative group/img overflow-hidden border border-neutral-200">
+                                <img 
+                                  src={imgUrl} 
+                                  alt="preview" 
+                                  className="w-full h-full object-cover" 
+                                />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                  <button type="button" className="p-1.5 bg-white text-neutral-900 rounded-full hover:scale-110 transition-transform"><Trash2 className="w-3.5 h-3.5" /></button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeExistingImage(index, imgIndex)}
+                                    className="p-1.5 bg-white text-neutral-900 rounded-full hover:scale-110 transition-transform"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
                               </div>
                             ))}
+
+                            {/* Hiện ảnh mới chọn */}
+                            {(styleFiles[index] || []).map((file, imgIndex) => (
+                              <div key={`new-${imgIndex}`} className="aspect-[3/4] bg-neutral-100 rounded-sm relative group/img overflow-hidden">
+                                <img 
+                                  src={URL.createObjectURL(file)} 
+                                  alt="preview" 
+                                  className="w-full h-full object-cover" 
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeFile(index, imgIndex)}
+                                    className="p-1.5 bg-white text-neutral-900 rounded-full hover:scale-110 transition-transform"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {/* Nút Upload chỉ hiện khi tổng số ảnh < 5 */}
+                            {((watch(`productStyles.${index}.images`)?.length || 0) + (styleFiles[index]?.length || 0) < 5) && (
+                              <label className="aspect-[3/4] bg-white border border-dashed border-neutral-200 flex flex-col items-center justify-center cursor-pointer hover:border-neutral-900 hover:bg-neutral-50 transition-all group/upload">
+                                <Upload className="w-5 h-5 text-neutral-300 group-hover/upload:text-neutral-900 transition-colors" />
+                                <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-400 mt-2 text-center px-2">Upload<br/>({5 - ((watch(`productStyles.${index}.images`)?.length || 0) + (styleFiles[index]?.length || 0))} left)</span>
+                                <input 
+                                  type="file" 
+                                  multiple 
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleFileSelect(index, e)}
+                                />
+                              </label>
+                            )}
+
+                            {/* Vẽ placeholder cho các slot còn trống nếu thích */}
+                            {Array.from({ length: 5 - ((watch(`productStyles.${index}.images`)?.length || 0) + (styleFiles[index]?.length || 0)) - 1 }).map((_, emptyIndex) => (
+                               <div key={`empty-${emptyIndex}`} className="aspect-[3/4] bg-neutral-50 border border-dashed border-neutral-100 rounded-sm" />
+                            ))}
+
                           </div>
                         </div>
 
@@ -378,11 +636,11 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                     </button>
                   </div>
 
-                  <div className="bg-neutral-50 p-2 overflow-hidden border border-neutral-100">
+                  <div className="bg-neutral-50 p-2 border border-neutral-100 relative">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-white border-b border-neutral-50">
-                          <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-neutral-400">Màu sắc</th>
+                          <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-neutral-400 min-w-[130px]">Màu sắc</th>
                           <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-neutral-400">Size</th>
                           <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-neutral-400">SKU</th>
                           <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-neutral-400">Kho</th>
@@ -392,44 +650,113 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                       </thead>
                       <tbody>
                         {variantFields.map((field, index) => (
-                          <tr key={field.id} className="border-b border-neutral-50 last:border-none group/tr">
+                          <tr key={field.id} className="border-b border-neutral-100 last:border-none group/tr">
                             <td className="p-2">
-                              <select 
-                                {...register(`variants.${index}.colorName` as const)}
-                                className="w-full bg-white border-none px-3 py-2 text-[11px] font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
-                              >
-                                <option value="">Chọn màu</option>
-                                {watch("productStyles").map((s) => (
-                                  <option key={s.colorName} value={s.colorName}>{s.colorName}</option>
-                                ))}
-                              </select>
+                              <div className="relative">
+                                <div 
+                                  onClick={() => setOpenVariantDropdown(openVariantDropdown === index ? null : index)}
+                                  className={cn(
+                                    "w-full bg-white border rounded-sm px-3 py-2 text-[11px] transition-all flex items-center justify-between cursor-pointer gap-2",
+                                    openVariantDropdown === index ? "border-neutral-900 ring-1 ring-neutral-900" : "border-neutral-200 hover:border-neutral-300",
+                                    !watch(`variants.${index}.colorName`) ? "text-neutral-400 font-normal" : "font-medium text-neutral-900"
+                                  )}
+                                >
+                                  <span className="truncate flex-1 text-left">
+                                    {watch(`variants.${index}.colorName`) || "Chọn màu"}
+                                  </span>
+                                  <ChevronDown className={cn("w-3 h-3 text-neutral-400 transition-transform shrink-0", openVariantDropdown === index && "rotate-180")} />
+                                </div>
+
+                                <AnimatePresence>
+                                  {openVariantDropdown === index && (
+                                    <>
+                                      <div 
+                                        className="fixed inset-0 z-40" 
+                                        onClick={() => setOpenVariantDropdown(null)} 
+                                      />
+                                      <motion.div
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        className="absolute left-0 right-0 top-full mt-1 bg-white border border-neutral-100 shadow-xl rounded-sm z-50 max-h-48 overflow-y-auto custom-scrollbar p-1 min-w-[130px]"
+                                      >
+                                        <div
+                                          onClick={() => {
+                                            setValue(`variants.${index}.colorName`, "", { shouldValidate: true });
+                                            setOpenVariantDropdown(null);
+                                          }}
+                                          className={cn(
+                                            "px-2 py-1.5 text-[11px] cursor-pointer transition-colors rounded-sm",
+                                            !watch(`variants.${index}.colorName`) ? "bg-neutral-900 text-white font-medium" : "hover:bg-neutral-50 text-neutral-600"
+                                          )}
+                                        >
+                                          Chọn màu
+                                        </div>
+                                        {watch("productStyles").map((s, sIdx) => (
+                                          <div
+                                            key={s.colorName || `empty-${sIdx}`}
+                                            onClick={() => {
+                                              if (s.colorName) {
+                                                setValue(`variants.${index}.colorName`, s.colorName, { shouldValidate: true });
+                                                setOpenVariantDropdown(null);
+                                              }
+                                            }}
+                                            className={cn(
+                                              "px-2 py-1.5 text-[11px] cursor-pointer transition-colors rounded-sm flex items-center gap-2",
+                                              watch(`variants.${index}.colorName`) === s.colorName && s.colorName ? "bg-neutral-900 text-white font-medium" : "hover:bg-neutral-50 text-neutral-600"
+                                            )}
+                                          >
+                                            <div 
+                                              className="w-3 h-3 rounded-full border border-neutral-200 shrink-0"
+                                              style={{ backgroundColor: s.colorHex || "#000000" }}
+                                            />
+                                            <span className="truncate flex-1 text-left">{s.colorName || "Chưa đặt tên"}</span>
+                                          </div>
+                                        ))}
+                                      </motion.div>
+                                    </>
+                                  )}
+                                </AnimatePresence>
+                              </div>
                             </td>
                             <td className="p-2">
                               <input 
                                 {...register(`variants.${index}.size` as const)}
-                                placeholder="S, M, L..." 
-                                className="w-full bg-white border-none px-3 py-2 text-[11px] font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
+                                placeholder="VD: S, M, XL" 
+                                className="w-full bg-white border border-neutral-200 rounded-sm px-3 py-2 text-[11px] font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
                               />
                             </td>
                             <td className="p-2">
-                              <input 
-                                {...register(`variants.${index}.sku` as const)}
-                                placeholder="SKU-XXXX" 
-                                className="w-full bg-white border-none px-3 py-2 text-[11px] font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all uppercase"
-                              />
+                              <div className="relative">
+                                <input 
+                                  {...register(`variants.${index}.sku` as const)}
+                                  placeholder="VD: SKU-123" 
+                                  className="w-full bg-white border border-neutral-200 rounded-sm px-3 py-2 text-[11px] font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all uppercase  pr-8"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => generateSku(index)}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900 bg-white"
+                                  title="Tự động tạo SKU"
+                                >
+                                  <Wand2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </td>
                             <td className="p-2">
                               <input 
                                 type="number"
                                 {...register(`variants.${index}.stock` as const, { valueAsNumber: true })}
-                                className="w-full bg-white border-none px-3 py-2 text-[11px] font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
+                                placeholder="Số lượng"
+                                className="w-full bg-white border border-neutral-200 rounded-sm px-3 py-2 text-[11px] font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
                               />
                             </td>
                             <td className="p-2 text-center">
                               <input 
                                 type="number"
                                 {...register(`variants.${index}.priceDifference` as const, { valueAsNumber: true })}
-                                className="w-full bg-white border-none px-3 py-2 text-[11px] font-medium outline-none focus:ring-1 focus:ring-neutral-900 transition-all"
+                                placeholder="+/- Giá ($)"
+                                className="w-full bg-white border border-neutral-200 rounded-sm px-3 py-2 text-[11px] font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all "
                               />
                             </td>
                             <td className="p-2 text-center">

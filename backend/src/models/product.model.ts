@@ -7,11 +7,13 @@ const productSchema = new Schema<IProduct>(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, trim: true, unique: true },
     description: { type: String, default: "" },
-    categoryId: {
-      type: Schema.Types.ObjectId,
-      ref: "Category",
-      required: true,
-    },
+    categoryIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Category",
+        required: true,
+      },
+    ],
     brand: { type: String, trim: true },
     tags: [{ type: String, trim: true }],
     gender: {

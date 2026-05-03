@@ -18,10 +18,10 @@ export interface IProductAdmin {
   title: string;
   slug: string;
   description: string;
-  categoryId: {
+  categoryIds: {
     _id: string;
     title: string;
-  };
+  }[];
   brand: string;
   gender: "male" | "female" | "unisex";
   price: number;

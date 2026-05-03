@@ -87,7 +87,7 @@ export const getListProductService = async (
       ...getSubCategoryIds(String(targetCategory._id)),
     ].map((id) => new mongoose.Types.ObjectId(id));
 
-    matchConditions.categoryId = { $in: categoryIds };
+    matchConditions['categoryIds'] = { $in: categoryIds };
   }
 
   if (queryFilter.size) {
@@ -230,7 +230,7 @@ export const getCategoryFilterService = async (categorySlug: string) => {
   ];
 
   const productOfCateogyIds = await Product.find({
-    categoryId: { $in: categoryIds },
+    categoryIds: { $in: categoryIds },
     isActive: true,
     deleted: false,
   })
@@ -317,12 +317,12 @@ export const getRelatedProductsService = async (
     slug: slug,
     isActive: true,
     deleted: false,
-  }).select("categoryId _id");
+  }).select("categoryIds _id");
 
   if (!product) return [];
 
   const relatedProducts = await Product.find({
-    categoryId: product.categoryId,
+    categoryIds: { $in: product.categoryIds },
     _id: { $ne: product._id }, // $ne (Not Equal) giúp loại trừ sản phẩm đang xem
     isActive: true,
     deleted: false,

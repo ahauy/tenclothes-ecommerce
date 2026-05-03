@@ -66,7 +66,7 @@ export interface IProduct extends Document {
   title: string;
   slug: string;
   description: string;
-  categoryId: mongoose.Types.ObjectId;
+  categoryIds: mongoose.Types.ObjectId[];
   brand?: string;
   tags: string[];
 

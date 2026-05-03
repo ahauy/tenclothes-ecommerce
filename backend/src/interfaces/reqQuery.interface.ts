@@ -10,4 +10,6 @@ export interface IRequestQueryFilter {
   isActive?: string;
   isFeatured?: string;
   categoryId?: string;
+  startDate?: string;
+  endDate?: string;
 }
