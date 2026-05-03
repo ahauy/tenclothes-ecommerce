@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Shield,
-  User
+  User,
+  Trash2
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../utils/cn";
@@ -25,7 +26,7 @@ const SidebarItem = ({
   active,
   onClick
 }: { 
-  icon: any; 
+  icon: React.ElementType; 
   label: string; 
   to: string; 
   active: boolean;
@@ -66,6 +67,7 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
     { icon: User, label: "Nhân viên", to: "/staff" },
     { icon: Shield, label: "Phân quyền", to: "/permissions" },
     { icon: ImageIcon, label: "Nội dung", to: "/cms" },
+    // { icon: Trash2, label: "Thùng rác", to: "/trash" },
     { icon: Settings, label: "Cài đặt", to: "/settings" },
   ];
 

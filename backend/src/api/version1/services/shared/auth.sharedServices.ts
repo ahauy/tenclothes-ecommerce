@@ -20,6 +20,7 @@ export const loginShareService = async (
         {
           _id: userByEmail.id,
           email: userByEmail.email,
+          fullName: userByEmail.fullName,
           ...(userByEmail.role && { role: userByEmail.role })
         },
         process.env["ACCESS_TOKEN_SECRET"]!,
@@ -30,6 +31,7 @@ export const loginShareService = async (
         {
           _id: userByEmail.id,
           email: userByEmail.email,
+          fullName: userByEmail.fullName,
           ...(userByEmail.role && { role: userByEmail.role })
         },
         process.env["REFRESH_TOKEN_SECRET"]!,
@@ -52,6 +54,7 @@ export const verifyRefreshTokenShareService = (refreshToken: string): (string | 
       {
         _id: decode._id,
         email: decode.email,
+        fullName: decode["fullName"],
         ...(decode.role && { role: decode.role })
       },
       process.env["ACCESS_TOKEN_SECRET"]!,

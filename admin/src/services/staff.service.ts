@@ -1,17 +1,17 @@
 import api from "../utils/axios";
 
 export const staffService = {
-  getStaffs: async (params?: any) => {
-    const response = await api.get(`/staff`, { params });
+  getStaffs: async (params?: Record<string, string | number | boolean | undefined>) => {
+    const response = await api.get(`/staffs`, { params });
     return response.data;
   },
 
-  createStaff: async (data: any) => {
-    const response = await api.post(`/staff/create`, data);
+  createStaff: async (data: Record<string, unknown> | FormData) => {
+    const response = await api.post(`/staffs/create`, data);
     return response.data;
   },
 
-  updateStaff: async (id: string, data: any) => {
+  updateStaff: async (id: string, data: Record<string, unknown> | FormData) => {
     const response = await api.patch(`/staff/${id}`, data);
     return response.data;
   },

@@ -2,16 +2,17 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { IDecodeToken } from "../interfaces/auth.interfaces";
 
-export interface AuthRequest extends Request {
+export interface IAuthRequest extends Request {
   user?: {
     _id: string;
     email?: string;
     role?: string;
+    fullName?: string;
   };
 }
 
 export const verifyToken = (
-  req: AuthRequest,
+  req: IAuthRequest,
   res: Response,
   next: NextFunction
 ): void => {
@@ -37,6 +38,7 @@ export const verifyToken = (
     req.user = {
       _id: decode._id,
       email: decode.email,
+      fullName: decode["fullName"],
       ...(decode.role && { role: decode.role })
     };
 

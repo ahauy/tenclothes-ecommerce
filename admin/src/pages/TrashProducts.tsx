@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
-  Plus,
   Search,
   ChevronDown,
-  Edit2,
-  Trash2,
-  Eye,
+  RefreshCcw,
   ChevronLeft,
   ChevronRight,
   Package,
@@ -23,15 +20,17 @@ import { categoryService } from "../services/category.service";
 import type { IProductAdmin } from "../interfaces/product.interface";
 import { cn } from "../utils/cn";
 import { toast } from "sonner";
-import type { IJsonFail } from "../interfaces/api.interface";
 import ProductDrawer from "../components/ProductDrawer";
+import type { IJsonFail } from "../interfaces/api.interface";
+// import ReactPaginateLib from "react-paginate";
 // import ReactPaginate from 'react-paginate';
 import ReactPaginateLib from "react-paginate";
-const ReactPaginate: any =
-  (ReactPaginateLib as any).default || ReactPaginateLib;
-import { useNavigate } from "react-router-dom";
+const ReactPaginate: any = (ReactPaginateLib as any).default || ReactPaginateLib;
 
-// Sử dụng Generic Type <T> để tự động nội suy kiểu dữ liệu (string, number, hoặc boolean)
+// const ReactPaginate =
+//   (ReactPaginateLib as unknown as { default: unknown }).default ||
+//   ReactPaginateLib;
+
 interface DropdownProps<T extends string | number | boolean> {
   options: { label: string; value: T; icon?: React.ReactNode }[];
   value: T;
@@ -156,7 +155,7 @@ const CustomDropdown = <T extends string | number | boolean>({
   );
 };
 
-const Products: React.FC = () => {
+const TrashProducts: React.FC = () => {
   const [products, setProducts] = useState<IProductAdmin[]>([]);
   const [categories, setCategories] = useState<
     { _id: string; title: string }[]
@@ -170,12 +169,12 @@ const Products: React.FC = () => {
   const [productToEdit, setProductToEdit] = useState<IProductAdmin | null>(
     null,
   );
-  const [productToDelete, setProductToDelete] = useState<{
+  const [productToRestore, setProductToRestore] = useState<{
     id: string;
     title: string;
     slug: string;
   } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // Filters State
   const [startDate, setStartDate] = useState<string>("");
@@ -184,9 +183,6 @@ const Products: React.FC = () => {
   const [featuredFilter, setFeaturedFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const navigate = useNavigate();
-
-  // Dùng useCallback để bọc lại, tránh render vô hạn khi đưa vào dependencies của useEffect
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -209,6 +205,7 @@ const Products: React.FC = () => {
         categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        isTrash: "true",
       });
       setProducts(response.data.products);
       setTotalPages(response.data.totalPages);
@@ -227,7 +224,7 @@ const Products: React.FC = () => {
     categoryFilter,
     startDate,
     endDate,
-  ]);
+  ]); // Đưa toàn bộ state phụ thuộc vào đây
 
   const handleToggleStatus = async (slug: string, currentStatus: boolean) => {
     try {
@@ -238,14 +235,14 @@ const Products: React.FC = () => {
 
       await productService.changeStatus(slug, newStatus);
       toast.success("Cập nhật trạng thái thành công");
-    } catch (error: unknown) {
-      const err = error as IJsonFail;
+    } catch (error) {
+      console.error("Failed to update status", error);
       setProducts((prev) =>
         prev.map((p) =>
           p.slug === slug ? { ...p, isActive: currentStatus } : p,
         ),
       );
-      toast.error(err?.message || "Không thể cập nhật trạng thái");
+      toast.error("Không thể cập nhật trạng thái");
     }
   };
 
@@ -263,42 +260,33 @@ const Products: React.FC = () => {
 
       await productService.changeFeatured(slug, newFeatured);
       toast.success("Cập nhật sản phẩm nổi bật thành công");
-    } catch (error: unknown) {
-      const err = error as IJsonFail;
+    } catch (error) {
+      console.error("Failed to update featured status", error);
       setProducts((prev) =>
         prev.map((p) =>
           p.slug === slug ? { ...p, isFeatured: currentFeatured } : p,
         ),
       );
-      toast.error(err?.message || "Không thể cập nhật sản phẩm nổi bật");
+      toast.error("Không thể cập nhật sản phẩm nổi bật");
     }
   };
 
-  const handleDeleteProduct = async () => {
-    if (!productToDelete) return;
-    setIsDeleting(true);
+  const handleRestoreProduct = async () => {
+    if (!productToRestore) return;
+    setIsRestoring(true);
     try {
-      await productService.deleteProduct(productToDelete.slug);
-      toast.success(`Đã xóa sản phẩm "${productToDelete.title}"`);
-      setProductToDelete(null);
+      await productService.restoreProduct(productToRestore.slug);
+      toast.success(`Đã khôi phục sản phẩm "${productToRestore.title}"`);
+      setProductToRestore(null);
       fetchProducts();
-    } catch (error: unknown) {
-      const err = error as IJsonFail;
-      toast.error(err?.message || "Không thể xóa sản phẩm. Vui lòng thử lại!");
+    } catch (error) {
+      console.error("Failed to restore product", error);
+      toast.error("Không thể khôi phục sản phẩm. Vui lòng thử lại!");
     } finally {
-      setIsDeleting(false);
+      setIsRestoring(false);
     }
   };
 
-  // Sử dụng hàm async bên trong useEffect để tránh cảnh báo set-state-in-effect
-  useEffect(() => {
-    const loadData = async () => {
-      await fetchProducts();
-    };
-    loadData();
-  }, [fetchProducts]);
-
-  // Di chuyển logic fetchCategories vào bên trong useEffect vì nó chỉ chạy 1 lần
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -336,7 +324,15 @@ const Products: React.FC = () => {
     };
 
     fetchCategories();
-  }, []);
+  }, []); // Mảng rỗng chuẩn xác vì không phụ thuộc vào state nào bên ngoài
+
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchProducts();
+    };
+
+    loadData();
+  }, [fetchProducts]); // Giờ mảng deps chỉ cần phụ thuộc vào mỗi fetchProducts
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -403,39 +399,14 @@ const Products: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 w-full px-2 sm:px-0">
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">
-              QUẢN LÝ DANH MỤC
+              QUẢN LÝ DỮ LIỆU
             </span>
             <h2 className="text-3xl lg:text-4xl font-semibold text-neutral-900 tracking-tight">
-              Kho Hàng
+              Thùng rác
             </h2>
             <p className="text-neutral-500 font-medium text-sm hidden md:block">
-              Theo dõi, cập nhật và quản lý toàn bộ sản phẩm trong hệ thống.
+              Xem và khôi phục các sản phẩm đã xoá.
             </p>
-          </div>
-
-          {/* Nhóm các nút thao tác */}
-          <div className="flex w-full sm:w-auto items-center gap-3">
-            {/* Nút Thùng Rác */}
-            <button
-              onClick={() => navigate("/trash")}
-              title="Xem sản phẩm đã xóa"
-              className="flex flex-1 sm:flex-none items-center justify-center gap-2.5 px-4 py-3 bg-white border border-neutral-200 text-neutral-600 text-[11px] font-bold uppercase tracking-wider rounded-md hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-all duration-300 active:scale-95"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Thùng Rác</span>
-            </button>
-
-            {/* Nút Thêm Mới */}
-            <button
-              onClick={() => {
-                setProductToEdit(null);
-                setIsDrawerOpen(true);
-              }}
-              className="flex flex-1 sm:flex-none items-center justify-center gap-2.5 px-6 py-3 bg-neutral-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-md hover:bg-neutral-800 shadow-md shadow-neutral-900/10 transition-all duration-300 active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Thêm Sản Phẩm Mới</span>
-            </button>
           </div>
         </div>
 
@@ -520,7 +491,7 @@ const Products: React.FC = () => {
           </div>
         </div>
 
-        {/* Product Presentation - Table for Desktop, Cards for Mobile */}
+        {/* Product Presentation */}
         <div className="w-full min-h-[400px]">
           {/* Mobile View: Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
@@ -654,31 +625,23 @@ const Products: React.FC = () => {
                         </div>
 
                         <div className="flex justify-end gap-2 pt-2">
-                          <button className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setProductToEdit(product);
-                              setIsDrawerOpen(true);
-                            }}
-                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              setProductToDelete({
+                              setProductToRestore({
                                 id: product._id,
                                 title: product.title,
                                 slug: product.slug,
                               });
                             }}
-                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-red-500 hover:border-red-500 hover:text-white transition-all text-red-500"
+                            title="Khôi phục"
+                            className="flex-1 flex items-center justify-center p-2 border border-emerald-200 rounded-md hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-all text-emerald-500 gap-2"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <RefreshCcw className="w-4 h-4" />{" "}
+                            <span className="text-[10px] uppercase font-bold tracking-widest">
+                              Khôi phục
+                            </span>
                           </button>
                         </div>
                       </div>
@@ -880,35 +843,22 @@ const Products: React.FC = () => {
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">
                               <button
-                                title="Xem chi tiết"
-                                className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                title="Chỉnh sửa"
-                                onClick={() => {
-                                  setProductToEdit(product);
-                                  setIsDrawerOpen(true);
-                                }}
-                                className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setProductToDelete({
+                                  setProductToRestore({
                                     id: product._id,
                                     title: product.title,
                                     slug: product.slug,
                                   });
                                 }}
-                                title="Xóa"
-                                className="p-2 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors rounded-md"
+                                title="Khôi phục"
+                                className="p-2 text-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors rounded-md border border-transparent hover:border-emerald-100 flex items-center gap-2"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <RefreshCcw className="w-4 h-4" />
+                                <span className="text-[10px] uppercase font-bold tracking-widest">
+                                  Khôi phục
+                                </span>
                               </button>
                             </div>
                           </td>
@@ -993,16 +943,16 @@ const Products: React.FC = () => {
         />
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Restore Confirmation Modal */}
       {createPortal(
         <AnimatePresence>
-          {productToDelete && (
+          {productToRestore && (
             <>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => !isDeleting && setProductToDelete(null)}
+                onClick={() => !isRestoring && setProductToRestore(null)}
                 className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-[9999] transition-all duration-300"
               />
               <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
@@ -1014,41 +964,41 @@ const Products: React.FC = () => {
                   className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6 pointer-events-auto"
                 >
                   <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
-                      <Trash2 className="w-6 h-6 text-red-500" />
+                    <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
+                      <RefreshCcw className="w-6 h-6 text-emerald-500" />
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold text-neutral-900">
-                        Xóa sản phẩm
+                        Khôi phục sản phẩm
                       </h3>
                       <p className="text-sm text-neutral-500">
-                        Bạn có chắc chắn muốn xóa sản phẩm <br />
+                        Bạn có chắc chắn muốn khôi phục sản phẩm <br />
                         <span className="font-bold text-neutral-900">
-                          "{productToDelete.title}"
+                          "{productToRestore.title}"
                         </span>
                         ? <br />
-                        Hành động này không thể hoàn tác.
+                        Sản phẩm sẽ được hiển thị lại trên hệ thống.
                       </p>
                     </div>
                   </div>
 
                   <div className="flex gap-3 mt-8">
                     <button
-                      onClick={() => setProductToDelete(null)}
-                      disabled={isDeleting}
+                      onClick={() => setProductToRestore(null)}
+                      disabled={isRestoring}
                       className="flex-1 px-4 py-2.5 text-[12px] font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Hủy bỏ
                     </button>
                     <button
-                      onClick={handleDeleteProduct}
-                      disabled={isDeleting}
-                      className="flex-1 px-4 py-2.5 text-[12px] font-semibold text-white bg-red-500 rounded-md hover:bg-red-600 shadow-md shadow-red-500/20 transition-all duration-300 active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleRestoreProduct}
+                      disabled={isRestoring}
+                      className="flex-1 px-4 py-2.5 text-[12px] font-semibold text-white bg-emerald-500 rounded-md hover:bg-emerald-600 shadow-md shadow-emerald-500/20 transition-all duration-300 active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isDeleting ? (
+                      {isRestoring ? (
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                       ) : (
-                        "Xác nhận xóa"
+                        "Xác nhận khôi phục"
                       )}
                     </button>
                   </div>
@@ -1063,4 +1013,4 @@ const Products: React.FC = () => {
   );
 };
 
-export default Products;
+export default TrashProducts;

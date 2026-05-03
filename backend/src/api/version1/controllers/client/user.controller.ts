@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { AuthRequest } from "../../../../middlewares/authen.middlewares";
+import { IAuthRequest } from "../../../../middlewares/authen.middlewares";
 import {
   getProfileService,
   updateProfileService,
@@ -20,7 +20,7 @@ import ApiError from "../../../../helpers/ApiError";
 
 // ---- GET /users/profile ----
 export const getProfileController = async (
-  req: AuthRequest,
+  req: IAuthRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -45,7 +45,7 @@ export const getProfileController = async (
 
 // ---- PATCH /users/profile ----
 export const updateProfileController = async (
-  req: AuthRequest & { body: IUpdateProfileBody },
+  req: IAuthRequest & { body: IUpdateProfileBody },
   res: Response
 ): Promise<void> => {
   try {
@@ -70,7 +70,7 @@ export const updateProfileController = async (
 
 // ---- PATCH /users/change-password ----
 export const changePasswordController = async (
-  req: AuthRequest & { body: IChangePasswordBody },
+  req: IAuthRequest & { body: IChangePasswordBody },
   res: Response
 ): Promise<void> => {
   try {
@@ -97,7 +97,7 @@ export const changePasswordController = async (
 // ============================================================
 
 // GET /users/addresses
-export const getAddressesController = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAddressesController = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!._id;
     const addresses = await getAddressesService(userId);
@@ -114,7 +114,7 @@ export const getAddressesController = async (req: AuthRequest, res: Response): P
 
 // POST /users/addresses
 export const addAddressController = async (
-  req: AuthRequest & { body: IAddressBody },
+  req: IAuthRequest & { body: IAddressBody },
   res: Response
 ): Promise<void> => {
   try {
@@ -133,7 +133,7 @@ export const addAddressController = async (
 
 // PATCH /users/addresses/:addressId
 export const updateAddressController = async (
-  req: AuthRequest & { body: IAddressBody },
+  req: IAuthRequest & { body: IAddressBody },
   res: Response
 ): Promise<void> => {
   try {
@@ -152,7 +152,7 @@ export const updateAddressController = async (
 };
 
 // DELETE /users/addresses/:addressId
-export const deleteAddressController = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteAddressController = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!._id;
     const { addressId } = req.params as { addressId: string };
@@ -169,7 +169,7 @@ export const deleteAddressController = async (req: AuthRequest, res: Response): 
 };
 
 // PATCH /users/addresses/:addressId/set-default
-export const setDefaultAddressController = async (req: AuthRequest, res: Response): Promise<void> => {
+export const setDefaultAddressController = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!._id;
     const { addressId } = req.params as { addressId: string };

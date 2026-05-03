@@ -1,6 +1,6 @@
 import ApiError from "../../../../helpers/ApiError";
 import { Request, Response } from "express";
-import { AuthRequest } from "../../../../middlewares/authen.middlewares";
+import { IAuthRequest } from "../../../../middlewares/authen.middlewares";
 import { CreateReviewReqBody } from "../../validators/client/review.validator";
 import { createViewProductService, getReviewsByProductService } from "../../services/client/review.service";
 
@@ -9,7 +9,7 @@ export const createReviewProduct = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = (req as AuthRequest).user!._id;
+    const userId = (req as IAuthRequest).user!._id;
     const { productId, orderId, rating, content } = req.body;
     const images = (req.body as any).cloudinaryUrls || [];
 

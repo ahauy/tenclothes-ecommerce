@@ -20,4 +20,8 @@ productRouter.patch("/change-featured/:slug", verifyToken, authorizationRole(['a
 
 productRouter.delete("/delete/:slug", verifyToken, authorizationRole(['admin']), controller.deleteProductController)
 
+productRouter.patch("/restore/:slug", verifyToken, authorizationRole(['admin', 'employee']), controller.restoreProductController)
+
+productRouter.get("/history/:id", verifyToken, authorizationRole(['admin', 'employee']), controller.getProductHistoryController)
+
 export default productRouter

@@ -14,6 +14,7 @@ export interface IProductVariant {
 }
 
 export interface IProductAdmin {
+  weight: number | undefined;
   _id: string;
   title: string;
   slug: string;

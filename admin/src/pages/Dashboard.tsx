@@ -77,7 +77,7 @@ const StatCard = ({
   value: string;
   trend: "up" | "down";
   trendValue: string;
-  icon: any;
+  icon: React.ElementType;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}

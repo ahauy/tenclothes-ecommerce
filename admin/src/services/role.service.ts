@@ -6,12 +6,12 @@ export const roleService = {
     return response.data;
   },
 
-  createRole: async (data: any) => {
-    const response = await api.post(`/role/create`, data);
+  createRole: async (data: Record<string, unknown>) => {
+    const response = await api.post(`/roles/create`, data);
     return response.data;
   },
 
-  updateRole: async (id: string, data: any) => {
+  updateRole: async (id: string, data: Record<string, unknown>) => {
     const response = await api.patch(`/role/${id}`, data);
     return response.data;
   },

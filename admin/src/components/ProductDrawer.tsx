@@ -10,6 +10,7 @@ import { cn } from "../utils/cn";
 import { uploadService } from "../services/upload.service";
 import { productService } from "../services/product.service";
 import type { IProductAdmin } from "../interfaces/product.interface";
+import type { IJsonFail } from "../interfaces/api.interface";
 
 interface ProductDrawerProps {
   isOpen: boolean;
@@ -88,7 +89,7 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
           title: productToEdit.title,
           description: productToEdit.description,
           brand: productToEdit.brand || "",
-          categoryIds: productToEdit.categoryIds ? productToEdit.categoryIds.map((c: any) => c._id || c) : [],
+          categoryIds: productToEdit.categoryIds ? productToEdit.categoryIds.map((c) => typeof c === "object" && c !== null && "_id" in c ? c._id : c) : [],
           gender: productToEdit.gender,
           weight: productToEdit.weight,
           price: productToEdit.price,
@@ -160,8 +161,13 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
       
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error?.message || "Đã xảy ra lỗi khi lưu sản phẩm");
+    } catch (error) {
+      console.error("Failed to save product", error);
+      if ((error as IJsonFail).message) {
+        toast.error((error as IJsonFail).message);
+      } else {
+        toast.error("Đã xảy ra lỗi khi lưu sản phẩm");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -179,12 +185,11 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
       if (newFiles.length > 0) {
         setStyleFiles((prev) => {
           const currentFiles = prev[index] || [];
-          const combined = [...currentFiles, ...newFiles].slice(0, 5); // Tối đa 5 ảnh
+          const combined = [...currentFiles, ...newFiles].slice(0, 5);
           return { ...prev, [index]: combined };
         });
       }
     }
-    // Xóa value để có thể chọn lại cùng một file
     if (e.target) e.target.value = "";
   };
 
@@ -215,7 +220,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -224,7 +228,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
             className="fixed inset-0 bg-neutral-900/10 backdrop-blur-[2px] z-[60]"
           />
 
-          {/* Drawer Content */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -244,19 +247,16 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
               </div>
               <div className="flex items-center gap-4">
                 <button
+                  type="button"
                   onClick={onClose}
                   className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors"
                 >
                   Hủy bỏ
                 </button>
+                {/* FIX 4: Gắn type submit và nối với thẻ form qua thuộc tính form="..." */}
                 <button
-                  onClick={handleSubmit(
-                    onSubmit,
-                    (errors) => {
-                      console.log("Lỗi form:", errors);
-                      toast.error("Vui lòng kiểm tra lại! Bạn chưa điền đủ các thông tin bắt buộc.");
-                    }
-                  )}
+                  type="submit"
+                  form="product-form"
                   disabled={isSubmitting}
                   className="px-8 py-3 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-200"
                 >
@@ -272,7 +272,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
               </div>
             </div>
 
-            {/* Loading Overlay */}
             <AnimatePresence>
               {isSubmitting && (
                 <motion.div
@@ -288,11 +287,17 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
               )}
             </AnimatePresence>
 
-            {/* Scrollable Form */}
             <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-              <form className="p-10 space-y-16 pb-20">
+              {/* FIX 3: Gắn id, nối sự kiện onSubmit vào đúng thẻ form */}
+              <form 
+                id="product-form" 
+                onSubmit={handleSubmit(onSubmit, (errors) => {
+                  console.log("Lỗi form:", errors);
+                  toast.error("Vui lòng kiểm tra lại! Bạn chưa điền đủ các thông tin bắt buộc.");
+                })}
+                className="p-10 space-y-16 pb-20"
+              >
                 
-                {/* 1. Basic Information */}
                 <section className="space-y-8">
                   <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
                     <Info className="w-4 h-4 text-neutral-900" />
@@ -317,7 +322,7 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                       <textarea
                         {...register("description")}
                         rows={4}
-                        className="w-full bg-white border border-neutral-200 rounded-sm p-4 text-sm font-light outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all  resize-none"
+                        className="w-full bg-white border border-neutral-200 rounded-sm p-4 text-sm font-light outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all resize-none"
                         placeholder="Mô tả chi tiết về chất liệu, kiểu dáng và cách bảo quản..."
                       />
                       {errors.description && <p className="text-[10px] text-red-500 font-medium tracking-wide uppercase mt-1">{errors.description.message}</p>}
@@ -402,7 +407,7 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                             <button
                               key={g}
                               type="button"
-                              onClick={() => setValue("gender", g as any)}
+                              onClick={() => setValue("gender", g as "male" | "female" | "unisex")}
                               className={cn(
                                 "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest transition-all rounded-sm",
                                 watch("gender") === g
@@ -428,7 +433,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                   </div>
                 </section>
 
-                {/* 2. Pricing & Logistics */}
                 <section className="space-y-8">
                   <div className="flex items-center gap-3 border-b border-neutral-100 pb-3">
                     <DollarSign className="w-4 h-4 text-neutral-900" />
@@ -471,7 +475,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                   </div>
                 </section>
 
-                {/* 3. Product Styles */}
                 <section className="space-y-8">
                   <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
                     <div className="flex items-center gap-3">
@@ -532,7 +535,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                         <div className="space-y-4">
                           <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">Hình ảnh (Tối đa 5 ảnh)</label>
                           <div className="grid grid-cols-5 gap-4">
-                            {/* Hiện ảnh đã có (từ database) */}
                             {(watch(`productStyles.${index}.images`) || []).map((imgUrl: string, imgIndex: number) => (
                               <div key={`existing-${imgIndex}`} className="aspect-[3/4] bg-neutral-100 rounded-sm relative group/img overflow-hidden border border-neutral-200">
                                 <img 
@@ -552,7 +554,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                               </div>
                             ))}
 
-                            {/* Hiện ảnh mới chọn */}
                             {(styleFiles[index] || []).map((file, imgIndex) => (
                               <div key={`new-${imgIndex}`} className="aspect-[3/4] bg-neutral-100 rounded-sm relative group/img overflow-hidden">
                                 <img 
@@ -572,7 +573,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                               </div>
                             ))}
                             
-                            {/* Nút Upload chỉ hiện khi tổng số ảnh < 5 */}
                             {((watch(`productStyles.${index}.images`)?.length || 0) + (styleFiles[index]?.length || 0) < 5) && (
                               <label className="aspect-[3/4] bg-white border border-dashed border-neutral-200 flex flex-col items-center justify-center cursor-pointer hover:border-neutral-900 hover:bg-neutral-50 transition-all group/upload">
                                 <Upload className="w-5 h-5 text-neutral-300 group-hover/upload:text-neutral-900 transition-colors" />
@@ -587,8 +587,8 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                               </label>
                             )}
 
-                            {/* Vẽ placeholder cho các slot còn trống nếu thích */}
-                            {Array.from({ length: 5 - ((watch(`productStyles.${index}.images`)?.length || 0) + (styleFiles[index]?.length || 0)) - 1 }).map((_, emptyIndex) => (
+                            {/* FIX 1: Chặn RangeError bằng Math.max */}
+                            {Array.from({ length: Math.max(0, 4 - ((watch(`productStyles.${index}.images`)?.length || 0) + (styleFiles[index]?.length || 0))) }).map((_, emptyIndex) => (
                                <div key={`empty-${emptyIndex}`} className="aspect-[3/4] bg-neutral-50 border border-dashed border-neutral-100 rounded-sm" />
                             ))}
 
@@ -618,7 +618,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                   </div>
                 </section>
 
-                {/* 4. Variants */}
                 <section className="space-y-8">
                   <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
                     <div className="flex items-center gap-3">
@@ -731,7 +730,7 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                                 <input 
                                   {...register(`variants.${index}.sku` as const)}
                                   placeholder="VD: SKU-123" 
-                                  className="w-full bg-white border border-neutral-200 rounded-sm px-3 py-2 text-[11px] font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all uppercase  pr-8"
+                                  className="w-full bg-white border border-neutral-200 rounded-sm px-3 py-2 text-[11px] font-medium outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all uppercase pr-8"
                                 />
                                 <button
                                   type="button"
@@ -777,7 +776,6 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
                   </div>
                 </section>
 
-                {/* 5. Visibility & Promotion */}
                 <section className="grid grid-cols-2 gap-8">
                   <div className="p-6 bg-neutral-50 flex justify-between items-center group cursor-pointer" onClick={() => setValue("isActive", !watch("isActive"))}>
                     <div className="space-y-1">

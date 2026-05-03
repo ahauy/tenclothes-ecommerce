@@ -1,7 +1,7 @@
 import api from "../utils/axios";
 
 export const customerService = {
-  getCustomers: async (params?: any) => {
+  getCustomers: async (params?: Record<string, string | number | boolean | undefined>) => {
     const response = await api.get(`/user`, { params });
     return response.data;
   },

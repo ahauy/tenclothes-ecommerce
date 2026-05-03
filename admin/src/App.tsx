@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import TrashProducts from "./pages/TrashProducts";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import Staff from "./pages/Staff";
@@ -46,6 +47,7 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/products" element={<Products />} />
+                <Route path="/trash" element={<TrashProducts />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/staff" element={<Staff />} />

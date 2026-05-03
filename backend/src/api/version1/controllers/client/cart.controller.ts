@@ -3,7 +3,7 @@ import {
   ISyncCartBody,
 } from "../../../../interfaces/cart.interfaces";
 import { ICartItem } from "../../../../interfaces/model.interfaces";
-import { AuthRequest } from "../../../../middlewares/authen.middlewares";
+import { IAuthRequest } from "../../../../middlewares/authen.middlewares";
 import { Request, Response } from "express";
 import {
   syncCartService,
@@ -45,7 +45,7 @@ export const syncCart = async (
   res: Response
 ) => {
   try {
-    const userId = (req as AuthRequest).user?._id;
+    const userId = (req as IAuthRequest).user?._id;
 
     if (!userId) {
       res.status(401).json({
@@ -94,7 +94,7 @@ export const addToCart = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = (req as AuthRequest).user?._id;
+    const userId = (req as IAuthRequest).user?._id;
     const { productId, sku, color, size, quantity } = req.body;
 
     if (!userId) { res.status(401).json({ message: "Chưa xác thực người dùng!" }); return; }
@@ -128,7 +128,7 @@ export const updateCart = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = (req as AuthRequest).user?._id;
+    const userId = (req as IAuthRequest).user?._id;
     const { productId, color, size, quantity } = req.body;
 
     if (!userId) { res.status(401).json({ message: "Chưa xác thực người dùng!" }); return; }
@@ -163,7 +163,7 @@ export const removeFromCart = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = (req as AuthRequest).user?._id;
+    const userId = (req as IAuthRequest).user?._id;
     const { productId, color, size } = req.body;
 
     if (!userId) { res.status(401).json({ message: "Chưa xác thực người dùng!" }); return; }

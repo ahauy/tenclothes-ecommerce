@@ -1,14 +1,13 @@
-import { AuthRequest } from "./authen.middlewares";
+import { IAuthRequest } from "./authen.middlewares";
 import { Response, NextFunction } from "express";
 
 export const authorizationRole = (allowedRoles: string[]) => {
   return async (
-    req: AuthRequest,
+    req: IAuthRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
-
       const role = req.user?.role;
 
       if (!role) {

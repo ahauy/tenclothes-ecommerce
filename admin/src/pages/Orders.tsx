@@ -25,9 +25,9 @@ import { toast } from "sonner";
 import type { IJsonFail } from "../interfaces/api.interface";
 
 interface DropdownProps {
-  options: { label: string; value: any; icon?: React.ReactNode; color?: string }[];
-  value: any;
-  onChange: (value: any) => void;
+  options: { label: string; value: string | number | boolean; icon?: React.ReactNode; color?: string }[];
+  value: string | number | boolean;
+  onChange: (value: string | number | boolean) => void;
   placeholder: string;
   icon?: React.ReactNode;
 }

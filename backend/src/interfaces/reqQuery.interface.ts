@@ -12,4 +12,9 @@ export interface IRequestQueryFilter {
   categoryId?: string;
   startDate?: string;
   endDate?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minStock?: string;
+  maxStock?: string;
+  isTrash?: string;
 }
