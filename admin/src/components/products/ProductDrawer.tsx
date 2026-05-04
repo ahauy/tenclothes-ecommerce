@@ -3,14 +3,14 @@ import { X, Plus, Trash2, Image as ImageIcon, Box, ChevronDown, Check, Upload, I
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { productSchema, type ProductFormData } from "../validators/product.validator";
-import { categoryService } from "../services/category.service";
+import { productSchema, type ProductFormData } from "../../validators/product.validator";
+import { categoryService } from "../../services/category.service";
 import { toast } from "sonner";
-import { cn } from "../utils/cn";
-import { uploadService } from "../services/upload.service";
-import { productService } from "../services/product.service";
-import type { IProductAdmin } from "../interfaces/product.interface";
-import type { IJsonFail } from "../interfaces/api.interface";
+import { cn } from "../../utils/cn";
+import { uploadService } from "../../services/upload.service";
+import { productService } from "../../services/product.service";
+import type { IProductAdmin } from "../../interfaces/product.interface";
+import type { IJsonFail } from "../../interfaces/api.interface";
 
 interface ProductDrawerProps {
   isOpen: boolean;

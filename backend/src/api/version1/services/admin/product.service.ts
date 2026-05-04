@@ -303,11 +303,10 @@ export const getListProductAdminService = async (queryFilter: IRequestQueryFilte
       from: "categories",
       localField: "categoryIds",
       foreignField: "_id",
-      as: "categories"
+      as: "categoryIds"
     }
   } as mongoose.PipelineStage.FacetPipelineStage, {
     $project: {
-      categoryIds: 0,
       __v: 0,
       "categories.deleted": 0,
       "categories.isActive": 0,

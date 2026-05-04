@@ -20,142 +20,22 @@ import { categoryService } from "../services/category.service";
 import type { IProductAdmin } from "../interfaces/product.interface";
 import { cn } from "../utils/cn";
 import { toast } from "sonner";
-import ProductDrawer from "../components/ProductDrawer";
+import ProductDrawer from "../components/products/ProductDrawer";
 import type { IJsonFail } from "../interfaces/api.interface";
 // import ReactPaginateLib from "react-paginate";
 // import ReactPaginate from 'react-paginate';
 import ReactPaginateLib from "react-paginate";
+import CustomDropdown from "../components/UI/CustomDropdown";
+import { useNavigate } from "react-router-dom";
+
 const ReactPaginate: any = (ReactPaginateLib as any).default || ReactPaginateLib;
 
 // const ReactPaginate =
 //   (ReactPaginateLib as unknown as { default: unknown }).default ||
 //   ReactPaginateLib;
 
-interface DropdownProps<T extends string | number | boolean> {
-  options: { label: string; value: T; icon?: React.ReactNode }[];
-  value: T;
-  onChange: (value: T) => void;
-  placeholder: string;
-  icon?: React.ReactNode;
-}
-
-const CustomDropdown = <T extends string | number | boolean>({
-  options,
-  value,
-  onChange,
-  placeholder,
-  icon,
-}: DropdownProps<T>) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const selectedOption = options.find((opt) => opt.value === value);
-
-  return (
-    <div className="relative flex-1 min-w-[150px]" ref={containerRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "flex items-center justify-between gap-3 px-4 py-2.5 bg-neutral-50/50 border border-neutral-200 text-[11px] font-semibold tracking-wide transition-all duration-300 w-full group hover:border-neutral-400 hover:bg-white rounded-md",
-          isOpen &&
-            "border-neutral-900 bg-white shadow-sm ring-1 ring-neutral-900/5",
-        )}
-      >
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          {icon && (
-            <span className="text-neutral-400 group-hover:text-neutral-600 transition-colors flex-shrink-0">
-              {icon}
-            </span>
-          )}
-          <span
-            className={cn(
-              "truncate",
-              selectedOption?.value !== "all"
-                ? "text-neutral-900"
-                : "text-neutral-500",
-            )}
-          >
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-        </div>
-        <ChevronDown
-          className={cn(
-            "w-3.5 h-3.5 text-neutral-400 transition-transform duration-300 flex-shrink-0",
-            isOpen && "rotate-180 text-neutral-900",
-          )}
-        />
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-md shadow-xl shadow-neutral-900/5 z-50 overflow-hidden min-w-[220px]"
-          >
-            <div className="max-h-60 overflow-y-auto py-1.5 custom-scrollbar">
-              {options.map((option) => (
-                <button
-                  key={String(option.value)}
-                  onClick={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] font-medium hover:bg-neutral-50 transition-colors text-left group"
-                >
-                  <div className="flex items-center gap-2.5 truncate">
-                    {option.icon && (
-                      <span
-                        className={cn(
-                          "transition-colors flex-shrink-0",
-                          value === option.value
-                            ? "text-neutral-900"
-                            : "text-neutral-400 group-hover:text-neutral-700",
-                        )}
-                      >
-                        {option.icon}
-                      </span>
-                    )}
-                    <span
-                      className={cn(
-                        "truncate",
-                        value === option.value
-                          ? "text-neutral-900 font-semibold"
-                          : "text-neutral-600 group-hover:text-neutral-900",
-                      )}
-                    >
-                      {option.label}
-                    </span>
-                  </div>
-                  {value === option.value && (
-                    <Check className="w-3.5 h-3.5 text-neutral-900 flex-shrink-0 ml-2" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
 const TrashProducts: React.FC = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<IProductAdmin[]>([]);
   const [categories, setCategories] = useState<
     { _id: string; title: string }[]
@@ -401,9 +281,10 @@ const TrashProducts: React.FC = () => {
             <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">
               QUẢN LÝ DỮ LIỆU
             </span>
-            <h2 className="text-3xl lg:text-4xl font-semibold text-neutral-900 tracking-tight">
-              Thùng rác
-            </h2>
+            <div>
+              <button onClick={() => navigate("/products")} className="text-neutral-500 hover:text-neutral-900 text-xs font-bold mb-2 flex items-center"><ChevronLeft className="w-4 h-4" /> Quay lại Kho hàng</button>
+              <h2 className="text-3xl font-semibold text-red-600">Thùng Rác</h2>
+            </div>
             <p className="text-neutral-500 font-medium text-sm hidden md:block">
               Xem và khôi phục các sản phẩm đã xoá.
             </p>
@@ -479,15 +360,15 @@ const TrashProducts: React.FC = () => {
               activeFilter !== "all" ||
               featuredFilter !== "all" ||
               categoryFilter !== "all") && (
-              <button
-                onClick={resetFilters}
-                title="Xóa tất cả lọc"
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 rounded-md transition-colors text-[11px] font-bold uppercase tracking-wider flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span className="lg:hidden">Xóa Bộ Lọc</span>
-              </button>
-            )}
+                <button
+                  onClick={resetFilters}
+                  title="Xóa tất cả lọc"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 rounded-md transition-colors text-[11px] font-bold uppercase tracking-wider flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span className="lg:hidden">Xóa Bộ Lọc</span>
+                </button>
+              )}
           </div>
         </div>
 
@@ -497,161 +378,161 @@ const TrashProducts: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
             {isLoading && products.length === 0
               ? Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white p-5 border border-neutral-100 rounded-xl animate-pulse h-48"
-                  />
-                ))
+                <div
+                  key={i}
+                  className="bg-white p-5 border border-neutral-100 rounded-xl animate-pulse h-48"
+                />
+              ))
               : products.length > 0
                 ? products.map((product) => (
-                    <motion.div
-                      layout
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: isLoading ? 0.6 : 1, y: 0 }}
-                      key={product._id}
-                      className="bg-white p-4 border border-neutral-200 rounded-xl shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
-                    >
-                      <div className="flex gap-4 mb-4">
-                        <div className="w-20 h-24 bg-neutral-50 rounded-md border border-neutral-100 flex-shrink-0 overflow-hidden relative">
-                          {product.productStyles?.[0]?.images?.[0] ? (
-                            <img
-                              src={product.productStyles[0].images[0]}
-                              alt={product.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                              <Package className="w-6 h-6 stroke-1" />
-                            </div>
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: isLoading ? 0.6 : 1, y: 0 }}
+                    key={product._id}
+                    className="bg-white p-4 border border-neutral-200 rounded-xl shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
+                  >
+                    <div className="flex gap-4 mb-4">
+                      <div className="w-20 h-24 bg-neutral-50 rounded-md border border-neutral-100 flex-shrink-0 overflow-hidden relative">
+                        {product.productStyles?.[0]?.images?.[0] ? (
+                          <img
+                            src={product.productStyles[0].images[0]}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                            <Package className="w-6 h-6 stroke-1" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 py-1">
+                        <h4
+                          className="text-[12px] font-bold uppercase text-neutral-900 truncate mb-1"
+                          title={product.title}
+                        >
+                          {product.title}
+                        </h4>
+                        <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">
+                          SKU: {product.variants?.[0]?.sku || "N/A"}
+                        </p>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-sm font-bold text-neutral-900 tabular-nums">
+                            ${product.price.toLocaleString()}
+                          </span>
+                          {product.discountPercentage > 0 && (
+                            <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
+                              -{product.discountPercentage}%
+                            </span>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 py-1">
-                          <h4
-                            className="text-[12px] font-bold uppercase text-neutral-900 truncate mb-1"
-                            title={product.title}
-                          >
-                            {product.title}
-                          </h4>
-                          <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">
-                            SKU: {product.variants?.[0]?.sku || "N/A"}
-                          </p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-sm font-bold text-neutral-900 tabular-nums">
-                              ${product.price.toLocaleString()}
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="text-[8px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-[3px] truncate max-w-[100px]">
+                            {product.categoryIds?.[0]?.title ||
+                              "CHƯA PHÂN LOẠI"}
+                          </span>
+                          {product.isFeatured && (
+                            <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-[3px]">
+                              NỔI BẬT
                             </span>
-                            {product.discountPercentage > 0 && (
-                              <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
-                                -{product.discountPercentage}%
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            <span className="text-[8px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-[3px] truncate max-w-[100px]">
-                              {product.categoryIds?.[0]?.title ||
-                                "CHƯA PHÂN LOẠI"}
-                            </span>
-                            {product.isFeatured && (
-                              <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-[3px]">
-                                NỔI BẬT
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
-
-                      <div className="flex flex-col gap-3 pt-3 border-t border-neutral-100 mt-auto">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-5">
-                            {/* Status Toggle */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                onClick={() =>
-                                  handleToggleStatus(
-                                    product.slug,
-                                    product.isActive,
-                                  )
-                                }
-                                className={cn(
-                                  "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
-                                  product.isActive
-                                    ? "bg-emerald-500 border-emerald-600"
-                                    : "bg-neutral-200 border-neutral-300",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isActive
-                                      ? "translate-x-[14px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
-                              <span className="text-[9px] font-semibold text-neutral-500">
-                                HIỂN THỊ
-                              </span>
-                            </div>
-
-                            {/* Featured Toggle */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                onClick={() =>
-                                  handleToggleFeatured(
-                                    product.slug,
-                                    product.isFeatured,
-                                  )
-                                }
-                                className={cn(
-                                  "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
-                                  product.isFeatured
-                                    ? "bg-amber-500 border-amber-600"
-                                    : "bg-neutral-200 border-neutral-300",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isFeatured
-                                      ? "translate-x-[14px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
-                              <span className="text-[9px] font-semibold text-neutral-500">
-                                NỔI BẬT
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setProductToRestore({
-                                id: product._id,
-                                title: product.title,
-                                slug: product.slug,
-                              });
-                            }}
-                            title="Khôi phục"
-                            className="flex-1 flex items-center justify-center p-2 border border-emerald-200 rounded-md hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-all text-emerald-500 gap-2"
-                          >
-                            <RefreshCcw className="w-4 h-4" />{" "}
-                            <span className="text-[10px] uppercase font-bold tracking-widest">
-                              Khôi phục
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                : !isLoading && (
-                    <div className="col-span-full py-20 text-center text-[11px] font-semibold text-neutral-400 tracking-wider">
-                      Không tìm thấy sản phẩm nào phù hợp
                     </div>
-                  )}
+
+                    <div className="flex flex-col gap-3 pt-3 border-t border-neutral-100 mt-auto">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-5">
+                          {/* Status Toggle */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() =>
+                                handleToggleStatus(
+                                  product.slug,
+                                  product.isActive,
+                                )
+                              }
+                              className={cn(
+                                "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
+                                product.isActive
+                                  ? "bg-emerald-500 border-emerald-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
+                                  product.isActive
+                                    ? "translate-x-[14px]"
+                                    : "translate-x-0",
+                                )}
+                              />
+                            </div>
+                            <span className="text-[9px] font-semibold text-neutral-500">
+                              HIỂN THỊ
+                            </span>
+                          </div>
+
+                          {/* Featured Toggle */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() =>
+                                handleToggleFeatured(
+                                  product.slug,
+                                  product.isFeatured,
+                                )
+                              }
+                              className={cn(
+                                "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
+                                product.isFeatured
+                                  ? "bg-amber-500 border-amber-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
+                                  product.isFeatured
+                                    ? "translate-x-[14px]"
+                                    : "translate-x-0",
+                                )}
+                              />
+                            </div>
+                            <span className="text-[9px] font-semibold text-neutral-500">
+                              NỔI BẬT
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setProductToRestore({
+                              id: product._id,
+                              title: product.title,
+                              slug: product.slug,
+                            });
+                          }}
+                          title="Khôi phục"
+                          className="flex-1 flex items-center justify-center p-2 border border-emerald-200 rounded-md hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-all text-emerald-500 gap-2"
+                        >
+                          <RefreshCcw className="w-4 h-4" />{" "}
+                          <span className="text-[10px] uppercase font-bold tracking-widest">
+                            Khôi phục
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+                : !isLoading && (
+                  <div className="col-span-full py-20 text-center text-[11px] font-semibold text-neutral-400 tracking-wider">
+                    Không tìm thấy sản phẩm nào phù hợp
+                  </div>
+                )}
           </div>
 
           {/* Desktop View: Table */}
@@ -685,195 +566,195 @@ const TrashProducts: React.FC = () => {
               <tbody className="divide-y divide-neutral-100 min-h-[480px]">
                 {isLoading && products.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td colSpan={7} className="px-6 py-4 h-[90px]">
+                    <tr key={i} className="animate-pulse">
+                      <td colSpan={7} className="px-6 py-4 h-[90px]">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-16 bg-neutral-100 rounded-md" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 bg-neutral-100 w-2/3 rounded-sm" />
+                            <div className="h-2 bg-neutral-100 w-1/3 rounded-sm" />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                  : products.length > 0
+                    ? products.map((product) => (
+                      <motion.tr
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isLoading ? 0.5 : 1 }}
+                        exit={{ opacity: 0 }}
+                        key={product._id}
+                        className="group hover:bg-neutral-50/50 transition-colors duration-200"
+                      >
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-14 h-16 bg-neutral-100 rounded-md" />
-                            <div className="flex-1 space-y-2">
-                              <div className="h-3 bg-neutral-100 w-2/3 rounded-sm" />
-                              <div className="h-2 bg-neutral-100 w-1/3 rounded-sm" />
+                            <div className="w-14 h-16 bg-neutral-50 rounded-md overflow-hidden relative border border-neutral-200 flex-shrink-0">
+                              {product.productStyles?.[0]?.images?.[0] ? (
+                                <img
+                                  src={product.productStyles[0].images[0]}
+                                  alt={product.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                                  <Package className="w-5 h-5 stroke-1" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 pr-2">
+                              <h4
+                                className="text-[12px] font-bold text-neutral-900 uppercase truncate mb-1"
+                                title={product.title}
+                              >
+                                {product.title}
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider bg-neutral-100 px-1.5 py-0.5 rounded-[3px]">
+                                  SKU: {product.variants?.[0]?.sku || "N/A"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
-                      </tr>
-                    ))
-                  : products.length > 0
-                    ? products.map((product) => (
-                        <motion.tr
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: isLoading ? 0.5 : 1 }}
-                          exit={{ opacity: 0 }}
-                          key={product._id}
-                          className="group hover:bg-neutral-50/50 transition-colors duration-200"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-4">
-                              <div className="w-14 h-16 bg-neutral-50 rounded-md overflow-hidden relative border border-neutral-200 flex-shrink-0">
-                                {product.productStyles?.[0]?.images?.[0] ? (
-                                  <img
-                                    src={product.productStyles[0].images[0]}
-                                    alt={product.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                                    <Package className="w-5 h-5 stroke-1" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="min-w-0 pr-2">
-                                <h4
-                                  className="text-[12px] font-bold text-neutral-900 uppercase truncate mb-1"
-                                  title={product.title}
-                                >
-                                  {product.title}
-                                </h4>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider bg-neutral-100 px-1.5 py-0.5 rounded-[3px]">
-                                    SKU: {product.variants?.[0]?.sku || "N/A"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1.5">
-                              <span
-                                className="text-[11px] font-semibold text-neutral-700 uppercase truncate"
-                                title={product.categoryIds
-                                  ?.map((c) => c.title)
-                                  .join(", ")}
-                              >
-                                {product.categoryIds?.[0]?.title ||
-                                  "CHƯA PHÂN LOẠI"}
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5">
+                            <span
+                              className="text-[11px] font-semibold text-neutral-700 uppercase truncate"
+                              title={product.categoryIds
+                                ?.map((c) => c.title)
+                                .join(", ")}
+                            >
+                              {product.categoryIds?.[0]?.title ||
+                                "CHƯA PHÂN LOẠI"}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 font-medium uppercase tracking-wider">
+                              {product.gender}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[13px] font-bold text-neutral-900 tabular-nums">
+                              ${product.price.toLocaleString()}
+                            </span>
+                            {product.discountPercentage > 0 && (
+                              <span className="text-[10px] text-red-500 font-semibold tracking-wide">
+                                -{product.discountPercentage}% OFF
                               </span>
-                              <span className="text-[10px] text-neutral-400 font-medium uppercase tracking-wider">
-                                {product.gender}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[13px] font-bold text-neutral-900 tabular-nums">
-                                ${product.price.toLocaleString()}
-                              </span>
-                              {product.discountPercentage > 0 && (
-                                <span className="text-[10px] text-red-500 font-semibold tracking-wide">
-                                  -{product.discountPercentage}% OFF
-                                </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="inline-flex flex-col items-center">
+                            <span
+                              className={cn(
+                                "text-[12px] font-bold tabular-nums",
+                                product.totalStock <= 5
+                                  ? "text-red-500"
+                                  : "text-neutral-900",
                               )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="inline-flex flex-col items-center">
-                              <span
-                                className={cn(
-                                  "text-[12px] font-bold tabular-nums",
-                                  product.totalStock <= 5
-                                    ? "text-red-500"
-                                    : "text-neutral-900",
-                                )}
-                              >
-                                {product.totalStock}
-                              </span>
+                            >
+                              {product.totalStock}
+                            </span>
+                            <div
+                              className={cn(
+                                "w-6 h-1 mt-1.5 rounded-full",
+                                product.totalStock <= 5
+                                  ? "bg-red-200"
+                                  : "bg-emerald-200",
+                              )}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center">
+                            <div
+                              onClick={() =>
+                                handleToggleStatus(
+                                  product.slug,
+                                  product.isActive,
+                                )
+                              }
+                              className={cn(
+                                "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
+                                product.isActive
+                                  ? "bg-emerald-500 border-emerald-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
                               <div
                                 className={cn(
-                                  "w-6 h-1 mt-1.5 rounded-full",
-                                  product.totalStock <= 5
-                                    ? "bg-red-200"
-                                    : "bg-emerald-200",
+                                  "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
+                                  product.isActive
+                                    ? "translate-x-[18px]"
+                                    : "translate-x-0",
                                 )}
                               />
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex justify-center">
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center">
+                            <div
+                              onClick={() =>
+                                handleToggleFeatured(
+                                  product.slug,
+                                  product.isFeatured,
+                                )
+                              }
+                              className={cn(
+                                "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
+                                product.isFeatured
+                                  ? "bg-amber-500 border-amber-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
                               <div
-                                onClick={() =>
-                                  handleToggleStatus(
-                                    product.slug,
-                                    product.isActive,
-                                  )
-                                }
                                 className={cn(
-                                  "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
-                                  product.isActive
-                                    ? "bg-emerald-500 border-emerald-600"
-                                    : "bg-neutral-200 border-neutral-300",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isActive
-                                      ? "translate-x-[18px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex justify-center">
-                              <div
-                                onClick={() =>
-                                  handleToggleFeatured(
-                                    product.slug,
-                                    product.isFeatured,
-                                  )
-                                }
-                                className={cn(
-                                  "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
+                                  "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
                                   product.isFeatured
-                                    ? "bg-amber-500 border-amber-600"
-                                    : "bg-neutral-200 border-neutral-300",
+                                    ? "translate-x-[18px]"
+                                    : "translate-x-0",
                                 )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isFeatured
-                                      ? "translate-x-[18px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
+                              />
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setProductToRestore({
-                                    id: product._id,
-                                    title: product.title,
-                                    slug: product.slug,
-                                  });
-                                }}
-                                title="Khôi phục"
-                                className="p-2 text-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors rounded-md border border-transparent hover:border-emerald-100 flex items-center gap-2"
-                              >
-                                <RefreshCcw className="w-4 h-4" />
-                                <span className="text-[10px] uppercase font-bold tracking-widest">
-                                  Khôi phục
-                                </span>
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setProductToRestore({
+                                  id: product._id,
+                                  title: product.title,
+                                  slug: product.slug,
+                                });
+                              }}
+                              title="Khôi phục"
+                              className="p-2 text-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors rounded-md border border-transparent hover:border-emerald-100 flex items-center gap-2"
+                            >
+                              <RefreshCcw className="w-4 h-4" />
+                              <span className="text-[10px] uppercase font-bold tracking-widest">
+                                Khôi phục
+                              </span>
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
                     : !isLoading && (
-                        <tr>
-                          <td
-                            colSpan={7}
-                            className="px-6 py-24 text-center text-[12px] font-semibold text-neutral-400 tracking-wider"
-                          >
-                            Không tìm thấy sản phẩm nào phù hợp
-                          </td>
-                        </tr>
-                      )}
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-6 py-24 text-center text-[12px] font-semibold text-neutral-400 tracking-wider"
+                        >
+                          Không tìm thấy sản phẩm nào phù hợp
+                        </td>
+                      </tr>
+                    )}
               </tbody>
             </table>
           </div>
