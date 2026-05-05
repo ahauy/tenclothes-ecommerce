@@ -1,0 +1,54 @@
+{
+  "status": true,
+  "message": "Lấy lịch sử sản phẩm thành công!",
+  "data": [
+    {
+      "_id": "69f8d02c62d819d1546d80fb",
+      "productId": "69f6affef1e8ee7f0da908c8",
+      "action": "CHANGE_FEATURED",
+      "performedBy": {
+        "_id": "69b18dad2420625bb2cce031",
+        "fullName": "Vũ Tuấn Hậu",
+        "email": "vutuanhau.haui@gmail.com",
+        "role": "admin"
+      },
+      "actorInfo": {
+        "fullName": "Vũ Tuấn Hậu",
+        "role": "admin",
+        "email": "vutuanhau.haui@gmail.com"
+      },
+      "changes": {
+        "isFeatured": {
+          "from": false,
+          "to": true
+        }
+      },
+      "createdAt": "2026-05-04T16:58:20.830Z",
+      "__v": 0
+    },
+    {
+      "_id": "69f8d02c62d819d1546d80f0",
+      "productId": "69f6affef1e8ee7f0da908c8",
+      "action": "CHANGE_FEATURED",
+      "performedBy": {
+        "_id": "69b18dad2420625bb2cce031",
+        "fullName": "Vũ Tuấn Hậu",
+        "email": "vutuanhau.haui@gmail.com",
+        "role": "admin"
+      },
+      "actorInfo": {
+        "fullName": "Vũ Tuấn Hậu",
+        "role": "admin",
+        "email": "vutuanhau.haui@gmail.com"
+      },
+      "changes": {
+        "isFeatured": {
+          "from": true,
+          "to": false
+        }
+      },
+      "createdAt": "2026-05-04T16:58:20.133Z",
+      "__v": 0
+    }
+  ]
+}

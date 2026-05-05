@@ -194,3 +194,23 @@ export interface ICategory extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+
+// ----------------- PRODUCT LOG MODEL ------------------
+export interface IProductLog extends Document {
+  productId: mongoose.Types.ObjectId;
+  action: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "CHANGE_STATUS" | "CHANGE_FEATURED";
+  performedBy: mongoose.Types.ObjectId;
+  actorInfo: {
+    fullName: string;
+    role: string;
+    email: string;
+  };
+  changes?: {
+    [key: string]: {
+      from: any;
+      to: any;
+    };
+  };
+  createdAt: Date;
+}

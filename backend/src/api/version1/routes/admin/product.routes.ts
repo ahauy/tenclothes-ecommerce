@@ -22,6 +22,6 @@ productRouter.delete("/delete/:slug", verifyToken, authorizationRole(['admin']),
 
 productRouter.patch("/restore/:slug", verifyToken, authorizationRole(['admin', 'employee']), controller.restoreProductController)
 
-productRouter.get("/history/:id", verifyToken, authorizationRole(['admin', 'employee']), controller.getProductHistoryController)
+productRouter.get("/history/:slug", verifyToken, authorizationRole(['admin', 'employee']), controller.getProductHistoryController)
 
 export default productRouter

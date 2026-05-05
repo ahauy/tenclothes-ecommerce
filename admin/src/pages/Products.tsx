@@ -16,6 +16,7 @@ import {
   Layers,
   Activity,
   X,
+  History,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { productService } from "../services/product.service";
@@ -29,9 +30,9 @@ import ProductDrawer from "../components/products/ProductDrawer";
 import ReactPaginateLib from "react-paginate";
 const ReactPaginate: any =
   (ReactPaginateLib as any).default || ReactPaginateLib;
-import { useNavigate } from "react-router-dom";
 import CustomDropdown from "../components/UI/CustomDropdown";
 import TrashDrawer from "../components/trash/TrashDrawer";
+import ProductHistoryDrawer from "../components/products/ProductHistoryDrawer";
 
 const Products: React.FC = () => {
   const [products, setProducts] = useState<IProductAdmin[]>([]);
@@ -61,9 +62,12 @@ const Products: React.FC = () => {
   const [featuredFilter, setFeaturedFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const navigate = useNavigate();
-
   const [isTrashOpen, setIsTrashOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedProductForHistory, setSelectedProductForHistory] = useState<{
+    slug: string;
+    title: string;
+  } | null>(null);
 
   // Dùng useCallback để bọc lại, tránh render vô hạn khi đưa vào dependencies của useEffect
   const fetchProducts = useCallback(async () => {
@@ -362,21 +366,21 @@ const Products: React.FC = () => {
               placeholder="Trạng thái"
               options={activeFilterOptions}
               value={activeFilter}
-              onChange={setActiveFilter}
+              onChange={(val) => setActiveFilter(val)}
               icon={<Activity className="w-4 h-4" />}
             />
             <CustomDropdown
               placeholder="Phân loại"
               options={featuredFilterOptions}
               value={featuredFilter}
-              onChange={setFeaturedFilter}
+              onChange={(val) => setFeaturedFilter(val)}
               icon={<Zap className="w-4 h-4" />}
             />
             <CustomDropdown
               placeholder="Danh mục"
               options={categoryOptions}
               value={categoryFilter}
-              onChange={setCategoryFilter}
+              onChange={(val) => setCategoryFilter(val)}
               icon={<Layers className="w-4 h-4" />}
             />
 
@@ -533,9 +537,24 @@ const Products: React.FC = () => {
                         </div>
 
                         <div className="flex justify-end gap-2 pt-2">
-                          <button className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600">
-                            <Eye className="w-4 h-4" />
+                          <button
+                            title="Lịch sử"
+                            onClick={() => {
+                              setSelectedProductForHistory({
+                                slug: product.slug,
+                                title: product.title,
+                              });
+                              setIsHistoryOpen(true);
+                            }}
+                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
+                          >
+                            <History className="w-4 h-4" />
                           </button>
+                          {/* <button
+                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button> */}
                           <button
                             onClick={() => {
                               setProductToEdit(product);
@@ -758,12 +777,25 @@ const Products: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">
-                              <button
-                                title="Xem chi tiết"
-                                className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
+                                <button
+                                  title="Lịch sử"
+                                  onClick={() => {
+                                    setSelectedProductForHistory({
+                                      slug: product.slug,
+                                      title: product.title,
+                                    });
+                                    setIsHistoryOpen(true);
+                                  }}
+                                  className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
+                                >
+                                  <History className="w-4 h-4" />
+                                </button>
+                                {/* <button
+                                  title="Xem chi tiết"
+                                  className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button> */}
                               <button
                                 title="Chỉnh sửa"
                                 onClick={() => {
@@ -874,6 +906,13 @@ const Products: React.FC = () => {
         <TrashDrawer 
           isOpen={isTrashOpen} 
             onClose={() => setIsTrashOpen(false)} 
+        />
+
+        <ProductHistoryDrawer
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          productSlug={selectedProductForHistory?.slug || null}
+          productTitle={selectedProductForHistory?.title || null}
         />
       </div>
 

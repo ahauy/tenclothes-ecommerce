@@ -187,8 +187,8 @@ const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose }) => {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-3 px-4 py-2 bg-white border border-neutral-200 rounded-sm">
+                <div className="flex flex-wrap items-center gap-4 w-full">
+                  <div className="flex-1 min-w-[280px] flex items-center justify-between gap-3 px-4 py-2 bg-white border border-neutral-200 rounded-sm">
                     <Calendar className="w-4 h-4 text-neutral-400" />
                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-[11px] font-medium outline-none cursor-pointer" />
                     <span className="text-neutral-300">-</span>
@@ -196,10 +196,20 @@ const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   <div className="flex-1 min-w-[150px]">
-                    <CustomDropdown options={activeFilterOptions} value={activeFilter} onChange={setActiveFilter} placeholder="Trạng thái" />
+                    <CustomDropdown 
+                      options={activeFilterOptions} 
+                      value={activeFilter} 
+                      onChange={(val) => setActiveFilter(String(val))} 
+                      placeholder="Trạng thái" 
+                    />
                   </div>
                   <div className="flex-1 min-w-[150px]">
-                    <CustomDropdown options={featuredFilterOptions} value={featuredFilter} onChange={setFeaturedFilter} placeholder="Loại hàng" />
+                    <CustomDropdown 
+                      options={featuredFilterOptions} 
+                      value={featuredFilter} 
+                      onChange={(val) => setFeaturedFilter(String(val))} 
+                      placeholder="Loại hàng" 
+                    />
                   </div>
                   
                   {(searchTerm || startDate || endDate || activeFilter !== "all" || featuredFilter !== "all" || categoryFilter !== "all") && (

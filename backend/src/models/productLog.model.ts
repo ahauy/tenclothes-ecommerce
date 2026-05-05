@@ -1,22 +1,5 @@
-import mongoose, { Schema, Document } from "mongoose";
-
-export interface IProductLog extends Document {
-  productId: mongoose.Types.ObjectId;
-  action: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "CHANGE_STATUS" | "CHANGE_FEATURED";
-  performedBy: mongoose.Types.ObjectId;
-  actorInfo: {
-    fullName: string;
-    role: string;
-    email: string;
-  };
-  changes?: {
-    [key: string]: {
-      from: any;
-      to: any;
-    };
-  };
-  createdAt: Date;
-}
+import mongoose, { Schema } from "mongoose";
+import { IProductLog } from "../interfaces/model.interfaces";
 
 const productLogSchema = new Schema<IProductLog>(
   {
@@ -32,7 +15,7 @@ const productLogSchema = new Schema<IProductLog>(
     },
     performedBy: {
       type: Schema.Types.ObjectId,
-      ref: "Staff",
+      ref: "Account",
       required: true,
     },
     actorInfo: {

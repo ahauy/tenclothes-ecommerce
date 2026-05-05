@@ -6,6 +6,11 @@ export const productService = {
     return response.data;
   },
 
+  getProductsBySlug: async (slug: string) => {
+    const response = await api.get(`/products/slug/${slug}`);
+    return response.data;
+  },
+
   createProduct: async (data: Record<string, unknown> | FormData) => {
     const response = await api.post(`/products/create`, data);
     return response.data;
@@ -33,6 +38,11 @@ export const productService = {
 
   restoreProduct: async (slug: string) => {
     const response = await api.patch(`/products/restore/${slug}`);
+    return response.data;
+  },
+
+  getProductHistory: async (slug: string) => {
+    const response = await api.get(`/products/history/${slug}`);
     return response.data;
   },
 };

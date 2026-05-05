@@ -8,6 +8,9 @@ export const authorizationRole = (allowedRoles: string[]) => {
     next: NextFunction
   ): Promise<void> => {
     try {
+
+      console.log(req.user)
+
       const role = req.user?.role;
 
       if (!role) {

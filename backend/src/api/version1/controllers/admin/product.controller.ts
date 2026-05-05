@@ -8,10 +8,10 @@ import {
   getListProductAdminService,
   restoreProductService,
   getProductHistoryService,
-  IStaffReq,
 } from "../../services/admin/product.service";
 import { IRequestQueryFilter } from "../../../../interfaces/reqQuery.interface";
 import { IAuthRequest } from "../../../../middlewares/authen.middlewares";
+import { IStaffReq } from "../../../../helpers/writeProductLog";
 
 
 export const getListProductAdminController = async (
@@ -210,8 +210,8 @@ export const getProductHistoryController = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { id } = req.params as { id: string };
-    const history = await getProductHistoryService(id);
+    const { slug } = req.params as { slug: string };
+    const history = await getProductHistoryService(slug);
 
     res.status(200).json({
       status: true,

@@ -3,40 +3,13 @@ import slug from "../../../../helpers/slugify";
 import { IProduct } from "../../../../interfaces/model.interfaces";
 import Product from "../../../../models/product.model";
 import { Category } from "../../../../models/category.model";
-import ProductLog from "../../../../models/productLog.model";
 import { calculateDiff } from "../../../../helpers/diff";
 import { ICreateProductReqBody } from "../../validators/admin/product.validator";
 import { IRequestQueryFilter } from "../../../../interfaces/reqQuery.interface";
+import ApiError from "../../../../helpers/ApiError";
+import writeProductLog, { IStaffReq } from "../../../../helpers/writeProductLog";
+import ProductLog from "../../../../models/productLog.model";
 
-export interface IStaffReq {
-  _id: string | mongoose.Types.ObjectId;
-  email?: string;
-  role?: string;
-  fullName?: string;
-}
-
-// Helper ghi log
-const writeProductLog = async (
-  productId: string | mongoose.Types.ObjectId,
-  action: string,
-  staff: IStaffReq,
-  changes?: Record<string, { from?: unknown; to?: unknown }>
-) => {
-  const logData: Record<string, unknown> = {
-    productId,
-    action,
-    performedBy: staff._id,
-    actorInfo: {
-      fullName: (staff.fullName || (staff.email ? staff.email.split("@")[0] : "Unknown")) as string,
-      role: (staff.role || "Unknown") as string,
-      email: (staff.email || "unknown@example.com") as string,
-    },
-  };
-  if (changes) {
-    logData["changes"] = changes;
-  }
-  await ProductLog.create(logData);
-};
 
 export const createProductService = async (
   productData: ICreateProductReqBody,
@@ -175,8 +148,13 @@ export const restoreProductService = async (
   return { success: true, message: "Khôi phục sản phẩm thành công!", product: product as unknown as IProduct };
 };
 
-export const getProductHistoryService = async (productId: string) => {
-  return await ProductLog.find({ productId })
+export const getProductHistoryService = async (slugKey: string) => {
+  const product = await Product.findOne({ slug: slugKey, deleted: false });
+  if (!product) {
+    throw new ApiError(404, "Không tìm thấy sản phẩm");
+  }
+  return await ProductLog.find({ productId: product._id })
+    .populate("performedBy", "email fullName role")
     .sort({ createdAt: -1 })
     .lean();
 };
