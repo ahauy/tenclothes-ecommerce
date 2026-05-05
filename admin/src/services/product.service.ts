@@ -45,4 +45,20 @@ export const productService = {
     const response = await api.get(`/products/history/${slug}`);
     return response.data;
   },
+
+  // Batch Operations
+  batchDelete: async (slugs: string[]) => {
+    const response = await api.post(`/products/batch/delete`, { slugs });
+    return response.data;
+  },
+
+  batchChangeStatus: async (slugs: string[], status: boolean) => {
+    const response = await api.patch(`/products/batch/change-status`, { slugs, status });
+    return response.data;
+  },
+
+  batchChangeFeatured: async (slugs: string[], isFeatured: boolean) => {
+    const response = await api.patch(`/products/batch/change-featured`, { slugs, isFeatured });
+    return response.data;
+  },
 };

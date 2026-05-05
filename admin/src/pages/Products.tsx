@@ -17,6 +17,9 @@ import {
   Activity,
   X,
   History,
+  CheckSquare,
+  Square,
+  MinusSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { productService } from "../services/product.service";
@@ -54,6 +57,8 @@ const Products: React.FC = () => {
     slug: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
 
   // Filters State
   const [startDate, setStartDate] = useState<string>("");
@@ -157,6 +162,72 @@ const Products: React.FC = () => {
     }
   };
 
+  const handleSelectAll = () => {
+    if (products.length > 0 && selectedProducts.length === products.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(products.map((p) => p.slug));
+    }
+  };
+
+  const handleSelectProduct = (slug: string) => {
+    if (selectedProducts.includes(slug)) {
+      setSelectedProducts(selectedProducts.filter((s) => s !== slug));
+    } else {
+      setSelectedProducts([...selectedProducts, slug]);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn?`)) return;
+    
+    setIsBatchProcessing(true);
+    try {
+      await productService.batchDelete(selectedProducts);
+      toast.success(`Đã xóa ${selectedProducts.length} sản phẩm thành công`);
+      setSelectedProducts([]);
+      fetchProducts();
+    } catch (error: unknown) {
+      const err = error as IJsonFail;
+      toast.error(err?.message || "Không thể xóa các sản phẩm đã chọn");
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  const handleBatchChangeStatus = async (status: boolean) => {
+    if (selectedProducts.length === 0) return;
+    setIsBatchProcessing(true);
+    try {
+      await productService.batchChangeStatus(selectedProducts, status);
+      toast.success(`Đã ${status ? "hiển thị" : "ẩn"} ${selectedProducts.length} sản phẩm`);
+      setSelectedProducts([]);
+      fetchProducts();
+    } catch (error: unknown) {
+      const err = error as IJsonFail;
+      toast.error(err?.message || "Không thể cập nhật trạng thái");
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  const handleBatchChangeFeatured = async (isFeatured: boolean) => {
+    if (selectedProducts.length === 0) return;
+    setIsBatchProcessing(true);
+    try {
+      await productService.batchChangeFeatured(selectedProducts, isFeatured);
+      toast.success(`Đã ${isFeatured ? "đặt nổi bật" : "bỏ nổi bật"} ${selectedProducts.length} sản phẩm`);
+      setSelectedProducts([]);
+      fetchProducts();
+    } catch (error: unknown) {
+      const err = error as IJsonFail;
+      toast.error(err?.message || "Không thể cập nhật nổi bật");
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
     setIsDeleting(true);
@@ -229,6 +300,7 @@ const Products: React.FC = () => {
     setFeaturedFilter("all");
     setCategoryFilter("all");
     setPage(1);
+    setSelectedProducts([]);
   };
 
   const activeFilterOptions = [
@@ -391,17 +463,83 @@ const Products: React.FC = () => {
               activeFilter !== "all" ||
               featuredFilter !== "all" ||
               categoryFilter !== "all") && (
-              <button
-                onClick={resetFilters}
-                title="Xóa tất cả lọc"
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 rounded-md transition-colors text-[11px] font-bold uppercase tracking-wider flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span className="lg:hidden">Xóa Bộ Lọc</span>
-              </button>
-            )}
+                <button
+                  onClick={resetFilters}
+                  title="Xóa tất cả lọc"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 rounded-md transition-colors text-[11px] font-bold uppercase tracking-wider flex-shrink-0 w-full lg:w-auto mt-2 lg:mt-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span className="lg:hidden">Xóa Bộ Lọc</span>
+                </button>
+              )}
           </div>
         </div>
+
+        {/* Batch Actions Toolbar */}
+        <AnimatePresence>
+          {selectedProducts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="bg-neutral-900 rounded-xl shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden mb-4"
+            >
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="bg-white/20 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]">
+                  {selectedProducts.length}
+                </div>
+                <span className="text-white text-[13px] font-medium whitespace-nowrap">
+                  sản phẩm đang chọn
+                </span>
+                <button
+                  onClick={() => setSelectedProducts([])}
+                  className="ml-2 text-neutral-400 hover:text-white transition-colors text-[11px] underline underline-offset-2"
+                >
+                  Bỏ chọn
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  onClick={() => handleBatchChangeStatus(true)}
+                  disabled={isBatchProcessing}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Check className="w-3.5 h-3.5 text-emerald-400" /> Hiện
+                </button>
+                <button
+                  onClick={() => handleBatchChangeStatus(false)}
+                  disabled={isBatchProcessing}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <X className="w-3.5 h-3.5 text-neutral-400" /> Ẩn
+                </button>
+                <div className="w-px h-6 bg-white/20 hidden sm:block mx-1"></div>
+                <button
+                  onClick={() => handleBatchChangeFeatured(true)}
+                  disabled={isBatchProcessing}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-400" /> Đặt Nổi Bật
+                </button>
+                <button
+                  onClick={() => handleBatchChangeFeatured(false)}
+                  disabled={isBatchProcessing}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Package className="w-3.5 h-3.5 text-neutral-400" /> Bỏ Nổi Bật
+                </button>
+                <div className="w-px h-6 bg-white/20 hidden sm:block mx-1"></div>
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={isBatchProcessing}
+                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 border border-red-500/30 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Xóa
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Product Presentation - Table for Desktop, Cards for Mobile */}
         <div className="w-full min-h-[400px]">
@@ -409,184 +547,205 @@ const Products: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
             {isLoading && products.length === 0
               ? Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white p-5 border border-neutral-100 rounded-xl animate-pulse h-48"
-                  />
-                ))
+                <div
+                  key={i}
+                  className="bg-white p-5 border border-neutral-100 rounded-xl animate-pulse h-48"
+                />
+              ))
               : products.length > 0
                 ? products.map((product) => (
-                    <motion.div
-                      layout
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: isLoading ? 0.6 : 1, y: 0 }}
-                      key={product._id}
-                      className="bg-white p-4 border border-neutral-200 rounded-xl shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
-                    >
-                      <div className="flex gap-4 mb-4">
-                        <div className="w-20 h-24 bg-neutral-50 rounded-md border border-neutral-100 flex-shrink-0 overflow-hidden relative">
-                          {product.productStyles?.[0]?.images?.[0] ? (
-                            <img
-                              src={product.productStyles[0].images[0]}
-                              alt={product.title}
-                              className="w-full h-full object-cover"
-                            />
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: isLoading ? 0.6 : 1, y: 0 }}
+                    key={product._id}
+                    className={cn(
+                      "p-4 border rounded-xl shadow-sm transition-all relative flex flex-col",
+                      selectedProducts.includes(product.slug)
+                        ? "bg-neutral-50/80 border-neutral-400 ring-1 ring-neutral-900/5"
+                        : "bg-white border-neutral-200 hover:shadow-md group"
+                    )}
+                  >
+                    <div className="flex gap-4 mb-4">
+                      {/* Checkbox */}
+                      <div 
+                        className="flex items-start pt-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectProduct(product.slug);
+                        }}
+                      >
+                        <button className="w-5 h-5 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors focus:outline-none">
+                          {selectedProducts.includes(product.slug) ? (
+                            <CheckSquare className="w-5 h-5 text-neutral-900" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                              <Package className="w-6 h-6 stroke-1" />
-                            </div>
+                            <Square className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                      <div className="w-20 h-24 bg-neutral-50 rounded-md border border-neutral-100 flex-shrink-0 overflow-hidden relative">
+                        {product.productStyles?.[0]?.images?.[0] ? (
+                          <img
+                            src={product.productStyles[0].images[0]}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                            <Package className="w-6 h-6 stroke-1" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 py-1">
+                        <h4
+                          className="text-[12px] font-bold uppercase text-neutral-900 truncate mb-1"
+                          title={product.title}
+                        >
+                          {product.title}
+                        </h4>
+                        <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">
+                          SKU: {product.variants?.[0]?.sku || "N/A"}
+                        </p>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-sm font-bold text-neutral-900 tabular-nums">
+                            ${product.price.toLocaleString()}
+                          </span>
+                          {product.discountPercentage > 0 && (
+                            <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
+                              -{product.discountPercentage}%
+                            </span>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 py-1">
-                          <h4
-                            className="text-[12px] font-bold uppercase text-neutral-900 truncate mb-1"
-                            title={product.title}
-                          >
-                            {product.title}
-                          </h4>
-                          <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">
-                            SKU: {product.variants?.[0]?.sku || "N/A"}
-                          </p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-sm font-bold text-neutral-900 tabular-nums">
-                              ${product.price.toLocaleString()}
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="text-[8px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-[3px] truncate max-w-[100px]">
+                            {product.categoryIds?.[0]?.title ||
+                              "CHƯA PHÂN LOẠI"}
+                          </span>
+                          {product.isFeatured && (
+                            <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-[3px]">
+                              NỔI BẬT
                             </span>
-                            {product.discountPercentage > 0 && (
-                              <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
-                                -{product.discountPercentage}%
-                              </span>
-                            )}
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-3 border-t border-neutral-100 mt-auto">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-5">
+                          {/* Status Toggle */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() =>
+                                handleToggleStatus(
+                                  product.slug,
+                                  product.isActive,
+                                )
+                              }
+                              className={cn(
+                                "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
+                                product.isActive
+                                  ? "bg-emerald-500 border-emerald-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
+                                  product.isActive
+                                    ? "translate-x-[14px]"
+                                    : "translate-x-0",
+                                )}
+                              />
+                            </div>
+                            <span className="text-[9px] font-semibold text-neutral-500">
+                              HIỂN THỊ
+                            </span>
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            <span className="text-[8px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-[3px] truncate max-w-[100px]">
-                              {product.categoryIds?.[0]?.title ||
-                                "CHƯA PHÂN LOẠI"}
+
+                          {/* Featured Toggle */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() =>
+                                handleToggleFeatured(
+                                  product.slug,
+                                  product.isFeatured,
+                                )
+                              }
+                              className={cn(
+                                "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
+                                product.isFeatured
+                                  ? "bg-amber-500 border-amber-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
+                                  product.isFeatured
+                                    ? "translate-x-[14px]"
+                                    : "translate-x-0",
+                                )}
+                              />
+                            </div>
+                            <span className="text-[9px] font-semibold text-neutral-500">
+                              NỔI BẬT
                             </span>
-                            {product.isFeatured && (
-                              <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-[3px]">
-                                NỔI BẬT
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-3 pt-3 border-t border-neutral-100 mt-auto">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-5">
-                            {/* Status Toggle */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                onClick={() =>
-                                  handleToggleStatus(
-                                    product.slug,
-                                    product.isActive,
-                                  )
-                                }
-                                className={cn(
-                                  "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
-                                  product.isActive
-                                    ? "bg-emerald-500 border-emerald-600"
-                                    : "bg-neutral-200 border-neutral-300",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isActive
-                                      ? "translate-x-[14px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
-                              <span className="text-[9px] font-semibold text-neutral-500">
-                                HIỂN THỊ
-                              </span>
-                            </div>
-
-                            {/* Featured Toggle */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                onClick={() =>
-                                  handleToggleFeatured(
-                                    product.slug,
-                                    product.isFeatured,
-                                  )
-                                }
-                                className={cn(
-                                  "w-8 h-4.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative",
-                                  product.isFeatured
-                                    ? "bg-amber-500 border-amber-600"
-                                    : "bg-neutral-200 border-neutral-300",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isFeatured
-                                      ? "translate-x-[14px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
-                              <span className="text-[9px] font-semibold text-neutral-500">
-                                NỔI BẬT
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button
-                            title="Lịch sử"
-                            onClick={() => {
-                              setSelectedProductForHistory({
-                                slug: product.slug,
-                                title: product.title,
-                              });
-                              setIsHistoryOpen(true);
-                            }}
-                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
-                          >
-                            <History className="w-4 h-4" />
-                          </button>
-                          {/* <button
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          title="Lịch sử"
+                          onClick={() => {
+                            setSelectedProductForHistory({
+                              slug: product.slug,
+                              title: product.title,
+                            });
+                            setIsHistoryOpen(true);
+                          }}
+                          className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
+                        >
+                          <History className="w-4 h-4" />
+                        </button>
+                        {/* <button
                             className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
                           >
                             <Eye className="w-4 h-4" />
                           </button> */}
-                          <button
-                            onClick={() => {
-                              setProductToEdit(product);
-                              setIsDrawerOpen(true);
-                            }}
-                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setProductToDelete({
-                                id: product._id,
-                                title: product.title,
-                                slug: product.slug,
-                              });
-                            }}
-                            className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-red-500 hover:border-red-500 hover:text-white transition-all text-red-500"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => {
+                            setProductToEdit(product);
+                            setIsDrawerOpen(true);
+                          }}
+                          className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-neutral-900 hover:border-neutral-900 hover:text-white transition-all text-neutral-600"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setProductToDelete({
+                              id: product._id,
+                              title: product.title,
+                              slug: product.slug,
+                            });
+                          }}
+                          className="flex-1 flex items-center justify-center p-2 border border-neutral-200 rounded-md hover:bg-red-500 hover:border-red-500 hover:text-white transition-all text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    </motion.div>
-                  ))
-                : !isLoading && (
-                    <div className="col-span-full py-20 text-center text-[11px] font-semibold text-neutral-400 tracking-wider">
-                      Không tìm thấy sản phẩm nào phù hợp
                     </div>
-                  )}
+                  </motion.div>
+                ))
+                : !isLoading && (
+                  <div className="col-span-full py-20 text-center text-[11px] font-semibold text-neutral-400 tracking-wider">
+                    Không tìm thấy sản phẩm nào phù hợp
+                  </div>
+                )}
           </div>
 
           {/* Desktop View: Table */}
@@ -594,7 +753,21 @@ const Products: React.FC = () => {
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-neutral-50 border-b border-neutral-200">
-                  <th className="w-[30%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                  <th className="w-[5%] px-6 py-4">
+                    <button
+                      onClick={handleSelectAll}
+                      className="flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors focus:outline-none"
+                    >
+                      {products.length > 0 && selectedProducts.length === products.length ? (
+                        <CheckSquare className="w-5 h-5 text-neutral-900" />
+                      ) : selectedProducts.length > 0 ? (
+                        <MinusSquare className="w-5 h-5 text-neutral-900" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="w-[25%] px-2 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
                     Sản Phẩm
                   </th>
                   <th className="w-[15%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
@@ -620,221 +793,241 @@ const Products: React.FC = () => {
               <tbody className="divide-y divide-neutral-100 min-h-[480px]">
                 {isLoading && products.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td colSpan={7} className="px-6 py-4 h-[90px]">
+                    <tr key={i} className="animate-pulse">
+                      <td colSpan={8} className="px-6 py-4 h-[90px]">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-16 bg-neutral-100 rounded-md" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 bg-neutral-100 w-2/3 rounded-sm" />
+                            <div className="h-2 bg-neutral-100 w-1/3 rounded-sm" />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                  : products.length > 0
+                    ? products.map((product) => (
+                      <motion.tr
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isLoading ? 0.5 : 1 }}
+                        exit={{ opacity: 0 }}
+                        key={product._id}
+                        className={cn(
+                          "transition-colors duration-200",
+                          selectedProducts.includes(product.slug)
+                            ? "bg-neutral-50/80"
+                            : "group hover:bg-neutral-50/50"
+                        )}
+                      >
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectProduct(product.slug);
+                            }}
+                            className="flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors focus:outline-none"
+                          >
+                            {selectedProducts.includes(product.slug) ? (
+                              <CheckSquare className="w-5 h-5 text-neutral-900" />
+                            ) : (
+                              <Square className="w-5 h-5" />
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-2 py-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-14 h-16 bg-neutral-100 rounded-md" />
-                            <div className="flex-1 space-y-2">
-                              <div className="h-3 bg-neutral-100 w-2/3 rounded-sm" />
-                              <div className="h-2 bg-neutral-100 w-1/3 rounded-sm" />
+                            <div className="w-14 h-16 bg-neutral-50 rounded-md overflow-hidden relative border border-neutral-200 flex-shrink-0">
+                              {product.productStyles?.[0]?.images?.[0] ? (
+                                <img
+                                  src={product.productStyles[0].images[0]}
+                                  alt={product.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                                  <Package className="w-5 h-5 stroke-1" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 pr-2">
+                              <h4
+                                className="text-[12px] font-bold text-neutral-900 uppercase truncate mb-1"
+                                title={product.title}
+                              >
+                                {product.title}
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider bg-neutral-100 px-1.5 py-0.5 rounded-[3px]">
+                                  SKU: {product.variants?.[0]?.sku || "N/A"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
-                      </tr>
-                    ))
-                  : products.length > 0
-                    ? products.map((product) => (
-                        <motion.tr
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: isLoading ? 0.5 : 1 }}
-                          exit={{ opacity: 0 }}
-                          key={product._id}
-                          className="group hover:bg-neutral-50/50 transition-colors duration-200"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-4">
-                              <div className="w-14 h-16 bg-neutral-50 rounded-md overflow-hidden relative border border-neutral-200 flex-shrink-0">
-                                {product.productStyles?.[0]?.images?.[0] ? (
-                                  <img
-                                    src={product.productStyles[0].images[0]}
-                                    alt={product.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                                    <Package className="w-5 h-5 stroke-1" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="min-w-0 pr-2">
-                                <h4
-                                  className="text-[12px] font-bold text-neutral-900 uppercase truncate mb-1"
-                                  title={product.title}
-                                >
-                                  {product.title}
-                                </h4>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider bg-neutral-100 px-1.5 py-0.5 rounded-[3px]">
-                                    SKU: {product.variants?.[0]?.sku || "N/A"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1.5">
-                              <span
-                                className="text-[11px] font-semibold text-neutral-700 uppercase truncate"
-                                title={product.categoryIds
-                                  ?.map((c) => c.title)
-                                  .join(", ")}
-                              >
-                                {product.categoryIds?.[0]?.title ||
-                                  "CHƯA PHÂN LOẠI"}
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5">
+                            <span
+                              className="text-[11px] font-semibold text-neutral-700 uppercase truncate"
+                              title={product.categoryIds
+                                ?.map((c) => c.title)
+                                .join(", ")}
+                            >
+                              {product.categoryIds?.[0]?.title ||
+                                "CHƯA PHÂN LOẠI"}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 font-medium uppercase tracking-wider">
+                              {product.gender}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[13px] font-bold text-neutral-900 tabular-nums">
+                              ${product.price.toLocaleString()}
+                            </span>
+                            {product.discountPercentage > 0 && (
+                              <span className="text-[10px] text-red-500 font-semibold tracking-wide">
+                                -{product.discountPercentage}% OFF
                               </span>
-                              <span className="text-[10px] text-neutral-400 font-medium uppercase tracking-wider">
-                                {product.gender}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[13px] font-bold text-neutral-900 tabular-nums">
-                                ${product.price.toLocaleString()}
-                              </span>
-                              {product.discountPercentage > 0 && (
-                                <span className="text-[10px] text-red-500 font-semibold tracking-wide">
-                                  -{product.discountPercentage}% OFF
-                                </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="inline-flex flex-col items-center">
+                            <span
+                              className={cn(
+                                "text-[12px] font-bold tabular-nums",
+                                product.totalStock <= 5
+                                  ? "text-red-500"
+                                  : "text-neutral-900",
                               )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="inline-flex flex-col items-center">
-                              <span
-                                className={cn(
-                                  "text-[12px] font-bold tabular-nums",
-                                  product.totalStock <= 5
-                                    ? "text-red-500"
-                                    : "text-neutral-900",
-                                )}
-                              >
-                                {product.totalStock}
-                              </span>
+                            >
+                              {product.totalStock}
+                            </span>
+                            <div
+                              className={cn(
+                                "w-6 h-1 mt-1.5 rounded-full",
+                                product.totalStock <= 5
+                                  ? "bg-red-200"
+                                  : "bg-emerald-200",
+                              )}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center">
+                            <div
+                              onClick={() =>
+                                handleToggleStatus(
+                                  product.slug,
+                                  product.isActive,
+                                )
+                              }
+                              className={cn(
+                                "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
+                                product.isActive
+                                  ? "bg-emerald-500 border-emerald-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
                               <div
                                 className={cn(
-                                  "w-6 h-1 mt-1.5 rounded-full",
-                                  product.totalStock <= 5
-                                    ? "bg-red-200"
-                                    : "bg-emerald-200",
+                                  "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
+                                  product.isActive
+                                    ? "translate-x-[18px]"
+                                    : "translate-x-0",
                                 )}
                               />
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex justify-center">
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center">
+                            <div
+                              onClick={() =>
+                                handleToggleFeatured(
+                                  product.slug,
+                                  product.isFeatured,
+                                )
+                              }
+                              className={cn(
+                                "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
+                                product.isFeatured
+                                  ? "bg-amber-500 border-amber-600"
+                                  : "bg-neutral-200 border-neutral-300",
+                              )}
+                            >
                               <div
-                                onClick={() =>
-                                  handleToggleStatus(
-                                    product.slug,
-                                    product.isActive,
-                                  )
-                                }
                                 className={cn(
-                                  "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
-                                  product.isActive
-                                    ? "bg-emerald-500 border-emerald-600"
-                                    : "bg-neutral-200 border-neutral-300",
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isActive
-                                      ? "translate-x-[18px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex justify-center">
-                              <div
-                                onClick={() =>
-                                  handleToggleFeatured(
-                                    product.slug,
-                                    product.isFeatured,
-                                  )
-                                }
-                                className={cn(
-                                  "w-10 h-5.5 p-0.5 rounded-full transition-colors duration-300 cursor-pointer border shadow-inner relative group/toggle",
+                                  "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
                                   product.isFeatured
-                                    ? "bg-amber-500 border-amber-600"
-                                    : "bg-neutral-200 border-neutral-300",
+                                    ? "translate-x-[18px]"
+                                    : "translate-x-0",
                                 )}
-                              >
-                                <div
-                                  className={cn(
-                                    "w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
-                                    product.isFeatured
-                                      ? "translate-x-[18px]"
-                                      : "translate-x-0",
-                                  )}
-                                />
-                              </div>
+                              />
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-2">
-                                <button
-                                  title="Lịch sử"
-                                  onClick={() => {
-                                    setSelectedProductForHistory({
-                                      slug: product.slug,
-                                      title: product.title,
-                                    });
-                                    setIsHistoryOpen(true);
-                                  }}
-                                  className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
-                                >
-                                  <History className="w-4 h-4" />
-                                </button>
-                                {/* <button
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              title="Lịch sử"
+                              onClick={() => {
+                                setSelectedProductForHistory({
+                                  slug: product.slug,
+                                  title: product.title,
+                                });
+                                setIsHistoryOpen(true);
+                              }}
+                              className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
+                            >
+                              <History className="w-4 h-4" />
+                            </button>
+                            {/* <button
                                   title="Xem chi tiết"
                                   className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button> */}
-                              <button
-                                title="Chỉnh sửa"
-                                onClick={() => {
-                                  setProductToEdit(product);
-                                  setIsDrawerOpen(true);
-                                }}
-                                className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setProductToDelete({
-                                    id: product._id,
-                                    title: product.title,
-                                    slug: product.slug,
-                                  });
-                                }}
-                                title="Xóa"
-                                className="p-2 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors rounded-md"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))
+                            <button
+                              title="Chỉnh sửa"
+                              onClick={() => {
+                                setProductToEdit(product);
+                                setIsDrawerOpen(true);
+                              }}
+                              className="p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors rounded-md"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setProductToDelete({
+                                  id: product._id,
+                                  title: product.title,
+                                  slug: product.slug,
+                                });
+                              }}
+                              title="Xóa"
+                              className="p-2 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors rounded-md"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
                     : !isLoading && (
-                        <tr>
-                          <td
-                            colSpan={7}
-                            className="px-6 py-24 text-center text-[12px] font-semibold text-neutral-400 tracking-wider"
-                          >
-                            Không tìm thấy sản phẩm nào phù hợp
-                          </td>
-                        </tr>
-                      )}
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="px-6 py-24 text-center text-[12px] font-semibold text-neutral-400 tracking-wider"
+                        >
+                          Không tìm thấy sản phẩm nào phù hợp
+                        </td>
+                      </tr>
+                    )}
               </tbody>
             </table>
           </div>
@@ -903,9 +1096,10 @@ const Products: React.FC = () => {
           productToEdit={productToEdit}
         />
 
-        <TrashDrawer 
-          isOpen={isTrashOpen} 
-            onClose={() => setIsTrashOpen(false)} 
+        <TrashDrawer
+          isOpen={isTrashOpen}
+          onClose={() => setIsTrashOpen(false)}
+          onRestore={() => fetchProducts()}
         />
 
         <ProductHistoryDrawer
@@ -926,7 +1120,7 @@ const Products: React.FC = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => !isDeleting && setProductToDelete(null)}
-                className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-[9999] transition-all duration-300"
+                className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-[9999]"
               />
               <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
                 <motion.div

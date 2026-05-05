@@ -24,4 +24,9 @@ productRouter.patch("/restore/:slug", verifyToken, authorizationRole(['admin', '
 
 productRouter.get("/history/:slug", verifyToken, authorizationRole(['admin', 'employee']), controller.getProductHistoryController)
 
+// Batch Operations
+productRouter.patch("/batch/change-status", verifyToken, authorizationRole(['admin']), controller.batchChangeStatusController)
+productRouter.patch("/batch/change-featured", verifyToken, authorizationRole(['admin']), controller.batchChangeFeaturedController)
+productRouter.post("/batch/delete", verifyToken, authorizationRole(['admin']), controller.batchDeleteProductsController)
+
 export default productRouter

@@ -159,6 +159,97 @@ export const getProductHistoryService = async (slugKey: string) => {
     .lean();
 };
 
+/**
+ * Xóa hàng loạt sản phẩm (soft delete)
+ */
+export const batchDeleteProductsService = async (
+  slugs: string[],
+  staff: IStaffReq
+): Promise<{ deletedCount: number }> => {
+  const products = await Product.find({ slug: { $in: slugs }, deleted: false })
+    .select("_id slug")
+    .lean();
+
+  if (products.length === 0) {
+    throw new ApiError(404, "Không tìm thấy sản phẩm nào để xóa");
+  }
+
+  await Product.updateMany(
+    { slug: { $in: slugs }, deleted: false },
+    { deleted: true, deletedAt: new Date() }
+  );
+
+  // Ghi log cho từng sản phẩm
+  const logPromises = products.map((p) =>
+    writeProductLog(p._id, "BATCH_DELETE", staff)
+  );
+  await Promise.all(logPromises);
+
+  return { deletedCount: products.length };
+};
+
+/**
+ * Thay đổi trạng thái hàng loạt
+ */
+export const batchChangeStatusService = async (
+  slugs: string[],
+  status: boolean,
+  staff: IStaffReq
+): Promise<{ updatedCount: number }> => {
+  const products = await Product.find({ slug: { $in: slugs }, deleted: false })
+    .select("_id slug isActive")
+    .lean();
+
+  if (products.length === 0) {
+    throw new ApiError(404, "Không tìm thấy sản phẩm nào để cập nhật");
+  }
+
+  await Product.updateMany(
+    { slug: { $in: slugs }, deleted: false },
+    { isActive: status }
+  );
+
+  const logPromises = products.map((p) =>
+    writeProductLog(p._id, "CHANGE_STATUS", staff, {
+      isActive: { from: p.isActive, to: status },
+    })
+  );
+  await Promise.all(logPromises);
+
+  return { updatedCount: products.length };
+};
+
+/**
+ * Thay đổi nổi bật hàng loạt
+ */
+export const batchChangeFeaturedService = async (
+  slugs: string[],
+  isFeatured: boolean,
+  staff: IStaffReq
+): Promise<{ updatedCount: number }> => {
+  const products = await Product.find({ slug: { $in: slugs }, deleted: false })
+    .select("_id slug isFeatured")
+    .lean();
+
+  if (products.length === 0) {
+    throw new ApiError(404, "Không tìm thấy sản phẩm nào để cập nhật");
+  }
+
+  await Product.updateMany(
+    { slug: { $in: slugs }, deleted: false },
+    { isFeatured }
+  );
+
+  const logPromises = products.map((p) =>
+    writeProductLog(p._id, "CHANGE_FEATURED", staff, {
+      isFeatured: { from: p.isFeatured, to: isFeatured },
+    })
+  );
+  await Promise.all(logPromises);
+
+  return { updatedCount: products.length };
+};
+
 export const getListProductAdminService = async (queryFilter: IRequestQueryFilter) => {
   const {
     page = 1,

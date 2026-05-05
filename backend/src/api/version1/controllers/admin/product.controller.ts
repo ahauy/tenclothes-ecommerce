@@ -8,6 +8,9 @@ import {
   getListProductAdminService,
   restoreProductService,
   getProductHistoryService,
+  batchDeleteProductsService,
+  batchChangeStatusService,
+  batchChangeFeaturedService,
 } from "../../services/admin/product.service";
 import { IRequestQueryFilter } from "../../../../interfaces/reqQuery.interface";
 import { IAuthRequest } from "../../../../middlewares/authen.middlewares";
@@ -220,6 +223,90 @@ export const getProductHistoryController = async (
     });
   } catch (error) {
     console.error("Lỗi trong getProductHistoryController: ", error);
+    res.status(500).json({ status: false, message: "Lỗi hệ thống!" });
+  }
+};
+
+/**
+ * API Xóa hàng loạt sản phẩm
+ */
+export const batchDeleteProductsController = async (
+  req: IAuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { slugs } = req.body as { slugs: string[] };
+    if (!Array.isArray(slugs) || slugs.length === 0) {
+      res.status(400).json({ status: false, message: "Danh sách sản phẩm không hợp lệ!" });
+      return;
+    }
+
+    const staff = req.user as IStaffReq;
+    const result = await batchDeleteProductsService(slugs, staff);
+
+    res.status(200).json({
+      status: true,
+      message: `Đã xóa ${result.deletedCount} sản phẩm thành công!`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Lỗi trong batchDeleteProductsController: ", error);
+    res.status(500).json({ status: false, message: "Lỗi hệ thống!" });
+  }
+};
+
+/**
+ * API Thay đổi trạng thái hàng loạt
+ */
+export const batchChangeStatusController = async (
+  req: IAuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { slugs, status } = req.body as { slugs: string[]; status: boolean };
+    if (!Array.isArray(slugs) || slugs.length === 0) {
+      res.status(400).json({ status: false, message: "Danh sách sản phẩm không hợp lệ!" });
+      return;
+    }
+
+    const staff = req.user as IStaffReq;
+    const result = await batchChangeStatusService(slugs, status, staff);
+
+    res.status(200).json({
+      status: true,
+      message: `Đã cập nhật trạng thái ${result.updatedCount} sản phẩm!`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Lỗi trong batchChangeStatusController: ", error);
+    res.status(500).json({ status: false, message: "Lỗi hệ thống!" });
+  }
+};
+
+/**
+ * API Thay đổi nổi bật hàng loạt
+ */
+export const batchChangeFeaturedController = async (
+  req: IAuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { slugs, isFeatured } = req.body as { slugs: string[]; isFeatured: boolean };
+    if (!Array.isArray(slugs) || slugs.length === 0) {
+      res.status(400).json({ status: false, message: "Danh sách sản phẩm không hợp lệ!" });
+      return;
+    }
+
+    const staff = req.user as IStaffReq;
+    const result = await batchChangeFeaturedService(slugs, isFeatured, staff);
+
+    res.status(200).json({
+      status: true,
+      message: `Đã cập nhật ${result.updatedCount} sản phẩm nổi bật!`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Lỗi trong batchChangeFeaturedController: ", error);
     res.status(500).json({ status: false, message: "Lỗi hệ thống!" });
   }
 };

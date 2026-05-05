@@ -27,9 +27,10 @@ const ReactPaginate: any = (ReactPaginateLib as any).default || ReactPaginateLib
 interface TrashDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  onRestore?: () => void;
 }
 
-const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose }) => {
+const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose, onRestore }) => {
   const [products, setProducts] = useState<IProductAdmin[]>([]);
   const [categories, setCategories] = useState<{ _id: string; title: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +85,7 @@ const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose }) => {
       toast.success(`Đã khôi phục sản phẩm "${productToRestore.title}"`);
       setProductToRestore(null);
       fetchProducts();
+      if (onRestore) onRestore();
     } catch (error) {
       toast.error("Không thể khôi phục sản phẩm. Vui lòng thử lại!");
     } finally {
