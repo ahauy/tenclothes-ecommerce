@@ -36,3 +36,23 @@ export interface IOrderAdmin {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface IOrderStats {
+  totalOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  totalItems: number;
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  paidRevenue: number;
+  unpaidRevenue: number;
+  paidOrders: number;
+  completionRate: number;
+  cancellationRate: number;
+  paymentRate: number;
+  todayOrders: number;
+  todayRevenue: number;
+}

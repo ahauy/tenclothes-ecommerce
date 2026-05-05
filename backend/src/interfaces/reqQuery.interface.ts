@@ -17,4 +17,6 @@ export interface IRequestQueryFilter {
   minStock?: string;
   maxStock?: string;
   isTrash?: string;
+  orderStatus?: string;
+  paymentStatus?: string;
 }

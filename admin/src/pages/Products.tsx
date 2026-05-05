@@ -66,6 +66,8 @@ const Products: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [featuredFilter, setFeaturedFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
 
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -97,6 +99,8 @@ const Products: React.FC = () => {
         categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        minPrice: minPrice || undefined,
+        maxPrice: maxPrice || undefined,
       });
       setProducts(response.data.products);
       setTotalPages(response.data.totalPages);
@@ -115,6 +119,8 @@ const Products: React.FC = () => {
     categoryFilter,
     startDate,
     endDate,
+    minPrice,
+    maxPrice,
   ]);
 
   const handleToggleStatus = async (slug: string, currentStatus: boolean) => {
@@ -181,7 +187,7 @@ const Products: React.FC = () => {
   const handleBatchDelete = async () => {
     if (selectedProducts.length === 0) return;
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn?`)) return;
-    
+
     setIsBatchProcessing(true);
     try {
       await productService.batchDelete(selectedProducts);
@@ -299,6 +305,8 @@ const Products: React.FC = () => {
     setActiveFilter("all");
     setFeaturedFilter("all");
     setCategoryFilter("all");
+    setMinPrice("");
+    setMaxPrice("");
     setPage(1);
     setSelectedProducts([]);
   };
@@ -434,6 +442,32 @@ const Products: React.FC = () => {
               </div>
             </div>
 
+            {/* Price Range Filter */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50/50 border border-neutral-200 rounded-md hover:border-neutral-400 hover:bg-white transition-colors flex-1 min-w-[240px] xl:flex-none">
+              <span className="text-neutral-400 font-bold text-[11px] flex-shrink-0">đ</span>
+              <div className="flex items-center w-full group">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Giá từ"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="bg-transparent text-[11px] font-medium outline-none w-full text-neutral-600 focus:text-neutral-900 placeholder:text-neutral-400"
+                  title="Giá từ"
+                />
+                <span className="text-neutral-300 text-xs px-2">-</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Đến giá"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="bg-transparent text-[11px] font-medium outline-none w-full text-neutral-600 focus:text-neutral-900 placeholder:text-neutral-400"
+                  title="Đến giá"
+                />
+              </div>
+            </div>
+
             <CustomDropdown
               placeholder="Trạng thái"
               options={activeFilterOptions}
@@ -460,6 +494,8 @@ const Products: React.FC = () => {
             {(searchTerm ||
               startDate ||
               endDate ||
+              minPrice ||
+              maxPrice ||
               activeFilter !== "all" ||
               featuredFilter !== "all" ||
               categoryFilter !== "all") && (
@@ -549,8 +585,43 @@ const Products: React.FC = () => {
               ? Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white p-5 border border-neutral-100 rounded-xl animate-pulse h-48"
-                />
+                  className="bg-white p-4 border border-neutral-100 rounded-xl animate-pulse flex flex-col min-h-[200px]"
+                >
+                  <div className="flex gap-4 mb-4">
+                    <div className="flex items-start pt-1">
+                      <div className="w-5 h-5 bg-neutral-100 rounded-[3px]" />
+                    </div>
+                    <div className="w-20 h-24 bg-neutral-100 rounded-md flex-shrink-0" />
+                    <div className="flex-1 py-1 space-y-3">
+                      <div className="h-3.5 bg-neutral-100 w-3/4 rounded-sm" />
+                      <div className="h-2 bg-neutral-100 w-1/2 rounded-sm" />
+                      <div className="h-3.5 bg-neutral-100 w-1/3 rounded-sm mt-1" />
+                      <div className="flex gap-1.5 mt-2">
+                        <div className="h-4 bg-neutral-100 w-16 rounded-[3px]" />
+                        <div className="h-4 bg-neutral-100 w-12 rounded-[3px]" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 pt-3 border-t border-neutral-100 mt-auto">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-4.5 bg-neutral-100 rounded-full" />
+                          <div className="h-2 bg-neutral-100 w-12 rounded-sm" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-4.5 bg-neutral-100 rounded-full" />
+                          <div className="h-2 bg-neutral-100 w-12 rounded-sm" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <div className="flex-1 h-8 bg-neutral-100 rounded-md" />
+                      <div className="flex-1 h-8 bg-neutral-100 rounded-md" />
+                      <div className="flex-1 h-8 bg-neutral-100 rounded-md" />
+                    </div>
+                  </div>
+                </div>
               ))
               : products.length > 0
                 ? products.map((product) => (
@@ -568,7 +639,7 @@ const Products: React.FC = () => {
                   >
                     <div className="flex gap-4 mb-4">
                       {/* Checkbox */}
-                      <div 
+                      <div
                         className="flex items-start pt-1"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -608,7 +679,7 @@ const Products: React.FC = () => {
                         </p>
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm font-bold text-neutral-900 tabular-nums">
-                            ${product.price.toLocaleString()}
+                            đ{product.price.toLocaleString()}
                           </span>
                           {product.discountPercentage > 0 && (
                             <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
@@ -794,13 +865,51 @@ const Products: React.FC = () => {
                 {isLoading && products.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={8} className="px-6 py-4 h-[90px]">
+                      <td className="px-6 py-4">
+                        <div className="w-5 h-5 bg-neutral-100 rounded-[3px] mx-auto" />
+                      </td>
+                      <td className="px-2 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-16 bg-neutral-100 rounded-md" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-3 bg-neutral-100 w-2/3 rounded-sm" />
-                            <div className="h-2 bg-neutral-100 w-1/3 rounded-sm" />
+                          <div className="w-14 h-16 bg-neutral-100 rounded-md flex-shrink-0" />
+                          <div className="flex-1 space-y-2 pr-2">
+                            <div className="h-3 bg-neutral-100 w-3/4 rounded-sm" />
+                            <div className="h-2 bg-neutral-100 w-1/2 rounded-sm" />
                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="h-3 bg-neutral-100 w-24 rounded-sm" />
+                          <div className="h-2 bg-neutral-100 w-16 rounded-sm" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="h-3 bg-neutral-100 w-16 rounded-sm" />
+                          <div className="h-2 bg-neutral-100 w-12 rounded-sm" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="h-3 bg-neutral-100 w-8 rounded-sm mb-1.5" />
+                          <div className="w-6 h-1 bg-neutral-100 rounded-full" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center">
+                          <div className="w-10 h-5.5 bg-neutral-100 rounded-full" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center">
+                          <div className="w-10 h-5.5 bg-neutral-100 rounded-full" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <div className="w-8 h-8 bg-neutral-100 rounded-md" />
+                          <div className="w-8 h-8 bg-neutral-100 rounded-md" />
+                          <div className="w-8 h-8 bg-neutral-100 rounded-md" />
                         </div>
                       </td>
                     </tr>
@@ -883,7 +992,7 @@ const Products: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
                             <span className="text-[13px] font-bold text-neutral-900 tabular-nums">
-                              ${product.price.toLocaleString()}
+                              {product.price.toLocaleString()} đ
                             </span>
                             {product.discountPercentage > 0 && (
                               <span className="text-[10px] text-red-500 font-semibold tracking-wide">

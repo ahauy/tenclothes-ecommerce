@@ -17,7 +17,9 @@ const Navbar = () => {
   const logOut = useAuthStore((state) => state.logOut);
 
   let quantityProduct: number = 0;
-  if (cartItems) {
+  
+  // Kiểm tra chắc chắn cartItems là 1 mảng
+  if (Array.isArray(cartItems)) {
     quantityProduct = cartItems.reduce((acc, cur) => {
       return acc + cur.quantity;
     }, 0);
@@ -335,7 +337,7 @@ const Navbar = () => {
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                           </svg>
-                          <span>Đăng xuất</span>
+                          <NavLink to="/" >Đăng xuất</NavLink>
                         </button>
                       </div>
                     </div>

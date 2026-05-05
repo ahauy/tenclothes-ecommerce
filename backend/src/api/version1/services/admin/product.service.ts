@@ -43,7 +43,7 @@ export const updateProductService = async (
   const product = await Product.findOneAndUpdate(
     { slug: slugKey, deleted: false },
     updatedData,
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (product && diff) {
@@ -61,7 +61,7 @@ export const changeStatusProductService = async (
   const product = await Product.findOneAndUpdate(
     { slug },
     { isActive: status },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (product) {
@@ -81,7 +81,7 @@ export const changeFeaturedProductService = async (
   const product = await Product.findOneAndUpdate(
     { slug },
     { isFeatured },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (product) {
@@ -100,7 +100,7 @@ export const deleteProductService = async (
   const product = await Product.findOneAndUpdate(
     { slug: slugKey },
     { deleted: true, deletedAt: new Date() },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (product) {

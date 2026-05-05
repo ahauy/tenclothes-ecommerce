@@ -175,7 +175,7 @@ export const removeFromCart = async (
           items: { productId: productId, size: size, color: color } // Xóa chính xác variant
         } 
       },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!updatedCart) { res.status(404).json({ message: "Không tìm thấy giỏ hàng" }); return; }

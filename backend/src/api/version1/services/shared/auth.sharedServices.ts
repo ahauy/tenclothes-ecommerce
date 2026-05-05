@@ -13,6 +13,8 @@ export const loginShareService = async (
 
   const userByEmail = await DataModal.findOne({ email: email, deleted: false })
 
+  console.log(userByEmail)
+
   // kiểm tra các điều kiện đăng nhập
   if (userByEmail) {
     if (await bcrypt.compare(password, userByEmail.password)) {

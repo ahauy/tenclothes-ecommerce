@@ -104,7 +104,7 @@ export const updateOrderService = async (orderId: string): Promise<IOrder | null
   const updatedOrder = await Order.findOneAndUpdate(
     { orderCode: orderId },
     { paymentStatus: "paid", orderStatus: "processing" },
-    { new: true }
+    { returnDocument: "after" }
   );
   return updatedOrder;
 };
