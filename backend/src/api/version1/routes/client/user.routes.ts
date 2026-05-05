@@ -37,7 +37,7 @@ userRoutesClient.patch("/change-password", validate(changePasswordSchema), chang
 userRoutesClient.get("/addresses", getAddressesController);
 
 // POST /api/version1/users/addresses — Thêm địa chỉ mới
-userRoutesClient.post("/addresses", verifyToken, validate(addressSchema), addAddressController);
+userRoutesClient.post("/addresses", validate(addressSchema), addAddressController);
 
 // PATCH /api/version1/users/addresses/:addressId — Cập nhật địa chỉ
 userRoutesClient.patch("/addresses/:addressId", validate(addressSchema), updateAddressController);
