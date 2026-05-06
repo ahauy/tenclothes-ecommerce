@@ -6,6 +6,7 @@ import cookieparser from 'cookie-parser';
 import cors from "cors";
 import mainV1RoutesClient from "./api/version1/routes/client/index.routes";
 import mainV1RoutesAdmin from "./api/version1/routes/admin/index.routes";
+import { errorHandler } from "./middlewares/errorHandler.middlewares";
 
 const app = express()
 
@@ -27,5 +28,8 @@ app.use(cors({
 // routes api in version1
 mainV1RoutesClient(app)
 mainV1RoutesAdmin(app)
+
+// Global error handler — phải đặt SAU tất cả routes
+app.use(errorHandler);
 
 export default app;
