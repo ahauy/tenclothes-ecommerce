@@ -1,11 +1,22 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';``
+import { useAuthStore } from '../stores/useAuthStore';
 
 interface AccountLayoutProps {
   children: React.ReactNode;
 }
 
 const AccountLayout: React.FC<AccountLayoutProps> = ({ children }) => {
+
+  const logout = useAuthStore(s => s.logOut)
+
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
   return (
     <div className="flex flex-col md:flex-row gap-8 py-8 md:py-12 h-fit text-black">  
       {/* Sidebar */}
@@ -73,6 +84,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({ children }) => {
         <div className="mt-auto border-t border-neutral-800 text-xs">
           <button
             className="w-full px-6 py-4 flex items-center gap-4 transition-all ease-in-out duration-200 text-neutral-500 hover:bg-[#f8f9ff] hover:text-red-500 uppercase text-left tracking-widest"
+            onClick={handleLogout}
           >
             Đăng xuất
           </button>

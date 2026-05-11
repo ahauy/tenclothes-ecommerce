@@ -44,6 +44,6 @@ export const verifyToken = (
 
     next();
   } catch (error) {
-    res.status(403).json({ message: "Token không hợp lệ hoặc đã hết hạn!" });
+    res.status(401).json({ message: "Token không hợp lệ hoặc đã hết hạn!" });
   }
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Trash2,
@@ -34,11 +34,27 @@ import OrderDrawer from "../components/orders/OrderDrawer";
 import AddressName from "../components/orders/AddressName";
 import Pagination from "../components/UI/Pagination";
 import OrderStatusDropdown from "../components/orders/OrderStatusDropdown";
+import { io } from "socket.io-client";
 
 const Orders: React.FC = () => {
   const [orders, setOrders] = useState<IOrderAdmin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce: cập nhật debouncedSearchTerm sau 500ms khi user ngừng gõ
+  useEffect(() => {
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, [searchTerm]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<IOrderAdmin | null>(null);
@@ -74,7 +90,7 @@ const Orders: React.FC = () => {
       const response = await orderService.getOrders({
         page,
         limit: 8,
-        keyword: searchTerm,
+        keyword: debouncedSearchTerm,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         minPrice: minPrice || undefined,
@@ -92,7 +108,7 @@ const Orders: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, searchTerm, orderStatus, paymentStatus, dateSort, startDate, endDate, minPrice, maxPrice]);
+  }, [page, debouncedSearchTerm, orderStatus, paymentStatus, dateSort, startDate, endDate, minPrice, maxPrice]);
 
   const fetchGlobalStats = useCallback(async () => {
     setIsStatsLoading(true);
@@ -113,6 +129,71 @@ const Orders: React.FC = () => {
   useEffect(() => {
     fetchGlobalStats();
   }, [fetchGlobalStats]);
+
+  useEffect(() => {
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const socket = io(API_URL);
+
+    socket.on("newOrder", (newOrder: IOrderAdmin) => {
+      setOrders(prev => {
+        if (prev.some(o => o._id === newOrder._id)) return prev;
+        const updated = [newOrder, ...prev];
+        if (updated.length > 8) updated.pop();
+        return updated;
+      });
+      setTotalElements(prev => prev + 1);
+      
+      setGlobalStats(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          totalOrders: prev.totalOrders + 1,
+          processingOrders: prev.processingOrders + 1,
+          todayOrders: prev.todayOrders + 1,
+          todayRevenue: prev.todayRevenue + (newOrder.finalAmount || 0),
+          unpaidRevenue: prev.unpaidRevenue + (newOrder.finalAmount || 0),
+        };
+      });
+
+      toast.custom((t) => (
+        <div className="bg-white border border-neutral-200 p-4 rounded-xl shadow-2xl flex items-start gap-4 w-[350px] relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-1 h-full bg-neutral-900" />
+          <div className="w-10 h-10 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center shrink-0">
+            <ShoppingBag className="w-5 h-5 text-neutral-900" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                Đơn hàng mới
+              </p>
+              <span className="text-[9px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
+                Vừa xong
+              </span>
+            </div>
+            <p className="text-[13px] font-semibold text-neutral-900 truncate">
+              {newOrder.customer.fullName}
+            </p>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100">
+              <p className="text-[11px] text-neutral-500 font-medium">#{newOrder.orderCode}</p>
+              <p className="text-[12px] font-bold text-neutral-900 tabular-nums">
+                {newOrder.finalAmount?.toLocaleString()} đ
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => toast.dismiss(t)} 
+            className="absolute top-2 right-2 p-1 text-neutral-400 hover:text-neutral-900 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ), { duration: 6000, position: 'top-right' });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   // Re-fetch stats after any mutation (delete, update)
   const refetchAll = useCallback(() => {
@@ -217,11 +298,11 @@ const Orders: React.FC = () => {
   };
 
   const statusOptions = [
-    { label: "Tất cả trạng thái", value: "all", icon: <Activity className="w-3.5 h-3.5" /> },
+    { label: "Tất cả", value: "all", icon: <Activity className="w-3.5 h-3.5" /> },
     { label: "Chờ xử lý", value: "pending", icon: <Calendar className="w-3.5 h-3.5 text-amber-500" /> },
-    { label: "Đang xử lý", value: "processing", icon: <Activity className="w-3.5 h-3.5 text-blue-500" /> },
+    { label: "Chuẩn bị", value: "processing", icon: <Activity className="w-3.5 h-3.5 text-blue-500" /> },
     { label: "Đang giao", value: "shipped", icon: <Truck className="w-3.5 h-3.5 text-indigo-500" /> },
-    { label: "Đã giao hàng", value: "delivered", icon: <Check className="w-3.5 h-3.5 text-emerald-500" /> },
+    { label: "Đã giao", value: "delivered", icon: <Check className="w-3.5 h-3.5 text-emerald-500" /> },
     { label: "Đã hủy", value: "cancelled", icon: <X className="w-3.5 h-3.5 text-red-500" /> },
   ];
 
@@ -237,16 +318,16 @@ const Orders: React.FC = () => {
     { label: "Cũ nhất trước", value: "asc", icon: <Calendar className="w-3.5 h-3.5 opacity-50" /> },
   ];
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "pending": return "bg-amber-50 text-amber-600 border-amber-200";
-      case "processing": return "bg-blue-50 text-blue-600 border-blue-200";
-      case "shipped": return "bg-indigo-50 text-indigo-600 border-indigo-200";
-      case "delivered": return "bg-emerald-50 text-emerald-600 border-emerald-200";
-      case "cancelled": return "bg-red-50 text-red-600 border-red-200";
-      default: return "bg-neutral-50 text-neutral-600 border-neutral-200";
-    }
-  };
+  // const getStatusStyle = (status: string) => {
+  //   switch (status) {
+  //     case "pending": return "bg-amber-50 text-amber-600 border-amber-200";
+  //     case "processing": return "bg-blue-50 text-blue-600 border-blue-200";
+  //     case "shipped": return "bg-indigo-50 text-indigo-600 border-indigo-200";
+  //     case "delivered": return "bg-emerald-50 text-emerald-600 border-emerald-200";
+  //     case "cancelled": return "bg-red-50 text-red-600 border-red-200";
+  //     default: return "bg-neutral-50 text-neutral-600 border-neutral-200";
+  //   }
+  // };
 
   const getPaymentMethodLabel = (method: string) => {
     switch(method) {
@@ -474,6 +555,26 @@ const Orders: React.FC = () => {
         </div>
       </div>
 
+      {/* Status Tabs */}
+      <div className="w-full overflow-x-auto no-scrollbar border border-neutral-200 bg-white rounded-md mb-4">
+        <div className="flex min-w-max">
+          {statusOptions.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => { setOrderStatus(tab.value); setPage(1); }}
+              className={cn(
+                "px-6 py-3 text-[11px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap",
+                orderStatus === tab.value
+                  ? "bg-neutral-900 text-white"
+                  : "bg-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Search & Filter Toolbar */}
       <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-4 space-y-4">
         {/* Top Row: Search */}
@@ -546,13 +647,6 @@ const Orders: React.FC = () => {
             value={dateSort}
             onChange={(val) => setDateSort(val as string)}
             icon={<Calendar className="w-4 h-4" />}
-          />
-          <CustomDropdown
-            placeholder="Trạng thái đơn"
-            options={statusOptions}
-            value={orderStatus}
-            onChange={(val) => setOrderStatus(val as string)}
-            icon={<Activity className="w-4 h-4" />}
           />
           <CustomDropdown
             placeholder="Thanh toán"

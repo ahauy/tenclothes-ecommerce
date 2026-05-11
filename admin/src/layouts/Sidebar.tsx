@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -18,19 +18,22 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "../utils/cn";
 import { useAuthStore } from "../stores/useAuthStore";
 import { motion, AnimatePresence } from "framer-motion";
+import { orderService } from "../services/order.service";
 
 const SidebarItem = ({ 
   icon: Icon, 
   label, 
   to, 
   active,
-  onClick
+  onClick,
+  badgeCount
 }: { 
   icon: React.ElementType; 
   label: string; 
   to: string; 
   active: boolean;
   onClick?: () => void;
+  badgeCount?: number;
 }) => (
   <Link
     to={to}
@@ -43,7 +46,14 @@ const SidebarItem = ({
     )}
   >
     <div className="flex items-center gap-4">
-      <Icon className={cn("w-4 h-4 transition-colors duration-500", active ? "text-white" : "group-hover:text-neutral-900")} />
+      <div className="relative">
+        <Icon className={cn("w-4 h-4 transition-colors duration-500", active ? "text-white" : "group-hover:text-neutral-900")} />
+        {!!badgeCount && badgeCount > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
+      </div>
       <span className="font-bold tracking-[0.15em] uppercase text-[10px]">{label}</span>
     </div>
     {active && (
@@ -58,11 +68,29 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
   const location = useLocation();
   const logout = useAuthStore((state) => state.logout);
   const admin = useAuthStore((state) => state.admin);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingOrders = async () => {
+      try {
+        const response = await orderService.getOrderStats();
+        if (response.data && response.data.pendingOrders !== undefined) {
+          setPendingOrdersCount(response.data.pendingOrders);
+        }
+      } catch (error) {
+        console.error("Failed to fetch order stats for sidebar", error);
+      }
+    };
+    
+    fetchPendingOrders();
+    const intervalId = setInterval(fetchPendingOrders, 60000); // refresh every minute
+    return () => clearInterval(intervalId);
+  }, []);
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Tổng quan", to: "/" },
     { icon: ShoppingBag, label: "Sản phẩm", to: "/products" },
-    { icon: Tag, label: "Đơn hàng", to: "/orders" },
+    { icon: Tag, label: "Đơn hàng", to: "/orders", badgeCount: pendingOrdersCount },
     { icon: Users, label: "Khách hàng", to: "/customers" },
     { icon: User, label: "Nhân viên", to: "/staff" },
     { icon: Shield, label: "Phân quyền", to: "/permissions" },
@@ -112,6 +140,7 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
               onClick={() => {
                 if (window.innerWidth < 1024) onClose();
               }}
+              badgeCount={item.badgeCount}
             />
           ))}
         </nav>

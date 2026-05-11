@@ -1,0 +1,433 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.searchProductFilterService = exports.searchProductService = exports.getRelatedProductsService = exports.getBestSellingService = exports.getLatestCollectionService = exports.getCategoryFilterService = exports.getProductDetailService = exports.getListProductService = void 0;
+const product_model_1 = __importDefault(require("../../../../models/product.model"));
+const mongoose_1 = __importDefault(require("mongoose"));
+const category_model_1 = require("../../../../models/category.model");
+const getListProductService = async (queryFilter, categorySlug) => {
+    const pipeline = [];
+    // tìm kiếm theo keyword
+    if (queryFilter.keyword) {
+        // 1. Chuẩn hóa tiếng Việt và cắt thành mảng các từ
+        const normalizedKeyword = queryFilter.keyword.normalize("NFC").trim();
+        const searchTerms = normalizedKeyword.split(/\s+/);
+        // 2. Thuật toán linh hoạt số lượng từ cần khớp (Dynamic Match)
+        let minMatch = searchTerms.length;
+        // Nếu khách gõ từ 3 chữ trở lên (VD: "áo sơ mi"), cho phép thiếu 1 chữ
+        if (searchTerms.length >= 3) {
+            minMatch = searchTerms.length - 1;
+        }
+        // 3. Tạo mảng điều kiện cho từng từ
+        const shouldClauses = searchTerms.map((term) => ({
+            text: {
+                query: term,
+                path: ["title", "tags", "description", "brand"],
+            },
+        }));
+        // 4. Đưa vào pipeline với minimumShouldMatch
+        pipeline.push({
+            $search: {
+                index: "default",
+                compound: {
+                    should: shouldClauses,
+                    minimumShouldMatch: minMatch, // Bắt buộc phải đạt đủ chỉ tiêu khớp lệnh
+                },
+            },
+        });
+    }
+    // tạo bộ lọc cứng
+    const matchConditions = {
+        isActive: true,
+        deleted: false,
+    };
+    if (categorySlug && categorySlug.trim() !== "all") {
+        const targetCategory = await category_model_1.Category.findOne({
+            slug: categorySlug,
+            isActive: true,
+            deleted: false,
+        });
+        if (!targetCategory) {
+            return {
+                products: [],
+                currentPage: 1,
+                totalPages: 0,
+                totalProducts: 0,
+            };
+        }
+        const allCategories = await category_model_1.Category.find({
+            isActive: true,
+            deleted: false,
+        }).select("_id parentId");
+        const getSubCategoryIds = (parentId) => {
+            const subs = allCategories.filter((cat) => String(cat.parentId) === String(parentId));
+            let subIds = subs.map((cat) => String(cat._id));
+            for (const sub of subs) {
+                subIds = [...subIds, ...getSubCategoryIds(String(sub._id))];
+            }
+            return subIds;
+        };
+        // Ép kiểu sang ObjectId để dùng trong Aggregation
+        const categoryIds = [
+            String(targetCategory._id),
+            ...getSubCategoryIds(String(targetCategory._id)),
+        ].map((id) => new mongoose_1.default.Types.ObjectId(id));
+        matchConditions['categoryIds'] = { $in: categoryIds };
+    }
+    if (queryFilter.size) {
+        matchConditions["variants.size"] = queryFilter.size.toUpperCase();
+    }
+    if (queryFilter.color) {
+        matchConditions["variants.colorName"] = queryFilter.color.trim();
+    }
+    if (queryFilter.price_range) {
+        const rangesPrice = queryFilter.price_range.split(",");
+        // Điều kiện sắp xếp theo giá
+        const priceConditions = rangesPrice.map((range) => {
+            const [minPrice, maxPrice] = range.split("-");
+            const min = Number(minPrice) || 0;
+            if (maxPrice) {
+                const max = Number(maxPrice);
+                return {
+                    salePrice: { $gte: min, $lte: max },
+                };
+            }
+            else {
+                return {
+                    salePrice: { $gte: min },
+                };
+            }
+        });
+        // gom các điều kiện giá
+        priceConditions.length > 0 && (matchConditions.$or = priceConditions);
+    }
+    // đẩy bộ lọc vào ống pipeline
+    pipeline.push({ $match: matchConditions });
+    let sortConditions = null;
+    if (queryFilter.sort === "best-selling")
+        sortConditions = { sold: -1 };
+    else if (queryFilter.sort === "price-asc")
+        sortConditions = { salePrice: 1 };
+    else if (queryFilter.sort === "price-desc")
+        sortConditions = { salePrice: -1 };
+    else if (!queryFilter.keyword)
+        sortConditions = { createdAt: -1 };
+    const page = Number(queryFilter.page) || 1;
+    const limit = Number(queryFilter.limit) || 12; // Mặc định 12 sản phẩm / trang
+    const skip = (page - 1) * limit;
+    // Tạo đường ống nhánh cho việc lấy Dữ liệu hiển thị (Data)
+    const dataPipeline = [];
+    if (sortConditions)
+        dataPipeline.push({ $sort: sortConditions });
+    dataPipeline.push({ $skip: skip }, { $limit: limit }, {
+        $project: {
+            _id: 1,
+            title: 1,
+            slug: 1,
+            price: 1,
+            salePrice: 1,
+            discountPercentage: 1,
+            productStyles: { $slice: ["$productStyles", 1] }, // Chỉ lấy 1 object ảnh đầu tiên cho nhẹ
+        },
+    });
+    // Đẩy nhánh Đếm tổng và nhánh Dữ liệu vào chung $facet
+    pipeline.push({
+        $facet: {
+            metadata: [{ $count: "total" }],
+            data: dataPipeline,
+        },
+    });
+    const result = await product_model_1.default.aggregate(pipeline);
+    const totalProducts = result[0].metadata[0]?.total || 0;
+    const products = result[0].data;
+    const totalPages = Math.ceil(totalProducts / limit);
+    return {
+        products,
+        currentPage: page,
+        totalPages: totalPages,
+        totalProducts: totalProducts,
+    };
+};
+exports.getListProductService = getListProductService;
+const getProductDetailService = async (slug) => {
+    const product = await product_model_1.default.findOne({
+        slug: slug,
+        isActive: true,
+        deleted: false,
+    })
+        .select("-__v -deleted -isActive -createAt -updateAt")
+        .lean();
+    return product;
+};
+exports.getProductDetailService = getProductDetailService;
+const getCategoryFilterService = async (categorySlug) => {
+    const targetCategory = await category_model_1.Category.findOne({
+        slug: categorySlug,
+        isActive: true,
+        deleted: false,
+    });
+    if (!targetCategory) {
+        return {
+            sizes: [],
+            colors: [],
+        };
+    }
+    const allCategories = await category_model_1.Category.find({
+        isActive: true,
+        deleted: false,
+    }).select("_id parentId");
+    const getSubCategoryIds = (parentId) => {
+        const subs = allCategories.filter((cat) => String(cat.parentId) === String(parentId));
+        let subIds = subs.map((cat) => String(cat._id));
+        for (const sub of subs) {
+            subIds = [...subIds, ...getSubCategoryIds(String(sub._id))];
+        }
+        return subIds;
+    };
+    const categoryIds = [
+        String(targetCategory._id),
+        ...getSubCategoryIds(String(targetCategory._id)),
+    ];
+    const productOfCateogyIds = await product_model_1.default.find({
+        categoryIds: { $in: categoryIds },
+        isActive: true,
+        deleted: false,
+    })
+        .select("variants.size productStyles.colorName productStyles.colorHex")
+        .lean();
+    const sizeSet = new Set();
+    const colorMap = new Map();
+    productOfCateogyIds.forEach((p) => {
+        p.variants?.forEach((v) => v.size && sizeSet.add(v.size.toUpperCase()));
+        p.productStyles?.forEach((s) => s.colorName && s.colorHex && colorMap.set(s.colorName, s.colorHex));
+    });
+    return {
+        sizes: Array.from(sizeSet)
+            .sort()
+            .map((s) => ({ label: s, value: s })),
+        colors: Array.from(colorMap.entries()).map(([name, hex]) => ({
+            label: name,
+            value: name,
+            hexCode: hex,
+        })),
+    };
+};
+exports.getCategoryFilterService = getCategoryFilterService;
+const getLatestCollectionService = async (limit) => {
+    const data = await product_model_1.default.find({
+        deleted: false,
+        isActive: true,
+    })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .select({
+        _id: 1,
+        title: 1,
+        slug: 1,
+        price: 1,
+        discountPercentage: 1,
+        salePrice: 1,
+        productStyles: { $slice: 1 }, // Lấy Style đầu tiên để làm ảnh bìa
+    })
+        .lean();
+    if (!data) {
+        return [];
+    }
+    return data;
+};
+exports.getLatestCollectionService = getLatestCollectionService;
+const getBestSellingService = async (limit) => {
+    const data = await product_model_1.default.find({
+        deleted: false,
+        isActive: true,
+    })
+        .sort({ sold: -1 })
+        .limit(limit)
+        .select({
+        _id: 1,
+        title: 1,
+        slug: 1,
+        price: 1,
+        discountPercentage: 1,
+        salePrice: 1,
+        productStyles: { $slice: 1 }, // Lấy Style đầu tiên để làm ảnh bìa
+    })
+        .lean();
+    if (!data) {
+        return [];
+    }
+    return data;
+};
+exports.getBestSellingService = getBestSellingService;
+const getRelatedProductsService = async (slug, limit) => {
+    const product = await product_model_1.default.findOne({
+        slug: slug,
+        isActive: true,
+        deleted: false,
+    }).select("categoryIds _id");
+    if (!product)
+        return [];
+    const relatedProducts = await product_model_1.default.find({
+        categoryIds: { $in: product.categoryIds },
+        _id: { $ne: product._id }, // $ne (Not Equal) giúp loại trừ sản phẩm đang xem
+        isActive: true,
+        deleted: false,
+    })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .select({
+        _id: 1,
+        title: 1,
+        slug: 1,
+        price: 1,
+        salePrice: 1,
+        discountPercentage: 1,
+        productStyles: { $slice: 1 },
+    });
+    return relatedProducts;
+};
+exports.getRelatedProductsService = getRelatedProductsService;
+const searchProductService = async (keyword, limit = 10) => {
+    try {
+        // --- Cách 1: Dùng Atlas Search (Full-text, Fuzzy) ---
+        // Yêu cầu: Search Index "default" phải được tạo trên MongoDB Atlas
+        const products = await product_model_1.default.aggregate([
+            {
+                $search: {
+                    index: "default",
+                    text: {
+                        query: keyword,
+                        path: ["title", "tags", "description", "brand"],
+                        fuzzy: {
+                            maxEdits: 2, // Cho phép gõ sai tối đa 2 ký tự
+                            prefixLength: 1, // Ký tự đầu phải đúng để tăng hiệu năng
+                        },
+                    },
+                },
+            },
+            {
+                $match: {
+                    isActive: true,
+                    deleted: false,
+                },
+            },
+            { $limit: limit },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    slug: 1,
+                    price: 1,
+                    salePrice: 1,
+                    discountPercentage: 1,
+                    productStyles: { $slice: ["$productStyles", 1] },
+                },
+            },
+        ]);
+        return products;
+    }
+    catch (error) {
+        // --- Cách 2: Fallback dùng Regex ---
+        // Tự động kích hoạt khi Atlas Search Index chưa được cấu hình
+        // (thường gặp ở môi trường dev local hoặc khi index chưa active)
+        console.warn("[Search] Atlas Search không khả dụng, fallback sang Regex:", error?.message);
+        const regexKeyword = new RegExp(keyword.trim(), "i");
+        const products = await product_model_1.default.find({
+            isActive: true,
+            deleted: false,
+            $or: [
+                { title: regexKeyword },
+                { tags: regexKeyword },
+                { brand: regexKeyword },
+                { description: regexKeyword },
+            ],
+        })
+            .limit(limit)
+            .select({
+            _id: 1,
+            title: 1,
+            slug: 1,
+            price: 1,
+            salePrice: 1,
+            discountPercentage: 1,
+            productStyles: { $slice: 1 },
+        })
+            .lean();
+        return products;
+    }
+};
+exports.searchProductService = searchProductService;
+const searchProductFilterService = async (keyword) => {
+    const pipeline = [];
+    // 1. NẾU CÓ KEYWORD: Dùng Atlas Search để lọc ra các sản phẩm khớp từ khóa trước
+    if (keyword) {
+        pipeline.push({
+            $search: {
+                index: "default",
+                text: {
+                    query: keyword,
+                    path: ["title", "tags", "description", "brand"],
+                    fuzzy: { maxEdits: 2, prefixLength: 1 },
+                },
+            },
+        });
+    }
+    // 2. LỌC CƠ BẢN
+    pipeline.push({
+        $match: {
+            isActive: true,
+            deleted: false,
+        },
+    });
+    // 3. DÙNG $FACET ĐỂ TÁCH 2 LUỒNG: LUỒNG LẤY SIZE VÀ LUỒNG LẤY MÀU
+    pipeline.push({
+        $facet: {
+            // --- LUỒNG 1: Gom nhóm SIZE ---
+            sizes: [
+                { $unwind: "$variants" }, // Tách mảng variants ra thành từng object riêng lẻ
+                {
+                    $group: {
+                        _id: { $toUpper: "$variants.size" }, // Gom nhóm theo size (chữ hoa)
+                    },
+                },
+                { $match: { _id: { $ne: null } } }, // Bỏ qua các size null
+                { $sort: { _id: 1 } }, // Sắp xếp A-Z
+                {
+                    $project: {
+                        _id: 0,
+                        label: "$_id",
+                        value: "$_id",
+                    },
+                },
+            ],
+            // --- LUỒNG 2: Gom nhóm MÀU SẮC ---
+            colors: [
+                { $unwind: "$productStyles" }, // Tách mảng productStyles
+                {
+                    $group: {
+                        _id: "$productStyles.colorName", // Gom nhóm theo Tên Màu
+                        hexCode: { $first: "$productStyles.colorHex" }, // Lấy mã hex đầu tiên của màu đó
+                    },
+                },
+                { $match: { _id: { $ne: null } } },
+                { $sort: { _id: 1 } },
+                {
+                    $project: {
+                        _id: 0,
+                        label: "$_id",
+                        value: "$_id",
+                        hexCode: "$hexCode",
+                    },
+                },
+            ],
+        },
+    });
+    // Chạy aggregation
+    const result = await product_model_1.default.aggregate(pipeline);
+    // result[0] sẽ có dạng { sizes: [...], colors: [...] }
+    return result[0];
+};
+exports.searchProductFilterService = searchProductFilterService;
+//# sourceMappingURL=product.service.js.map

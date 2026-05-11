@@ -17,13 +17,13 @@ const FormCheckoutInfo = ({
 }: {
   onSubmitSuccess: (data: CheckoutInfoValue) => void;
 }) => {
-  // Lấy thông tin user đang đăng nhập (Bạn tự điều chỉnh state.user cho khớp với Store của bạn nhé)
+  // Lấy thông tin user đang đăng nhập
   const currentUser = useAuthStore((s) => s.user); 
 
-  const fullName = useCheckoutInforStore((s) => s.fullName);
-  // LOGIC LẤY EMAIL: Ưu tiên email đã nhập trước đó trong giỏ hàng, nếu không có thì lấy email của tài khoản đang đăng nhập
-  const email = useCheckoutInforStore((s) => s.email) || currentUser?.email || "";
-  const phone = useCheckoutInforStore((s) => s.phone);
+  // Lấy thông tin đã lưu trong localStorage
+  const storedFullName = useCheckoutInforStore((s) => s.fullName);
+  const storedEmail = useCheckoutInforStore((s) => s.email);
+  const storedPhone = useCheckoutInforStore((s) => s.phone);
   const province = useCheckoutInforStore((s) => s.province);
   const district = useCheckoutInforStore((s) => s.district);
   const ward = useCheckoutInforStore((s) => s.ward);
@@ -32,6 +32,11 @@ const FormCheckoutInfo = ({
   const paymentMethod = useCheckoutInforStore((s) => s.paymentMethod);
 
   const setField = useCheckoutInforStore((s) => s.setField);
+
+  // Ưu tiên thông tin cá nhân từ tài khoản đăng nhập, fallback về localStorage
+  const fullName = currentUser?.fullName || storedFullName;
+  const email = currentUser?.email || storedEmail;
+  const phone = currentUser?.phone || storedPhone;
 
   const {
     register,
@@ -43,7 +48,7 @@ const FormCheckoutInfo = ({
     resolver: zodResolver(checkoutInfoSchema),
     defaultValues: {
       fullName,
-      email, // Truyền email lấy được vào giá trị mặc định của Form
+      email,
       phone,
       province,
       district,
@@ -53,6 +58,34 @@ const FormCheckoutInfo = ({
       paymentMethod,
     },
   });
+
+  // Khi user đăng nhập/đăng xuất: đồng bộ thông tin cá nhân vào form và localStorage
+  useEffect(() => {
+    if (currentUser) {
+      // Đăng nhập: ghi đè form + localStorage bằng thông tin tài khoản
+      if (currentUser.fullName) {
+        setValue("fullName", currentUser.fullName);
+        setField("fullName", currentUser.fullName);
+      }
+      if (currentUser.email) {
+        setValue("email", currentUser.email);
+        setField("email", currentUser.email);
+      }
+      if (currentUser.phone) {
+        setValue("phone", currentUser.phone);
+        setField("phone", currentUser.phone);
+      }
+    } else {
+      // Đăng xuất: xóa thông tin cá nhân cũ để tránh dữ liệu "dính"
+      setValue("fullName", "");
+      setField("fullName", "");
+      setValue("email", "");
+      setField("email", "");
+      setValue("phone", "");
+      setField("phone", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   const formChangeValue = watch();
 
@@ -99,7 +132,7 @@ const FormCheckoutInfo = ({
             type="text"
             placeholder="Ví dụ: Nguyễn Văn A"
             {...register("fullName")}
-            className={`${getInputClassName(!!errors.fullName)} w-full py-3`}
+            className={`${getInputClassName(!!errors.fullName)} w-full py-3 ${currentUser?.fullName ? 'bg-gray-50' : ''}`}
             defaultValue={fullName}
           />
           <ErrorMessage message={errors.fullName?.message} />
@@ -128,7 +161,7 @@ const FormCheckoutInfo = ({
               type="text"
               placeholder="0912 345 678"
               {...register("phone")}
-              className={`${getInputClassName(!!errors.phone)} w-full py-3`}
+              className={`${getInputClassName(!!errors.phone)} w-full py-3 ${currentUser?.phone ? 'bg-gray-50' : ''}`}
               defaultValue={phone}
             />
             <ErrorMessage message={errors.phone?.message} />

@@ -95,8 +95,8 @@ instance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // ✅ FIX 2: Dùng đúng endpoint refresh-token của backend
-        // ✅ FIX 3: Không cần gửi body vì backend đọc refresh token từ httpOnly cookie `jwt`
+        // FIX 2: Dùng đúng endpoint refresh-token của backend
+        // FIX 3: Không cần gửi body vì backend đọc refresh token từ httpOnly cookie `jwt`
         //           `withCredentials: true` đảm bảo cookie được gửi kèm tự động
         const res = await axios.post<RefreshTokenResponse>(
           `${BASE_URL}/auth/refresh-token`,

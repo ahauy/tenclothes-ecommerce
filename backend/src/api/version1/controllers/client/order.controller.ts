@@ -36,6 +36,11 @@ export const postOrderClient = async (
 
     const data = await postOrderServiceClient(payload, userId);
 
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("newOrder", data);
+    }
+
     const paymentMethod: string = payload.customer.paymentMethod;
 
     if (paymentMethod === "cod") {

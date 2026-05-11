@@ -1,4 +1,5 @@
 import React from "react";
+import { NavLink } from "react-router-dom";
 
 export interface ICoupon {
   _id: string;
@@ -17,9 +18,13 @@ interface CouponListProps {
   onSelect: (code: string) => void;
   isLoading: boolean;
   appliedCoupon: string | null;
+  /** Khi true: hiển thị coupon nhưng mờ + không thể chọn, overlay yêu cầu đăng nhập */
+  isLocked?: boolean;
+  /** Khi true: giỏ hàng trống, hiển thị coupon ở chế độ preview — không check eligibility, không click được */
+  cartIsEmpty?: boolean;
 }
 
-const CouponList: React.FC<CouponListProps> = ({ coupons, cartTotal, onSelect, isLoading, appliedCoupon }) => {
+const CouponList: React.FC<CouponListProps> = ({ coupons, cartTotal, onSelect, isLoading, appliedCoupon, isLocked = false, cartIsEmpty = false }) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -38,33 +43,55 @@ const CouponList: React.FC<CouponListProps> = ({ coupons, cartTotal, onSelect, i
         <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-neutral-400">
           Vouchers
         </p>
-        <span className="text-[10px] text-neutral-300 font-medium">Chọn mã để áp dụng</span>
+        {isLocked ? (
+          <span className="flex items-center gap-1 text-[10px] text-neutral-400 font-medium">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            Yêu cầu đăng nhập
+          </span>
+        ) : cartIsEmpty ? (
+          <span className="text-[10px] text-neutral-400 font-medium">Thêm sản phẩm để áp dụng</span>
+        ) : (
+          <span className="text-[10px] text-neutral-300 font-medium">Chọn mã để áp dụng</span>
+        )}
       </div>
-      
-      {/* Scrollable Container with substantial max-height */}
-      <div className="flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-2 pb-2 custom-scrollbar" style={{ scrollbarWidth: "thin" }}>
-        {coupons.map((coupon) => {
-          const isEligible = cartTotal >= coupon.minOrderAmount;
+
+      {/* Wrapper có relative để chứa overlay khi isLocked */}
+      <div className="relative">
+        {/* Danh sách coupon — luôn render, chỉ mờ khi bị lock */}
+        <div
+          className={`flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-2 pb-2 custom-scrollbar transition-all duration-300 ${
+            isLocked ? "opacity-40 pointer-events-none select-none blur-[1px]" : ""
+          }`}
+          style={{ scrollbarWidth: "thin" }}
+        >
+          {coupons.map((coupon) => {
+          // Khi giỏ trống: bỏ qua minOrderAmount check, coi như preview
+          const isEligible = cartIsEmpty ? false : cartTotal >= coupon.minOrderAmount;
+          const isPreview = cartIsEmpty; // preview: style bình thường nhưng không click
           const isApplied = appliedCoupon === coupon.code;
           const diff = coupon.minOrderAmount - cartTotal;
 
           return (
             <div
               key={coupon._id}
-              onClick={() => isEligible && onSelect(coupon.code)}
+              onClick={() => !isPreview && isEligible && onSelect(coupon.code)}
               className={`group relative flex items-stretch min-h-[100px] flex-shrink-0 bg-white border transition-all duration-300 rounded-2xl overflow-hidden ${
                 isApplied 
                   ? "border-emerald-500 ring-1 ring-emerald-500 shadow-lg shadow-emerald-50/50" 
-                  : isEligible
-                    ? "border-neutral-200 hover:border-black cursor-pointer shadow-sm hover:shadow-md"
-                    : "border-neutral-100 opacity-60 cursor-not-allowed"
+                  : isPreview
+                    ? "border-neutral-200 cursor-default shadow-sm"
+                    : isEligible
+                      ? "border-neutral-200 hover:border-black cursor-pointer shadow-sm hover:shadow-md"
+                      : "border-neutral-100 opacity-60 cursor-not-allowed"
               }`}
             >
               {/* Left Side: Ticket Stub */}
               <div className={`flex flex-col items-center justify-center w-24 flex-shrink-0 border-r border-dashed transition-colors duration-300 ${
                 isApplied 
                   ? "bg-emerald-500 text-white" 
-                  : isEligible 
+                  : isPreview || isEligible
                     ? "bg-black text-white" 
                     : "bg-neutral-100 text-neutral-400"
               }`}>
@@ -89,14 +116,14 @@ const CouponList: React.FC<CouponListProps> = ({ coupons, cartTotal, onSelect, i
               <div className="flex-1 px-5 py-4 flex flex-col justify-between bg-white">
                 <div>
                   <div className="flex justify-between items-start mb-1.5">
-                    <span className={`text-sm font-black tracking-tight ${isApplied ? "text-emerald-600" : isEligible ? "text-black" : "text-neutral-500"}`}>
+                    <span className={`text-sm font-black tracking-tight ${isApplied ? "text-emerald-600" : "text-black"}`}>
                       {coupon.code}
                     </span>
                     {isApplied ? (
                       <span className="text-[9px] font-bold text-white bg-emerald-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">
                         Đang dùng
                       </span>
-                    ) : !isEligible && (
+                    ) : !isPreview && !isEligible && (
                       <span className="text-[9px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-tighter border border-red-100">
                         Thiếu {diff.toLocaleString("vi-VN")}đ
                       </span>
@@ -111,7 +138,7 @@ const CouponList: React.FC<CouponListProps> = ({ coupons, cartTotal, onSelect, i
                    <p className="text-[10px] text-neutral-400 font-medium">
                     Hạn dùng: {new Date(coupon.expiresAt).toLocaleDateString("vi-VN")}
                   </p>
-                  {isEligible && !isApplied && (
+                  {!isPreview && isEligible && !isApplied && (
                     <span className="text-[10px] font-bold text-black opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                       Áp dụng ngay →
                     </span>
@@ -126,17 +153,45 @@ const CouponList: React.FC<CouponListProps> = ({ coupons, cartTotal, onSelect, i
               <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 bg-neutral-50 rounded-full border-r border-neutral-200" />
               <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-4 h-4 bg-neutral-50 rounded-full border-l border-neutral-200" />
               
-              {/* Overlay for Ineligible state */}
-              {!isEligible && (
+              {/* Overlay for Ineligible state — chỉ hiện khi không phải preview và không đủ điều kiện */}
+              {!isPreview && !isEligible && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[0.5px] opacity-0 hover:opacity-100 transition-opacity p-4 text-center cursor-not-allowed">
-                   <p className="text-[11px] font-bold text-black bg-white px-4 py-2 rounded-xl shadow-xl border border-neutral-100 animate-in fade-in zoom-in-95 duration-200">
-                    Mua thêm {(diff).toLocaleString("vi-VN")}đ để dùng mã này
+                  <p className="text-[11px] font-bold text-black bg-white px-4 py-2 rounded-xl shadow-xl border border-neutral-100 animate-in fade-in zoom-in-95 duration-200">
+                    Mua thêm {diff.toLocaleString("vi-VN")}đ để dùng mã này
                   </p>
                 </div>
               )}
             </div>
           );
         })}
+        </div>
+
+        {/* Overlay đăng nhập — chỉ hiện khi isLocked */}
+        {isLocked && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <NavLink
+              to="/login"
+              className="flex items-center gap-3 px-5 py-3 rounded-xl bg-white border border-neutral-200 shadow-lg hover:shadow-xl hover:border-black transition-all duration-200 group"
+            >
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-black leading-tight whitespace-nowrap">
+                  Đăng nhập để nhận ưu đãi
+                </p>
+                <p className="text-[10px] text-neutral-400 mt-0.5 whitespace-nowrap">
+                  Áp dụng voucher &amp; mã giảm giá
+                </p>
+              </div>
+              <svg className="w-4 h-4 text-neutral-300 group-hover:text-black group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </NavLink>
+          </div>
+        )}
       </div>
     </div>
   );

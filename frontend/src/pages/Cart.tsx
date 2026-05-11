@@ -29,6 +29,8 @@ const Cart = () => {
   const cartItems: ICartItem[] = useCartStore((s) => s.cartItems);
   const clearCart = useCartStore((s) => s.clearCart);
   const navigate = useNavigate();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const isLoggedIn = Boolean(accessToken);
 
   useEffect(() => {
     const fetchValidatedCart = async () => {
@@ -223,16 +225,20 @@ const Cart = () => {
             ))}
           </div>
 
-          {/* Coupon List Area */}
-          <div className="px-6 py-5 border-t border-neutral-100">
-            <CouponList
-              coupons={coupons}
-              cartTotal={totalSalePrice}
-              isLoading={isLoadingCoupons}
-              appliedCoupon={appliedCoupon}
-              onSelect={(code) => handleApplyCoupon(code)}
-            />
-          </div>
+          {/* Coupon Area — luôn hiển thị sau khi load xong */}
+          {!isLoading && (
+            <div className="px-6 py-5 border-t border-neutral-100">
+              <CouponList
+                coupons={coupons}
+                cartTotal={totalSalePrice}
+                isLoading={isLoadingCoupons}
+                appliedCoupon={appliedCoupon}
+                onSelect={(code) => handleApplyCoupon(code)}
+                isLocked={!isLoggedIn}
+                cartIsEmpty={validatedCart.length === 0}
+              />
+            </div>
+          )}
 
           {/* Order summary details */}
           <div className="px-6 pt-1 pb-5 border-t border-neutral-100">

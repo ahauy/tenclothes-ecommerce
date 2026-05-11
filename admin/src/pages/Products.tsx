@@ -44,6 +44,21 @@ const Products: React.FC = () => {
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce: cập nhật debouncedSearchTerm sau 500ms khi user ngừng gõ
+  useEffect(() => {
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, [searchTerm]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -83,7 +98,7 @@ const Products: React.FC = () => {
       const response = await productService.getProducts({
         page,
         limit: 8,
-        keyword: searchTerm,
+        keyword: debouncedSearchTerm,
         isActive:
           activeFilter === "active"
             ? true
@@ -113,7 +128,7 @@ const Products: React.FC = () => {
     }
   }, [
     page,
-    searchTerm,
+    debouncedSearchTerm,
     activeFilter,
     featuredFilter,
     categoryFilter,

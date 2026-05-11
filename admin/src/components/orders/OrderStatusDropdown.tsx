@@ -10,7 +10,7 @@ interface OrderStatusDropdownProps {
 
 const statusOptions = [
   { value: "pending", label: "Chờ xử lý", icon: Clock, color: "text-amber-500" },
-  { value: "processing", label: "Đang xử lý", icon: Activity, color: "text-blue-500" },
+  { value: "processing", label: "Chuẩn bị", icon: Activity, color: "text-blue-500" },
   { value: "shipped", label: "Đang giao", icon: Truck, color: "text-indigo-500" },
   { value: "delivered", label: "Đã giao", icon: PackageCheck, color: "text-emerald-500" },
   { value: "cancelled", label: "Đã hủy", icon: XCircle, color: "text-red-500" },
