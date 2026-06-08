@@ -3,20 +3,14 @@ import {
   Search,
   Trash2,
   Eye,
-  ChevronLeft,
-  ChevronRight,
   Calendar,
   Check,
   Activity,
   X,
   CreditCard,
   Truck,
-  User,
   ShoppingBag,
   DollarSign,
-  TrendingUp,
-  PackageCheck,
-  AlertCircle,
   PackageX,
   BarChart3,
   Banknote,
@@ -154,6 +148,7 @@ const Orders: React.FC = () => {
           unpaidRevenue: prev.unpaidRevenue + (newOrder.finalAmount || 0),
         };
       });
+      window.dispatchEvent(new Event("orderStatsUpdated"));
 
       toast.custom((t) => (
         <div className="bg-white border border-neutral-200 p-4 rounded-xl shadow-2xl flex items-start gap-4 w-[350px] relative overflow-hidden group">
@@ -195,10 +190,10 @@ const Orders: React.FC = () => {
     };
   }, []);
 
-  // Re-fetch stats after any mutation (delete, update)
   const refetchAll = useCallback(() => {
     fetchOrders();
     fetchGlobalStats();
+    window.dispatchEvent(new Event("orderStatsUpdated"));
   }, [fetchOrders, fetchGlobalStats]);
 
   const resetFilters = () => {
@@ -271,7 +266,14 @@ const Orders: React.FC = () => {
       toast.success(`Đã xóa đơn hàng #${orderToDelete.orderCode} thành công!`);
       setIsDeleteModalOpen(false);
       setOrderToDelete(null);
-      refetchAll();
+      
+      if (orders.length === 1 && page > 1) {
+        setPage(page - 1);
+        fetchGlobalStats();
+        window.dispatchEvent(new Event("orderStatsUpdated"));
+      } else {
+        refetchAll();
+      }
     } catch (error) {
       const err = error as IJsonFail;
       toast.error(err?.message || "Xóa đơn hàng thất bại. Vui lòng thử lại!");
@@ -287,8 +289,15 @@ const Orders: React.FC = () => {
       await orderService.batchDeleteOrders(selectedOrders);
       toast.success(`Đã xóa ${selectedOrders.length} đơn hàng thành công!`);
       setIsBatchDeleteModalOpen(false);
+      
+      if (selectedOrders.length === orders.length && page > 1) {
+        setPage(page - 1);
+        fetchGlobalStats();
+        window.dispatchEvent(new Event("orderStatsUpdated"));
+      } else {
+        refetchAll();
+      }
       setSelectedOrders([]);
-      refetchAll();
     } catch (error) {
       const err = error as IJsonFail;
       toast.error(err?.message || "Xóa hàng loạt thất bại. Vui lòng thử lại!");
@@ -836,11 +845,11 @@ const Orders: React.FC = () => {
         </div>
 
         {/* Desktop: Table */}
-        <div className="hidden lg:block bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="hidden lg:block bg-white border border-neutral-200 rounded-xl shadow-sm">
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
               <tr className="bg-neutral-50 border-b border-neutral-200">
-                <th className="px-6 py-4 w-[50px]">
+                <th className="px-6 py-4 w-[50px] rounded-tl-xl">
                   <input
                     type="checkbox"
                     checked={orders.length > 0 && selectedOrders.length === orders.length}
@@ -854,7 +863,7 @@ const Orders: React.FC = () => {
                 <th className="px-6 py-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Giá trị</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">T.Thái Đơn</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Thanh toán</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-right">Thao tác</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-right rounded-tr-xl">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">

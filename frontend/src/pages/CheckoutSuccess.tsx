@@ -97,7 +97,7 @@ const CheckoutSuccess = () => {
           to="/"
           className="bg-black text-white px-6 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors duration-300 text-center"
         >
-          Khám phá thêm các sản phẩm khác tại đây
+          Khám phá thêm các sản phẩm khác
         </Link>
       </div>
 

@@ -23,7 +23,6 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState<string>("");
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-  const [isApplyingCoupon, setIsApplyingCoupon] = useState<boolean>(false);
 
   const delivery_fee: number = useShopStore((s) => s.delivery_fee);
   const cartItems: ICartItem[] = useCartStore((s) => s.cartItems);
@@ -34,7 +33,7 @@ const Cart = () => {
 
   useEffect(() => {
     const fetchValidatedCart = async () => {
-      if (!cartItems || cartItems.length === 0) {
+      if (!Array.isArray(cartItems) || cartItems.length === 0) {
         setValidatedCart([]);
         setIsLoading(false);
         return;
@@ -99,7 +98,6 @@ const Cart = () => {
     }
 
     try {
-      setIsApplyingCoupon(true);
       const productIds = validatedCart.map(item => item.productId);
       const token = useAuthStore.getState().accessToken;
 
@@ -123,8 +121,6 @@ const Cart = () => {
       setDiscountAmount(0);
       setAppliedCoupon(null);
       toast.error("Mã giảm giá không hợp lệ!");
-    } finally {
-      setIsApplyingCoupon(false);
     }
   };
 
@@ -146,7 +142,7 @@ const Cart = () => {
       if (response.status === 201 || response.status === 200) {
         if (data.paymentMethod === "cod") {
           toast.success("Đặt hàng thành công!");
-          navigate("/checkout/success", { state: { orderId: response.data.data._id } });
+          navigate("/checkout/success", { state: { orderId: response.data.data.id || response.data.data._id } });
           clearCart();
         } else if (data.paymentMethod === "momo") {
           const payUrl: string = response.data.payUrl;
@@ -169,7 +165,7 @@ const Cart = () => {
       </div>
 
       {/* ── RIGHT: Order summary ── */}
-      <div className="lg:col-span-2 order-first lg:order-none animate-fade-in-up animate-delay-1">
+      <div className="lg:col-span-2 order-first lg:order-0 animate-fade-in-up animate-delay-1">
         <div className="lg:sticky lg:top-24 flex flex-col gap-0 bg-white rounded-2xl border border-neutral-100 overflow-hidden shadow-sm">
 
           {/* Header */}

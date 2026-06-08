@@ -78,6 +78,10 @@ const orderSchema = new Schema<IOrder>(
       enum: ["unpaid", "paid", "refunded"],
       default: "unpaid",
     },
+    cancelReason: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true, // Tự động tạo createdAt và updatedAt

@@ -32,3 +32,11 @@ export const orderSchema = z.object({
 });
 
 export type IOrderReq = z.infer<typeof orderSchema>['body']
+
+export const cancelOrderSchema = z.object({
+  body: z.object({
+    cancelReason: z.string().min(5, "Lý do hủy đơn hàng phải từ 5 ký tự trở lên!"),
+  }),
+});
+
+export type ICancelOrderReq = z.infer<typeof cancelOrderSchema>["body"];

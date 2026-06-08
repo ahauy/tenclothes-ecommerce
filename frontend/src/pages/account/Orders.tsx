@@ -5,6 +5,10 @@ import { orderService } from '../../services/orderService';
 import { convertPrice } from '../../utils/convertPrice';
 import ReviewModal from '../../components/ReviewModal';
 import { useAuthStore } from '../../stores/useAuthStore';
+import api from '../../utils/axios';
+import { useCartStore } from '../../stores/useCartStore';
+import axios from 'axios';
+import type { IJsonFail } from '../../interfaces/iAuthState';
 
 // ---- Types ----
 interface OrderItem {
@@ -38,6 +42,7 @@ interface Order {
     detailAddress: string;
     paymentMethod: string;
   };
+  cancelReason?: string | null;
 }
 
 // ---- Status config ----
@@ -175,8 +180,80 @@ const Orders: React.FC = () => {
     productTitle: string;
   } | null>(null);
 
+  // Cancel Order Modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [selectedOrderToCancel, setSelectedOrderToCancel] = useState<Order | null>(null);
+  const [cancelReasonOption, setCancelReasonOption] = useState<string>("Muốn thay đổi địa chỉ nhận hàng");
+  const [customCancelReason, setCustomCancelReason] = useState<string>("");
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
+
+  const [isRepurchasing, setIsRepurchasing] = useState<Record<string, boolean>>({});
+
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthLoading = useAuthStore((state) => state.isAuthLoading);
+
+  const handleCancelOrder = async () => {
+    if (!selectedOrderToCancel) return;
+    
+    const finalReason = cancelReasonOption === "Lý do khác" 
+      ? customCancelReason.trim() 
+      : cancelReasonOption;
+
+    if (!finalReason) {
+      toast.warning("Vui lòng nhập lý do hủy đơn!");
+      return;
+    }
+
+    try {
+      setIsSubmittingCancel(true);
+      const res = await orderService.cancelOrderService(selectedOrderToCancel.orderCode, finalReason);
+      if (res.data.status) {
+        toast.success("Hủy đơn hàng thành công!");
+        setIsCancelModalOpen(false);
+        setSelectedOrderToCancel(null);
+        setCustomCancelReason("");
+        fetchOrders();
+      }
+    } catch (error: unknown) {
+      console.error(error);
+      let msg = "Không thể hủy đơn hàng, vui lòng thử lại!";
+      if (axios.isAxiosError<IJsonFail>(error) && error.response?.data?.message) {
+        msg = error.response.data.message;
+      }
+      toast.error(msg);
+    } finally {
+      setIsSubmittingCancel(false);
+    }
+  };
+
+  const handleRepurchase = async (orderCode: string) => {
+    try {
+      setIsRepurchasing(prev => ({ ...prev, [orderCode]: true }));
+      const res = await orderService.repurchaseOrderService(orderCode);
+      if (res.data.status) {
+        toast.success("Đã thêm các sản phẩm vào giỏ hàng thành công!");
+        const syncRes = await api.post(
+          "/cart/sync",
+          { items: [] },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        useCartStore.getState().setCart(syncRes.data.data);
+      }
+    } catch (error: unknown) {
+      console.error(error);
+      let msg = "Không thể mua lại đơn hàng, vui lòng thử lại!";
+      if (axios.isAxiosError<IJsonFail>(error) && error.response?.data?.message) {
+        msg = error.response.data.message;
+      }
+      toast.error(msg);
+    } finally {
+      setIsRepurchasing(prev => ({ ...prev, [orderCode]: false }));
+    }
+  };
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -357,6 +434,18 @@ const Orders: React.FC = () => {
                   <StatusBadge status={order.orderStatus} />
                 </div>
 
+                {order.orderStatus === 'cancelled' && order.cancelReason && (
+                  <div className="mx-6 sm:mx-8 mt-4 px-4 py-3 bg-rose-50 border border-rose-100 text-rose-700 text-xs flex items-start gap-2.5">
+                    <svg className="w-4.5 h-4.5 shrink-0 mt-0.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold uppercase tracking-wider mb-0.5 text-rose-800">Đơn hàng đã bị hủy</p>
+                      <p className="text-rose-600">Lý do: {order.cancelReason}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Order Items */}
                 <div className="px-6 sm:px-8 py-6 space-y-5">
                   {order.items.map((item, idx) => (
@@ -476,6 +565,46 @@ const Orders: React.FC = () => {
                     </p>
                   </div>
                 </div>
+
+                {/* Order Actions */}
+                {((order.orderStatus === 'pending' || order.orderStatus === 'processing') ||
+                  (order.orderStatus === 'cancelled' || order.orderStatus === 'delivered' || order.orderStatus === 'shipped')) && (
+                  <div className="px-6 sm:px-8 py-3.5 bg-white border-t border-[#e5e7eb] flex justify-end gap-3 flex-wrap">
+                    {/* Hủy đơn hàng */}
+                    {(order.orderStatus === 'pending' || order.orderStatus === 'processing') && (
+                      <button
+                        onClick={() => {
+                          setSelectedOrderToCancel(order);
+                          setIsCancelModalOpen(true);
+                        }}
+                        className="text-xs font-semibold uppercase tracking-widest px-5 py-2.5 border border-[#e5e7eb] text-[#6b7280] hover:text-[#1a1a1a] hover:bg-[#f7f8fa] transition-all duration-200 cursor-pointer"
+                      >
+                        Hủy Đơn Hàng
+                      </button>
+                    )}
+                    
+                    {/* Mua lại */}
+                    {(order.orderStatus === 'cancelled' || order.orderStatus === 'delivered' || order.orderStatus === 'shipped') && (
+                      <button
+                        onClick={() => handleRepurchase(order.orderCode)}
+                        disabled={isRepurchasing[order.orderCode]}
+                        className="bg-[#1a1a1a] text-white text-xs font-semibold uppercase tracking-widest px-5 py-2.5 hover:bg-[#333] transition-all duration-200 disabled:bg-[#e5e7eb] disabled:text-[#9ca3af] disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                      >
+                        {isRepurchasing[order.orderCode] ? (
+                          <>
+                            <svg className="w-3.5 h-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          "Mua Lại"
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -496,6 +625,104 @@ const Orders: React.FC = () => {
           orderId={selectedProduct.orderId}
           onReviewSuccess={handleReviewSuccess}
         />
+      )}
+
+      {/* Cancel Order Modal */}
+      {isCancelModalOpen && selectedOrderToCancel && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full border border-[#e5e7eb] p-6 sm:p-8 space-y-6 animate-fade-in-up">
+            <div className="flex justify-between items-center border-b border-[#f3f4f6] pb-4">
+              <h3 className="text-lg font-semibold text-[#1a1a1a] uppercase tracking-wider">
+                Hủy Đơn Hàng #{selectedOrderToCancel.orderCode}
+              </h3>
+              <button
+                onClick={() => {
+                  setIsCancelModalOpen(false);
+                  setSelectedOrderToCancel(null);
+                  setCustomCancelReason("");
+                }}
+                className="text-[#9ca3af] hover:text-[#1a1a1a] transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-xs font-semibold uppercase tracking-widest text-[#6b7280]">
+                Lý do hủy đơn hàng <span className="text-rose-500">*</span>
+              </label>
+              
+              <div className="space-y-2">
+                {[
+                  "Muốn thay đổi địa chỉ nhận hàng",
+                  "Muốn thay đổi sản phẩm (size, màu sắc, số lượng...)",
+                  "Tìm thấy cửa hàng khác giá tốt hơn",
+                  "Không có nhu cầu mua nữa",
+                  "Lý do khác"
+                ].map((reason) => (
+                  <label key={reason} className="flex items-center gap-3 cursor-pointer group py-1">
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value={reason}
+                      checked={cancelReasonOption === reason}
+                      onChange={(e) => setCancelReasonOption(e.target.value)}
+                      className="w-4 h-4 text-[#1a1a1a] border-[#d1d5db] focus:ring-[#1a1a1a] accent-[#1a1a1a] cursor-pointer"
+                    />
+                    <span className="text-sm text-[#374151] group-hover:text-[#1a1a1a] transition-colors">
+                      {reason}
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              {cancelReasonOption === "Lý do khác" && (
+                <div className="mt-3">
+                  <textarea
+                    rows={3}
+                    placeholder="Vui lòng nhập lý do cụ thể..."
+                    value={customCancelReason}
+                    onChange={(e) => setCustomCancelReason(e.target.value)}
+                    className="w-full text-sm border border-[#d1d5db] p-3 focus:outline-none focus:border-[#1a1a1a] transition-colors resize-none placeholder:text-[#9ca3af]"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 border-t border-[#f3f4f6] pt-5">
+              <button
+                disabled={isSubmittingCancel}
+                onClick={() => {
+                  setIsCancelModalOpen(false);
+                  setSelectedOrderToCancel(null);
+                  setCustomCancelReason("");
+                }}
+                className="flex-1 border border-[#e5e7eb] bg-white text-[#6b7280] text-xs font-semibold uppercase tracking-widest py-3 hover:bg-[#f7f8fa] hover:text-[#1a1a1a] transition-all duration-200 cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                disabled={isSubmittingCancel || (cancelReasonOption === "Lý do khác" && !customCancelReason.trim())}
+                onClick={handleCancelOrder}
+                className="flex-1 bg-black text-white text-xs font-semibold uppercase tracking-widest py-3 hover:bg-[#333] transition-all duration-200 disabled:bg-[#e5e7eb] disabled:text-[#9ca3af] disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmittingCancel ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "Xác nhận hủy"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

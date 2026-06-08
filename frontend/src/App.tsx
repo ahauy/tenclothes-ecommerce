@@ -13,6 +13,8 @@ import Footer from "./components/Footer";
 import SignUp from "./pages/SignUp";
 import { Toaster } from "sonner";
 import { useAuthStore } from "./stores/useAuthStore";
+import { useCartStore } from "./stores/useCartStore";
+import api from "./utils/axios";
 import { useEffect } from "react";
 import MoMoReturn from "./pages/MomoReturn";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
@@ -24,13 +26,39 @@ import Search from "./components/Search";
 
 const App = () => {
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const cartItems = useCartStore((state) => state.cartItems);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
+  useEffect(() => {
+    if (accessToken) {
+      const syncCart = async () => {
+        try {
+          const response = await api.post(
+            "cart/sync",
+            { items: cartItems },
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          useCartStore.getState().setCart(response.data.data);
+        } catch (error) {
+          console.error("Lỗi đồng bộ giỏ hàng:", error);
+        }
+      };
+      syncCart();
+    }
+  }, [accessToken]);
+
+  // sm:px-[5vw] md:px-[7vw] lg:px-[9vw] 
+
   return (
-    <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] flex flex-col min-h-screen">
+    <div className="px-4 flex flex-col min-h-screen">
       <Toaster richColors position="top-right" expand={false} />
       <Search />
       <Navbar></Navbar>

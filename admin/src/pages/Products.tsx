@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Edit2,
   Trash2,
-  Eye,
   ChevronLeft,
   ChevronRight,
   Package,
@@ -20,6 +19,7 @@ import {
   CheckSquare,
   Square,
   MinusSquare,
+  ArrowUpDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { productService } from "../services/product.service";
@@ -83,6 +83,7 @@ const Products: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("all");
 
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -116,6 +117,7 @@ const Products: React.FC = () => {
         endDate: endDate || undefined,
         minPrice: minPrice || undefined,
         maxPrice: maxPrice || undefined,
+        sort: sortBy !== "all" && sortBy ? sortBy : undefined,
       });
       setProducts(response.data.products);
       setTotalPages(response.data.totalPages);
@@ -136,6 +138,7 @@ const Products: React.FC = () => {
     endDate,
     minPrice,
     maxPrice,
+    sortBy,
   ]);
 
   const handleToggleStatus = async (slug: string, currentStatus: boolean) => {
@@ -322,6 +325,7 @@ const Products: React.FC = () => {
     setCategoryFilter("all");
     setMinPrice("");
     setMaxPrice("");
+    setSortBy("all");
     setPage(1);
     setSelectedProducts([]);
   };
@@ -372,6 +376,34 @@ const Products: React.FC = () => {
       label: cat.title,
       value: cat._id,
     })),
+  ];
+
+  const sortOptions = [
+    {
+      label: "Mới nhất",
+      value: "all",
+      icon: <Calendar className="w-3.5 h-3.5" />,
+    },
+    {
+      label: "Bán chạy nhất",
+      value: "-sold",
+      icon: <Zap className="w-3.5 h-3.5 text-amber-500" />,
+    },
+    {
+      label: "Bán chậm nhất",
+      value: "sold",
+      icon: <Package className="w-3.5 h-3.5" />,
+    },
+    {
+      label: "Giá: Thấp đến Cao",
+      value: "price",
+      icon: <ChevronDown className="w-3.5 h-3.5" />,
+    },
+    {
+      label: "Giá: Cao đến Thấp",
+      value: "-price",
+      icon: <ChevronDown className="w-3.5 h-3.5 rotate-180" />,
+    },
   ];
 
   return (
@@ -504,6 +536,13 @@ const Products: React.FC = () => {
               onChange={(val) => setCategoryFilter(val)}
               icon={<Layers className="w-4 h-4" />}
             />
+            <CustomDropdown
+              placeholder="Sắp xếp"
+              options={sortOptions}
+              value={sortBy}
+              onChange={(val) => setSortBy(val)}
+              icon={<ArrowUpDown className="w-4 h-4" />}
+            />
 
             {/* Reset Filters Icon Button */}
             {(searchTerm ||
@@ -513,7 +552,8 @@ const Products: React.FC = () => {
               maxPrice ||
               activeFilter !== "all" ||
               featuredFilter !== "all" ||
-              categoryFilter !== "all") && (
+              categoryFilter !== "all" ||
+              sortBy !== "all") && (
                 <button
                   onClick={resetFilters}
                   title="Xóa tất cả lọc"
@@ -692,15 +732,20 @@ const Products: React.FC = () => {
                         <p className="text-[9px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">
                           SKU: {product.variants?.[0]?.sku || "N/A"}
                         </p>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-sm font-bold text-neutral-900 tabular-nums">
-                            đ{product.price.toLocaleString()}
-                          </span>
-                          {product.discountPercentage > 0 && (
-                            <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
-                              -{product.discountPercentage}%
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-neutral-900 tabular-nums">
+                              đ{product.price.toLocaleString()}
                             </span>
-                          )}
+                            {product.discountPercentage > 0 && (
+                              <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1 rounded-sm">
+                                -{product.discountPercentage}%
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-semibold text-neutral-500 whitespace-nowrap">
+                            Đã bán: <span className="font-bold text-neutral-800">{product.sold || 0}</span>
+                          </span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           <span className="text-[8px] font-bold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-[3px] truncate max-w-[100px]">
@@ -853,22 +898,25 @@ const Products: React.FC = () => {
                       )}
                     </button>
                   </th>
-                  <th className="w-[25%] px-2 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                  <th className="w-[22%] px-2 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
                     Sản Phẩm
                   </th>
-                  <th className="w-[15%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                  <th className="w-[13%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
                     Phân Loại
                   </th>
-                  <th className="w-[15%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                  <th className="w-[12%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
                     Giá Niêm Yết
+                  </th>
+                  <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">
+                    Đã Bán
                   </th>
                   <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">
                     Tồn Kho
                   </th>
-                  <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">
+                  <th className="w-[9%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">
                     Hiển Thị
                   </th>
-                  <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">
+                  <th className="w-[9%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">
                     Nổi Bật
                   </th>
                   <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-right">
@@ -902,6 +950,12 @@ const Products: React.FC = () => {
                         <div className="space-y-2">
                           <div className="h-3 bg-neutral-100 w-16 rounded-sm" />
                           <div className="h-2 bg-neutral-100 w-12 rounded-sm" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="h-3 bg-neutral-100 w-8 rounded-sm mb-1.5" />
+                          <div className="w-6 h-1 bg-neutral-100 rounded-full" />
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -1015,6 +1069,11 @@ const Products: React.FC = () => {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-[12px] font-bold text-neutral-900 tabular-nums">
+                            {product.sold || 0}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="inline-flex flex-col items-center">
@@ -1182,7 +1241,7 @@ const Products: React.FC = () => {
               <ReactPaginate
                 breakLabel="..."
                 nextLabel={<ChevronRight className="w-4 h-4" />}
-                onPageChange={(e) => setPage(e.selected + 1)}
+                onPageChange={(selectedItem: { selected: number }) => setPage(selectedItem.selected + 1)}
                 pageRangeDisplayed={3}
                 marginPagesDisplayed={1}
                 pageCount={totalPages}

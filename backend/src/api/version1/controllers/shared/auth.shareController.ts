@@ -7,7 +7,10 @@ import {
 import { Model } from "mongoose";
 import ApiError from "../../../../helpers/ApiError";
 
-export const loginShareController = (DataModel: Model<any>) => {
+export const loginShareController = (
+  DataModel: Model<any>,
+  cookieName: string = "jwt"
+) => {
   return async (
     req: Request<{}, {}, ILoginReqBody>,
     res: Response,
@@ -18,7 +21,7 @@ export const loginShareController = (DataModel: Model<any>) => {
       const data = await loginShareService(DataModel, loginData);
 
       if (data) {
-        res.cookie("jwt", data.refreshToken, {
+        res.cookie(cookieName, data.refreshToken, {
           httpOnly: true,
           sameSite: "lax",
           secure: false,
@@ -52,10 +55,10 @@ export const loginShareController = (DataModel: Model<any>) => {
   };
 };
 
-export const refreshShareController = () => {
+export const refreshShareController = (cookieName: string = "jwt") => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
-      const refreshToken = req.cookies["jwt"];
+      const refreshToken = req.cookies[cookieName];
 
       if (!refreshToken) {
         res.status(401).json({
@@ -90,10 +93,10 @@ export const refreshShareController = () => {
   };
 };
 
-export const logoutShareController = () => {
+export const logoutShareController = (cookieName: string = "jwt") => {
   return (_req: Request, res: Response): void => {
     try {
-      res.clearCookie("jwt", {
+      res.clearCookie(cookieName, {
         httpOnly: true,
         sameSite: "lax",
         secure: false,

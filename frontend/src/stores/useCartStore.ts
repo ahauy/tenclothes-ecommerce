@@ -130,7 +130,7 @@ export const useCartStore = create<ShopState>()(
           try {
             await api.patch(
               "/cart/remove", 
-              { data: { productId, size, color } }, 
+              { productId, size, color }, 
               {
                 headers: {
                   Authorization: `Bearer ${isAuthenticated()}`,

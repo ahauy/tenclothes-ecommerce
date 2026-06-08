@@ -152,6 +152,7 @@ export interface IOrder extends Document {
 
   orderStatus: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "unpaid" | "paid" | "refunded";
+  cancelReason?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

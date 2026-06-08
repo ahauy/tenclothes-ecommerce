@@ -2,6 +2,8 @@ import { create } from "zustand";
 import type { IAuthState, IUserProfile } from "../interfaces/iAuthState";
 import { authServices } from "../services/authService";
 import { userServices } from "../services/userService";
+import { useCheckoutInforStore } from "./useCheckoutInforStore";
+import { useCartStore } from "./useCartStore";
 import { toast } from "sonner";
 
 export const useAuthStore = create<IAuthState>((set) => ({
@@ -10,6 +12,7 @@ export const useAuthStore = create<IAuthState>((set) => ({
   user: null,
 
   setAccessToken: (token: string) => {
+    localStorage.setItem("access_token", token);
     set({ accessToken: token });
   },
 
@@ -21,6 +24,7 @@ export const useAuthStore = create<IAuthState>((set) => ({
     try {
       const res = await authServices.refreshToken();
       const accessToken: string = res.data.accessToken;
+      localStorage.setItem("access_token", accessToken);
       set({ accessToken, isAuthLoading: false });
 
       // Load profile ngay sau khi có token
@@ -33,6 +37,7 @@ export const useAuthStore = create<IAuthState>((set) => ({
       }
     } catch (error) {
       console.error(error);
+      localStorage.removeItem("access_token");
       set({ accessToken: "", isAuthLoading: false, user: null });
     }
   },
@@ -40,10 +45,16 @@ export const useAuthStore = create<IAuthState>((set) => ({
   logOut: async () => {
     try {
       await authServices.logOutService();
-      set({ accessToken: "", isAuthLoading: false, user: null });
-      toast.success("Đăng xuất thành công!");
     } catch (error) {
-      console.log("Có lỗi trong quá trình đăng xuất!", error);
+      console.log("Có lỗi trong quá trình đăng xuất ở server!", error);
     }
+    
+    // Luôn dọn dẹp các thông tin ở client
+    localStorage.removeItem("access_token");
+    useCheckoutInforStore.getState().resetAddress();
+    useCartStore.getState().clearCart();
+    set({ accessToken: "", isAuthLoading: false, user: null });
+    toast.success("Đăng xuất thành công!");
   },
 }));
+

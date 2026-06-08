@@ -84,7 +84,13 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
     
     fetchPendingOrders();
     const intervalId = setInterval(fetchPendingOrders, 60000); // refresh every minute
-    return () => clearInterval(intervalId);
+    
+    window.addEventListener("orderStatsUpdated", fetchPendingOrders);
+    
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("orderStatsUpdated", fetchPendingOrders);
+    };
   }, []);
 
   const menuItems = [

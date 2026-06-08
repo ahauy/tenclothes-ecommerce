@@ -33,12 +33,12 @@ export const getProfileController = async (
       data: profile,
     });
   } catch (error) {
-    console.error("Lỗi trong getProfileController:", error);
-
     if (error instanceof ApiError) {
       res.status(error.statusCode).json({ status: false, message: error.message });
       return;
     }
+    
+    console.error("Lỗi trong getProfileController:", error);
     res.status(500).json({ status: false, message: "Lỗi hệ thống!" });
   }
 };

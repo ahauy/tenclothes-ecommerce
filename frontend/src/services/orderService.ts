@@ -10,4 +10,20 @@ export const orderService = {
       },
     });
   },
+  cancelOrderService: async (orderCode: string, cancelReason: string) => {
+    const token = useAuthStore.getState().accessToken;
+    return await api.patch(`/orders/${orderCode}/cancel`, { cancelReason }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  repurchaseOrderService: async (orderCode: string) => {
+    const token = useAuthStore.getState().accessToken;
+    return await api.post(`/orders/${orderCode}/repurchase`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };

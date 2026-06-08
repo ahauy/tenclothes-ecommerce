@@ -56,7 +56,7 @@ export const syncCart = async (
 
     const localItemsCart: ICartItem[] = req.body.items || [];
 
-    const formattedItems = syncCartService(userId, localItemsCart);
+    const formattedItems = await syncCartService(userId, localItemsCart);
 
     res.status(200).json({
       status: true,

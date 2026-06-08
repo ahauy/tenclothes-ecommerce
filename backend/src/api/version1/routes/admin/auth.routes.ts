@@ -6,10 +6,10 @@ import Account from "../../../../models/account.model";
 
 const authRoutesAdmin: Router = express.Router()
 
-authRoutesAdmin.post("/login", validate(loginSchema), loginShareController(Account))
+authRoutesAdmin.post("/login", validate(loginSchema), loginShareController(Account, "admin_jwt"))
 
-authRoutesAdmin.post("/refresh-token", refreshShareController())
+authRoutesAdmin.post("/refresh-token", refreshShareController("admin_jwt"))
 
-authRoutesAdmin.post("/logout", logoutShareController())
+authRoutesAdmin.post("/logout", logoutShareController("admin_jwt"))
 
 export default authRoutesAdmin

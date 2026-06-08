@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, Edit2, Trash2, Package, RefreshCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Edit2, Trash2, Package, RefreshCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../utils/cn";
 import type { IProductAdmin } from "../../interfaces/product.interface";
@@ -72,14 +72,15 @@ const ProductTable: React.FC<ProductTableProps> = ({
                 <th className="w-[5%] px-6 py-4">
                   <input type="checkbox" checked={products.length > 0 && selectedSlugs.length === products.length} onChange={handleSelectAll} className="w-4 h-4 rounded border-neutral-300 accent-neutral-900 cursor-pointer" />
                 </th>
-                <th className="w-[25%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Sản Phẩm</th>
-                <th className="w-[15%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Phân Loại</th>
-                <th className="w-[15%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Giá</th>
+                <th className="w-[22%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Sản Phẩm</th>
+                <th className="w-[13%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Phân Loại</th>
+                <th className="w-[12%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Giá</th>
+                <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">Đã Bán</th>
                 <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">Tồn Kho</th>
                 {mode === "active" && (
                   <>
-                    <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">Hiển Thị</th>
-                    <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">Nổi Bật</th>
+                    <th className="w-[9%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">Hiển Thị</th>
+                    <th className="w-[9%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-center">Nổi Bật</th>
                   </>
                 )}
                 <th className="w-[10%] px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase tracking-widest text-right">Thao Tác</th>
@@ -88,7 +89,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
             <tbody className="divide-y divide-neutral-100 min-h-[400px]">
               {isLoading && products.length === 0 ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse"><td colSpan={8} className="px-6 py-4 h-[90px] bg-neutral-50/50" /></tr>
+                  <tr key={i} className="animate-pulse"><td colSpan={9} className="px-6 py-4 h-[90px] bg-neutral-50/50" /></tr>
                 ))
               ) : products.length > 0 ? (
                 products.map((product) => (
@@ -111,6 +112,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                       <span className="text-[11px] font-semibold text-neutral-700 block truncate">{product.categoryIds?.[0]?.title || "CHƯA PHÂN LOẠI"}</span>
                     </td>
                     <td className="px-6 py-4 font-bold text-neutral-900">${product.price.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-center font-bold">{product.sold || 0}</td>
                     <td className="px-6 py-4 text-center font-bold">{product.totalStock}</td>
                     
                     {mode === "active" && (
@@ -144,7 +146,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                   </motion.tr>
                 ))
               ) : (
-                <tr><td colSpan={8} className="py-20 text-center text-neutral-400 text-xs">Không tìm thấy sản phẩm</td></tr>
+                <tr><td colSpan={9} className="py-20 text-center text-neutral-400 text-xs">Không tìm thấy sản phẩm</td></tr>
               )}
             </tbody>
           </table>

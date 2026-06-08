@@ -9,6 +9,7 @@ export const useAuthStore = create<IAdminAuthState>((set) => ({
   admin: null,
 
   setAccessToken: (token: string) => {
+    localStorage.setItem("access_token", token);
     set({ accessToken: token });
   },
 
@@ -21,6 +22,7 @@ export const useAuthStore = create<IAdminAuthState>((set) => ({
       set({ isAuthLoading: true });
       const response = await authService.refreshToken();
       // Backend returns: { status, message, accessToken, data: user }
+      localStorage.setItem("access_token", response.accessToken);
       set({ 
         accessToken: response.accessToken, 
         admin: response.data,
@@ -28,6 +30,7 @@ export const useAuthStore = create<IAdminAuthState>((set) => ({
       });
     } catch (error) {
       console.error("Lỗi xác thực:", error);
+      localStorage.removeItem("access_token");
       set({ accessToken: "", admin: null, isAuthLoading: false });
     } finally {
       set({ isAuthLoading: false });
@@ -37,10 +40,12 @@ export const useAuthStore = create<IAdminAuthState>((set) => ({
   logout: async () => {
     try {
       await authService.logout();
+      localStorage.removeItem("access_token");
       set({ accessToken: "", admin: null, isAuthLoading: false });
       toast.success("Đăng xuất thành công");
     } catch (error) {
       console.error("Lỗi đăng xuất:", error);
+      localStorage.removeItem("access_token");
       // Vẫn xóa state local kể cả khi API lỗi
       set({ accessToken: "", admin: null, isAuthLoading: false });
     }

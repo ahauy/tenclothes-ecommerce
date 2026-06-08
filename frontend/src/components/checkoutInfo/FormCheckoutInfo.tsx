@@ -11,6 +11,7 @@ import { useCheckoutInforStore } from "../../stores/useCheckoutInforStore";
 import { useAuthStore } from "../../stores/useAuthStore"; // Import thêm AuthStore
 import ErrorMessage from "../errorMessage/ErrorMessage";
 import { getInputClassName } from "../../utils/getInputClassName";
+import { userServices, type IAddress } from "../../services/userService";
 
 const FormCheckoutInfo = ({
   onSubmitSuccess,
@@ -19,6 +20,7 @@ const FormCheckoutInfo = ({
 }) => {
   // Lấy thông tin user đang đăng nhập
   const currentUser = useAuthStore((s) => s.user); 
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   // Lấy thông tin đã lưu trong localStorage
   const storedFullName = useCheckoutInforStore((s) => s.fullName);
@@ -33,10 +35,10 @@ const FormCheckoutInfo = ({
 
   const setField = useCheckoutInforStore((s) => s.setField);
 
-  // Ưu tiên thông tin cá nhân từ tài khoản đăng nhập, fallback về localStorage
-  const fullName = currentUser?.fullName || storedFullName;
-  const email = currentUser?.email || storedEmail;
-  const phone = currentUser?.phone || storedPhone;
+  // Ưu tiên thông tin đã lưu trong store (địa chỉ mặc định/đã chọn), fallback về thông tin tài khoản đăng nhập
+  const fullName = storedFullName || currentUser?.fullName || "";
+  const email = storedEmail || currentUser?.email || "";
+  const phone = storedPhone || currentUser?.phone || "";
 
   const {
     register,
@@ -59,30 +61,68 @@ const FormCheckoutInfo = ({
     },
   });
 
+  // Tải danh sách địa chỉ và tự động điền địa chỉ mặc định khi đăng nhập
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!accessToken) {
+        return;
+      }
+      try {
+        const res = await userServices.getAddresses(accessToken);
+        const list: IAddress[] = res.data.data ?? [];
+
+        // Tìm địa chỉ mặc định (hoặc địa chỉ đầu tiên)
+        const defaultAddr = list.find((addr) => addr.isDefault) || list[0];
+        if (defaultAddr) {
+          // Chỉ tự động điền nếu các trường địa chỉ hiện tại đang trống
+          const hasAddress = !!(province || district || ward || detailAddress);
+          if (!hasAddress) {
+            setValue("fullName", defaultAddr.name);
+            setField("fullName", defaultAddr.name);
+
+            setValue("phone", defaultAddr.phone);
+            setField("phone", defaultAddr.phone);
+
+            setValue("province", String(defaultAddr.province));
+            setField("province", String(defaultAddr.province));
+
+            setValue("district", String(defaultAddr.district));
+            setField("district", String(defaultAddr.district));
+
+            setValue("ward", String(defaultAddr.ward));
+            setField("ward", String(defaultAddr.ward));
+
+            setValue("detailAddress", defaultAddr.address);
+            setField("detailAddress", defaultAddr.address);
+          }
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách địa chỉ:", error);
+      }
+    };
+    fetchAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
+
+
+
   // Khi user đăng nhập/đăng xuất: đồng bộ thông tin cá nhân vào form và localStorage
   useEffect(() => {
     if (currentUser) {
-      // Đăng nhập: ghi đè form + localStorage bằng thông tin tài khoản
-      if (currentUser.fullName) {
+      const currentStored = useCheckoutInforStore.getState();
+      // Đăng nhập: ghi đè form + localStorage bằng thông tin tài khoản nếu trống
+      if (currentUser.fullName && !currentStored.fullName) {
         setValue("fullName", currentUser.fullName);
         setField("fullName", currentUser.fullName);
       }
-      if (currentUser.email) {
+      if (currentUser.email && !currentStored.email) {
         setValue("email", currentUser.email);
         setField("email", currentUser.email);
       }
-      if (currentUser.phone) {
+      if (currentUser.phone && !currentStored.phone) {
         setValue("phone", currentUser.phone);
         setField("phone", currentUser.phone);
       }
-    } else {
-      // Đăng xuất: xóa thông tin cá nhân cũ để tránh dữ liệu "dính"
-      setValue("fullName", "");
-      setField("fullName", "");
-      setValue("email", "");
-      setField("email", "");
-      setValue("phone", "");
-      setField("phone", "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
@@ -122,6 +162,8 @@ const FormCheckoutInfo = ({
         <h1 className="font-semibold text-xl sm:text-2xl mb-6 text-[#1a1a1a] tracking-tight">
           THÔNG TIN GIAO HÀNG
         </h1>
+
+
         
         {/* Họ tên */}
         <div className="w-full mb-5">

@@ -14,6 +14,8 @@ import { Cart } from "../../../../models/cart.model";
 export const validateLocalCartSevice = async (
   items: ICartItem[]
 ): Promise<IOrderProductItem[]> => {
+  if (!Array.isArray(items)) return [];
+
   const validItems = await Promise.all(
     items.map(async (item: ICartItem) => {
 
@@ -58,28 +60,47 @@ export const syncCartService = async (
   userId: string,
   localItemsCart: ICartItem[]
 ): Promise<IFormattedCart[]> => {
+  if (!Array.isArray(localItemsCart)) {
+    localItemsCart = [];
+  }
+
   let cart: ICart | null = await Cart.findOne({ userId: userId });
 
   if (cart === null) {
     cart = new Cart({ userId, items: localItemsCart });
+    await cart.save();
   } else {
-    localItemsCart.forEach((localItem: ICartItem) => {
-      // Phải check trùng cả ID, Size và Màu sắc
-      const existingItemIndex = cart!.items.findIndex(
-        (dbItem: ICartItem) =>
-          String(dbItem.productId) === String(localItem.productId) &&
-          dbItem.size === localItem.size &&
-          dbItem.color === localItem.color
-      );
+    const isCartEqual = (localItems: ICartItem[], dbItems: any[]): boolean => {
+      if (localItems.length !== dbItems.length) return false;
+      return localItems.every(localItem => {
+        const dbItem = dbItems.find(db => 
+          String(db.productId) === String(localItem.productId) &&
+          db.size === localItem.size &&
+          db.color === localItem.color
+        );
+        return dbItem && dbItem.quantity === localItem.quantity;
+      });
+    };
 
-      if (existingItemIndex > -1) {
-        cart!.items[existingItemIndex]!.quantity += localItem.quantity;
-      } else {
-        cart!.items.push(localItem);
-      }
-    });4
+    if (localItemsCart.length > 0 && !isCartEqual(localItemsCart, cart.items)) {
+      localItemsCart.forEach((localItem: ICartItem) => {
+        // Phải check trùng cả ID, Size và Màu sắc
+        const existingItemIndex = cart!.items.findIndex(
+          (dbItem: ICartItem) =>
+            String(dbItem.productId) === String(localItem.productId) &&
+            dbItem.size === localItem.size &&
+            dbItem.color === localItem.color
+        );
+
+        if (existingItemIndex > -1) {
+          cart!.items[existingItemIndex]!.quantity += localItem.quantity;
+        } else {
+          cart!.items.push(localItem);
+        }
+      });
+      await cart.save();
+    }
   }
-  await cart.save();
 
   const populatedCart = (await Cart.findById(cart._id)
     .populate({

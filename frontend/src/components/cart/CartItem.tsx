@@ -40,17 +40,33 @@ const CartItem = ({
   productId: string;
   color: string;
 }) => {
-  const [quantity, setQuantity] = useState<number>(quantityProps);
+  const [inputValue, setInputValue] = useState<string>(String(quantityProps));
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeFromCart = useCartStore((s) => s.removeFromCart);
   useShopStore((s) => s.currency);
 
   useEffect(() => {
-    updateQuantity(productId, size, color, quantity);
-    if (quantity === 0) removeFromCart(productId, size, color);
-  }, [quantity]);
+    setInputValue(String(quantityProps));
+  }, [quantityProps]);
 
-  const lineTotal = (salePrice * quantity).toLocaleString("vi-VN");
+  useEffect(() => {
+    const num = Number(inputValue);
+
+    if (inputValue === "" || isNaN(num) || num <= 0) {
+      const timer = setTimeout(() => {
+        if (inputValue === "" || num === 0) {
+          removeFromCart(productId, size, color);
+        }
+      }, 1000); // Trì hoãn 1 giây trước khi xóa thực tế
+
+      return () => clearTimeout(timer);
+    } else {
+      updateQuantity(productId, size, color, num);
+    }
+  }, [inputValue, productId, size, color, updateQuantity, removeFromCart]);
+
+  const displayQty = inputValue === "" ? 0 : Number(inputValue);
+  const lineTotal = (salePrice * displayQty).toLocaleString("vi-VN");
 
   return (
     <div className="flex gap-4 py-5 border-b border-neutral-100 group">
@@ -102,7 +118,7 @@ const CartItem = ({
           <div className="flex items-center rounded-full border border-neutral-200 overflow-hidden">
             <button
               className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 transition-colors select-none"
-              onClick={() => setQuantity((q) => Math.max(0, Number(q) - 1))}
+              onClick={() => setInputValue((q) => String(Math.max(0, Number(q) - 1)))}
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
@@ -110,17 +126,18 @@ const CartItem = ({
             </button>
             <input
               type="text"
-              value={quantity}
+              value={inputValue}
               onChange={(e) => {
                 const v = e.target.value;
-                if (v === "") setQuantity(0);
-                if (!isNaN(Number(v))) setQuantity(Number(v));
+                if (v === "" || !isNaN(Number(v))) {
+                  setInputValue(v);
+                }
               }}
               className="w-8 text-center text-sm font-semibold text-black outline-none bg-transparent"
             />
             <button
               className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:bg-neutral-100 transition-colors select-none"
-              onClick={() => setQuantity((q) => Number(q) + 1)}
+              onClick={() => setInputValue((q) => String(Number(q) + 1))}
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

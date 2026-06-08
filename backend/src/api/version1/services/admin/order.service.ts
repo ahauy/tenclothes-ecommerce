@@ -18,16 +18,27 @@ export const getListOrderAdminService = async (queryFilter: IRequestQueryFilter)
    const limitNum = Number(limit);
    const skip = (pageNum - 1) * limitNum;
 
-   const filter: any = {};
+   const filter: any = {
+     $and: [
+       {
+         $or: [
+           { "customer.paymentMethod": { $ne: "momo" } },
+           { paymentStatus: { $in: ["paid", "refunded"] } }
+         ]
+       }
+     ]
+   };
 
    // Xử lý tìm kiếm keyword (Mã đơn hàng, Email, SĐT, Tên)
    if (keyword) {
-    filter.$or = [
-      { orderCode: { $regex: keyword, $options: "i" } },
-      { "customer.fullName": { $regex: keyword, $options: "i" } },
-      { "customer.email": { $regex: keyword, $options: "i" } },
-      { "customer.phone": { $regex: keyword, $options: "i" } }
-    ];
+    filter.$and.push({
+      $or: [
+        { orderCode: { $regex: keyword, $options: "i" } },
+        { "customer.fullName": { $regex: keyword, $options: "i" } },
+        { "customer.email": { $regex: keyword, $options: "i" } },
+        { "customer.phone": { $regex: keyword, $options: "i" } }
+      ]
+    });
    }
 
    // Lọc theo trạng thái
@@ -149,6 +160,14 @@ export const getOrderStatsAdminService = async () => {
   const [globalAgg, todayAgg] = await Promise.all([
     Order.aggregate([
       {
+        $match: {
+          $or: [
+            { "customer.paymentMethod": { $ne: "momo" } },
+            { paymentStatus: { $in: ["paid", "refunded"] } }
+          ]
+        }
+      },
+      {
         $facet: {
           totals: [
             {
@@ -177,7 +196,15 @@ export const getOrderStatsAdminService = async () => {
       },
     ]),
     Order.aggregate([
-      { $match: { createdAt: { $gte: today, $lt: tomorrow } } },
+      {
+        $match: {
+          createdAt: { $gte: today, $lt: tomorrow },
+          $or: [
+            { "customer.paymentMethod": { $ne: "momo" } },
+            { paymentStatus: { $in: ["paid", "refunded"] } }
+          ]
+        }
+      },
       {
         $group: {
           _id: null,

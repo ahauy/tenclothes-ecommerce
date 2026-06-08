@@ -1,9 +1,11 @@
 import { type Request, type Response } from "express";
-import { IOrderReq } from "../../validators/client/order.validator";
+import { IOrderReq, ICancelOrderReq } from "../../validators/client/order.validator";
 import {
   postOrderServiceClient,
   updateOrderService,
   getMyOrdersService,
+  cancelOrderServiceClient,
+  repurchaseOrderServiceClient,
 } from "../../services/client/order.service";
 import ApiError from "../../../../helpers/ApiError";
 import axios from "axios";
@@ -36,14 +38,14 @@ export const postOrderClient = async (
 
     const data = await postOrderServiceClient(payload, userId);
 
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("newOrder", data);
-    }
-
     const paymentMethod: string = payload.customer.paymentMethod;
 
     if (paymentMethod === "cod") {
+      const io = req.app.get("io");
+      if (io) {
+        io.emit("newOrder", data);
+      }
+
       res.status(201).json({
         status: true,
         message: "Đặt hàng thành công!",
@@ -196,6 +198,11 @@ export const momoIPN = async (req: Request, res: Response): Promise<void> => {
           await Coupon.findOneAndUpdate({ code: updatedOrder.couponCode }, updateQuery);
         }
 
+        const io = req.app.get("io");
+        if (io) {
+          io.emit("newOrder", updatedOrder);
+        }
+
         const htmlContent = await emailTemplate(updatedOrder)
         await sendMail(
           updatedOrder.customer.email,
@@ -236,6 +243,77 @@ export const getMyOrdersClient = async (req: Request | any, res: Response): Prom
     });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách đơn hàng: ", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const cancelOrderClient = async (
+  req: Request<{ orderCode: string }, {}, ICancelOrderReq>,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) {
+      res.status(401).json({ message: "Chưa xác thực người dùng!" });
+      return;
+    }
+
+    const { orderCode } = req.params;
+    const { cancelReason } = req.body;
+
+    const data = await cancelOrderServiceClient(orderCode, userId, cancelReason);
+
+    res.status(200).json({
+      status: true,
+      message: "Hủy đơn hàng thành công!",
+      data: data,
+    });
+  } catch (error) {
+    console.error("Có lỗi trong cancelOrderClient: ", error);
+
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({
+        status: false,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const repurchaseOrderClient = async (
+  req: Request<{ orderCode: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) {
+      res.status(401).json({ message: "Chưa xác thực người dùng!" });
+      return;
+    }
+
+    const { orderCode } = req.params;
+
+    const cart = await repurchaseOrderServiceClient(orderCode, userId);
+
+    res.status(200).json({
+      status: true,
+      message: "Đã thêm các sản phẩm vào giỏ hàng thành công!",
+      data: cart,
+    });
+  } catch (error) {
+    console.error("Có lỗi trong repurchaseOrderClient: ", error);
+
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({
+        status: false,
+        message: error.message,
+      });
+      return;
+    }
+
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };

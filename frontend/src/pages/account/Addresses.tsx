@@ -74,6 +74,7 @@ const Addresses: React.FC = () => {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<IAddress | null>(null);
+  const [addressNames, setAddressNames] = useState<Record<string, { province: string; district: string; ward: string }>>({});
 
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthLoading = useAuthStore((state) => state.isAuthLoading);
@@ -100,6 +101,55 @@ const Addresses: React.FC = () => {
       }
     }
   }, [isAuthLoading, accessToken, fetchAddresses]);
+
+  // Giải mã mã tỉnh/huyện/xã thành tên hiển thị
+  useEffect(() => {
+    const resolveNames = async () => {
+      const newNames = { ...addressNames };
+      let updated = false;
+
+      for (const addr of addresses) {
+        const cacheKey = `${addr._id}-${addr.province}-${addr.district}-${addr.ward}`;
+        if (!newNames[cacheKey]) {
+          try {
+            const [pRes, dRes, wRes] = await Promise.all([
+              fetch(`https://provinces.open-api.vn/api/p/${addr.province}`),
+              fetch(`https://provinces.open-api.vn/api/d/${addr.district}`),
+              fetch(`https://provinces.open-api.vn/api/w/${addr.ward}`),
+            ]);
+
+            const pData = pRes.ok ? await pRes.json() : null;
+            const dData = dRes.ok ? await dRes.json() : null;
+            const wData = wRes.ok ? await wRes.json() : null;
+
+            newNames[cacheKey] = {
+              province: pData?.name || `Tỉnh ${addr.province}`,
+              district: dData?.name || `Quận/Huyện ${addr.district}`,
+              ward: wData?.name || `Phường/Xã ${addr.ward}`,
+            };
+            updated = true;
+          } catch (err) {
+            console.error("Lỗi phân giải tên địa chỉ:", err);
+            newNames[cacheKey] = {
+              province: `Tỉnh/TP ${addr.province}`,
+              district: `Quận/Huyện ${addr.district}`,
+              ward: `Phường/Xã ${addr.ward}`,
+            };
+            updated = true;
+          }
+        }
+      }
+
+      if (updated) {
+        setAddressNames(newNames);
+      }
+    };
+
+    if (addresses.length > 0) {
+      resolveNames();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addresses]);
 
   const openAddModal = () => {
     setEditingAddress(null);
@@ -159,8 +209,20 @@ const Addresses: React.FC = () => {
     }
   };
 
-  const formatAddress = (addr: IAddress) =>
-    [addr.address, addr.ward, addr.district, addr.province].filter(Boolean).join(", ");
+  const formatAddress = (addr: IAddress) => {
+    const cacheKey = `${addr._id}-${addr.province}-${addr.district}-${addr.ward}`;
+    const names = addressNames[cacheKey];
+    if (names) {
+      return [addr.address, names.ward, names.district, names.province].filter(Boolean).join(", ");
+    }
+    // Fallback khi đang tải thông tin địa chỉ từ open-api
+    return [
+      addr.address,
+      `Phường/Xã ${addr.ward}`,
+      `Quận/Huyện ${addr.district}`,
+      `Tỉnh/TP ${addr.province}`
+    ].filter(Boolean).join(", ");
+  };
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] font-manrope w-full">

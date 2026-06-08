@@ -17,8 +17,6 @@ app.set("io", io);
 
 const PORT: string = process.env["PORT"] || "3000";
 
-
-
 // Gọi hàm kết nối Database độc lập (chạy cho cả Local và Vercel)
 connectDB().catch((e): void => {
   console.error("Không thể kết nối với database: ", e);

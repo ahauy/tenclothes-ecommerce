@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
 // import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -7,8 +7,7 @@ import { type loginFormValue } from "../validators/signUp.validate";
 // import type { IJsonFail } from "../interfaces/iAuthState";
 import { useAuthStore } from "../stores/useAuthStore";
 import { authServices } from "../services/authService";
-import { useCartStore, type ICartItem } from "../stores/useCartStore";
-import api from "../utils/axios";
+import { userServices } from "../services/userService";
 
 const Login = () => {
   const {
@@ -20,39 +19,34 @@ const Login = () => {
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
   const navigate = useNavigate();
 
-  const localCartItems: ICartItem[] = useCartStore((s) => s.cartItems);
-
   const onSubmit: SubmitHandler<loginFormValue> = async (
     data: loginFormValue
   ) => {
+    let res;
     try {
-      const res = await authServices.logInService(data.email, data.password);
-
-      if (res.data?.status) {
-        setAccessToken(res.data.accessToken);
-        console.log(res.data.accessToken)
-        toast.success("Đăng nhập thành công!");
-
-        if (localCartItems.length > 0) {
-          const response = await api.post(
-            "cart/sync",
-            { items: localCartItems },
-            {
-              headers: {
-                // Nhét thủ công Access Token vào đúng cái định dạng mà verifyToken đang chờ đón
-                Authorization: `Bearer ${res.data.accessToken}`,
-              },
-            }
-          );
-
-          // Frontend nhận kết quả gộp, cập nhật lại giao diện
-          useCartStore.getState().setCart(response.data.data);
-        }
-
-        navigate("/");
-      }
+      res = await authServices.logInService(data.email, data.password);
     } catch {
       toast.error("Email hoặc mật khẩu không hợp lệ!");
+      return;
+    }
+
+    if (res.data?.status) {
+      const token = res.data.accessToken;
+      setAccessToken(token);
+      console.log(token);
+      
+      try {
+        const profileRes = await userServices.getProfile(token);
+        useAuthStore.getState().setUser(profileRes.data.data);
+      } catch (error) {
+        console.error("Lỗi lấy profile:", error);
+      }
+
+      toast.success("Đăng nhập thành công!");
+
+      navigate("/");
+    } else {
+      toast.error(res.data?.message || "Đăng nhập thất bại!");
     }
   };
 

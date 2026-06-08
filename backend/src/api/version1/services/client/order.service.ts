@@ -8,6 +8,7 @@ import Review from "../../../../models/review.model";
 import { Coupon } from "../../../../models/coupon.model";
 import { validateCouponService } from "./coupon.service";
 import { IOrderReq } from "./../../validators/client/order.validator";
+import { Cart } from "../../../../models/cart.model";
 
 export const postOrderServiceClient = async (payload: IOrderReq, userId: string | null = null): Promise<IOrder> => {
   const { customer, items, couponCode } = payload;
@@ -110,7 +111,13 @@ export const updateOrderService = async (orderId: string): Promise<IOrder | null
 };
 
 export const getMyOrdersService = async (userId: string): Promise<IOrder[]> => {
-  const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 }).lean();
+  const orders = await Order.find({
+    userId: userId,
+    $or: [
+      { "customer.paymentMethod": { $ne: "momo" } },
+      { paymentStatus: { $in: ["paid", "refunded"] } }
+    ]
+  }).sort({ createdAt: -1 }).lean();
   
   const userReviews = await Review.find({ userId: userId }).select("orderId productId").lean();
   const reviewedSet = new Set(userReviews.map(r => `${r.orderId.toString()}-${r.productId.toString()}`));
@@ -124,4 +131,133 @@ export const getMyOrdersService = async (userId: string): Promise<IOrder[]> => {
   }));
 
   return ordersWithReviewStatus as any;
+};
+
+export const cancelOrderServiceClient = async (
+  orderCode: string,
+  userId: string,
+  cancelReason: string
+): Promise<IOrder> => {
+  const order = await Order.findOne({ orderCode: orderCode.toUpperCase(), userId: userId });
+  if (!order) {
+    throw new ApiError(404, "Không tìm thấy đơn hàng!");
+  }
+
+  // Chỉ cho phép hủy đơn ở trạng thái pending hoặc processing
+  if (order.orderStatus !== "pending" && order.orderStatus !== "processing") {
+    throw new ApiError(
+      400,
+      `Đơn hàng ở trạng thái "${order.orderStatus}" không thể hủy!`
+    );
+  }
+
+  const oldPaymentStatus = order.paymentStatus;
+
+  // Cập nhật trạng thái đơn hàng
+  order.orderStatus = "cancelled";
+  order.cancelReason = cancelReason;
+
+  // Nếu đã thanh toán thì cập nhật trạng thái là refunded
+  if (oldPaymentStatus === "paid") {
+    order.paymentStatus = "refunded";
+  }
+
+  await order.save();
+
+  // Hoàn lại kho nếu kho đã bị trừ trước đó.
+  // Kho bị trừ khi:
+  // 1. Phương thức thanh toán là COD
+  // 2. Phương thức thanh toán là Momo và trạng thái thanh toán đã là paid trước khi hủy
+  const wasStockDecremented =
+    order.customer.paymentMethod === "cod" ||
+    (order.customer.paymentMethod === "momo" && oldPaymentStatus === "paid");
+
+  if (wasStockDecremented) {
+    // 1. Hoàn trả kho sản phẩm
+    for (const item of order.items) {
+      await Product.updateOne(
+        {
+          _id: item.productId,
+          "variants.size": item.size,
+          "variants.colorName": item.color
+        },
+        {
+          $inc: { "variants.$.stock": item.quantity, sold: -item.quantity },
+        }
+      );
+    }
+
+    // 2. Hoàn lại lượt sử dụng mã giảm giá (nếu có)
+    if (order.couponCode) {
+      const updateQuery: any = { $inc: { usageCount: -1 } };
+      if (order.userId) {
+        updateQuery["$pull"] = { usedBy: new mongoose.Types.ObjectId(order.userId.toString()) };
+      }
+      await Coupon.findOneAndUpdate({ code: order.couponCode }, updateQuery);
+    }
+  }
+
+  return order;
+};
+
+export const repurchaseOrderServiceClient = async (
+  orderCode: string,
+  userId: string
+): Promise<any> => {
+  const order = await Order.findOne({ orderCode: orderCode.toUpperCase(), userId: userId });
+  if (!order) {
+    throw new ApiError(404, "Không tìm thấy đơn hàng!");
+  }
+
+  // Chỉ lấy những sản phẩm còn bán (isActive: true và deleted: false)
+  const productIds = order.items.map((item) => item.productId);
+  const activeProducts = await Product.find({
+    _id: { $in: productIds },
+    isActive: { $ne: false },
+    deleted: { $ne: true },
+  }).select("_id").lean();
+
+  const activeProductIdsSet = new Set(activeProducts.map((p) => p._id.toString()));
+
+  const validItems = order.items.filter((item) =>
+    activeProductIdsSet.has(item.productId.toString())
+  );
+
+  if (validItems.length === 0) {
+    throw new ApiError(
+      400,
+      "Tất cả sản phẩm trong đơn hàng này hiện đã ngừng bán hoặc không còn tồn tại!"
+    );
+  }
+
+  // Lấy hoặc tạo mới giỏ hàng của user
+  let cart = await Cart.findOne({ userId });
+  if (!cart) {
+    cart = new Cart({ userId, items: [] });
+  }
+
+  // Thêm từng sản phẩm hợp lệ vào giỏ hàng
+  for (const item of validItems) {
+    const existingIndex = cart.items.findIndex(
+      (cartItem) =>
+        String(cartItem.productId) === String(item.productId) &&
+        cartItem.size === item.size &&
+        cartItem.color === item.color
+    );
+
+    if (existingIndex > -1) {
+      cart.items[existingIndex]!.quantity += item.quantity;
+    } else {
+      cart.items.push({
+        productId: item.productId,
+        sku: item.sku,
+        color: item.color,
+        size: item.size,
+        quantity: item.quantity,
+      } as any);
+    }
+  }
+
+  await cart.save();
+  return cart;
 };
