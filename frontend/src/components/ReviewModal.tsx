@@ -216,8 +216,8 @@ const ReviewModal = ({
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
                       className="w-9 h-9 sm:w-10 sm:h-10 transition-all duration-150"
-                      fill={star <= displayRating ? "#1a1a1a" : "none"}
-                      stroke={star <= displayRating ? "#1a1a1a" : "#d1d5db"}
+                      fill={star <= displayRating ? "#c2c202" : "none"}
+                      stroke={star <= displayRating ? "#c2c202" : "#d1d5db"}
                       strokeWidth={1.5}
                     >
                       <path

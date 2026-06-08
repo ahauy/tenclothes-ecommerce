@@ -8,6 +8,7 @@ import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import Staff from "./pages/Staff";
 import Permissions from "./pages/Permissions";
+import Reviews from "./pages/Reviews";
 import MainLayout from "./layouts/MainLayout";
 import { useAuthStore } from "./stores/useAuthStore";
 import { Loader2 } from "lucide-react";
@@ -50,6 +51,7 @@ const App = () => {
                 <Route path="/products/trash" element={<TrashProducts />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/customers" element={<Customers />} />
+                <Route path="/reviews" element={<Reviews />} />
                 <Route path="/staff" element={<Staff />} />
                 <Route path="/permissions" element={<Permissions />} />
                 {/* Fallback cho các trang chưa làm */}

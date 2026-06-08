@@ -80,8 +80,8 @@ export const postOrderClient = async (
       // SỬA: ipnUrl là link API Backend của bạn để MoMo gọi vào cập nhật trạng thái
       // Lưu ý: Môi trường local cần dùng Ngrok để public port (vd: https://abc.ngrok.io/api/version1/orders/momo-ipn)
       // Ví dụ link ngrok của bạn là https://abcd-123.ngrok-free.app
-      let ipnUrl =
-        "https://raven-urchin-apply.ngrok-free.dev/api/version1/orders/momo-ipn";
+      const backendUrl = process.env["BACKEND_URL"] || "https://raven-urchin-apply.ngrok-free.dev";
+      let ipnUrl = `${backendUrl}/api/version1/orders/momo-ipn`;
       // let ipnUrl = redirectUrl = "https://webhook.site/454e7b77-f177-4ece-8236-ddf1c26ba7f8";
       let amount = data.finalAmount;
       let requestType = "captureWallet";

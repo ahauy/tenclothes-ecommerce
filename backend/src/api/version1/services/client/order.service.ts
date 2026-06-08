@@ -70,6 +70,11 @@ export const postOrderServiceClient = async (payload: IOrderReq, userId: string 
 
   const saveOrder = await newOrder.save();
 
+  // ── XÓA GIỎ HÀNG TRÊN DATABASE NẾU NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP ──
+  if (userId) {
+    await Cart.updateOne({ userId: userId }, { $set: { items: [] } });
+  }
+
   // ── CHỈ TRỪ KHO VÀ COUPON NẾU THANH TOÁN LÀ COD ──
   // (Nếu là MoMo, sẽ chờ webhook IPN xác nhận mới trừ để tránh mất lượt của khách)
   if (customer.paymentMethod === "cod") {

@@ -8,11 +8,10 @@ import {
   ChevronRight, 
   Tag, 
   Image as ImageIcon,
-  Menu,
   X,
   Shield,
   User,
-  Trash2
+  MessageSquare
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../utils/cn";
@@ -98,6 +97,7 @@ const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
     { icon: ShoppingBag, label: "Sản phẩm", to: "/products" },
     { icon: Tag, label: "Đơn hàng", to: "/orders", badgeCount: pendingOrdersCount },
     { icon: Users, label: "Khách hàng", to: "/customers" },
+    { icon: MessageSquare, label: "Đánh giá", to: "/reviews" },
     { icon: User, label: "Nhân viên", to: "/staff" },
     { icon: Shield, label: "Phân quyền", to: "/permissions" },
     { icon: ImageIcon, label: "Nội dung", to: "/cms" },

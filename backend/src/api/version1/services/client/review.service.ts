@@ -1,6 +1,7 @@
 import ApiError from "../../../../helpers/ApiError";
 import { Order } from "../../../../models/order.model";
 import Review from "../../../../models/review.model";
+import { moderateContent } from "../../../../helpers/moderator.helper";
 
 interface CreateReviewParams {
   userId: string;
@@ -51,7 +52,21 @@ export const createViewProductService = async ({
     size: itemProduct?.size || "",
   };
 
-  // 4. Khởi tạo và lưu Review
+  // 4. Kiểm duyệt nội dung (3 Lớp)
+  const modResult = await moderateContent(content, images || []);
+
+  // Xác định trạng thái duyệt ban đầu
+  let status: "pending" | "approved" | "rejected" = "approved";
+  
+  if (images && images.length > 0) {
+    // Nếu có hình ảnh đính kèm -> Luôn bắt buộc chuyển trạng thái chờ duyệt (Lớp 1)
+    status = "pending";
+  } else if (modResult.action === "rejected" || modResult.action === "flagged") {
+    // Nếu không có hình ảnh nhưng AI phát hiện bất thường -> Chuyển sang chờ duyệt (Lớp 2)
+    status = "pending";
+  }
+
+  // 5. Khởi tạo và lưu Review kèm các trường kiểm duyệt AI
   const reviewNew = new Review({
     userId,
     productId,
@@ -60,6 +75,9 @@ export const createViewProductService = async ({
     content,
     images: images || [],
     variantInfo,
+    status,
+    aiStatus: modResult.action,
+    aiReason: modResult.reason,
   });
 
   await reviewNew.save();

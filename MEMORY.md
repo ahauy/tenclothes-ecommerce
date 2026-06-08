@@ -14,9 +14,16 @@
     - Fixed order creation issue where unpaid MoMo orders were visible in user history and admin stats.
     - Implemented query filtering on client order history (`getMyOrdersService`), admin order lists (`getListOrderAdminService`), and admin stats aggregations (`getOrderStatsAdminService`) to hide MoMo orders unless they are paid or refunded.
     - Updated Socket.io notifications (`newOrder` event) to only trigger immediately for COD orders, and defer for MoMo orders until confirmation of successful payment via the IPN webhook.
+- **Admin Review Management (2026-06-08):**
+    - Designed and implemented the Admin Review Management interface (`/reviews`) in React 19 following the "Quiet Luxury" visual guidelines.
+    - Added strict TypeScript definitions (`IReviewAdmin`, `IReviewUser`, etc.) in `review.interface.ts`.
+    - Added filter dropdowns for moderation status (`pending`, `approved`, `rejected`) and AI safety ratings (`approved`, `flagged`, `rejected`).
+    - Added approve/reject patch actions and a comprehensive review detail modal with an image lightbox.
 
 ## Learnings
 - TypeScript `verbatimModuleSyntax` requires `import type` for type-only imports.
 - Tailwind v4 requires explicit installation of plugins like `@tailwindcss/typography`.
 - Quarkus Panache MongoDB active record operations are extremely simple, but for complex reporting/aggregations, native `MongoClient` aggregation pipelines should be used to avoid loading large document sets into JVM memory and bypass entity state tracking side effects.
+- Fetching item counts for stats blocks can be performed efficiently by requesting lists with `limit: 1` and retrieving `totalItems` from pagination headers/bodies.
+
 

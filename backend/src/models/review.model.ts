@@ -15,6 +15,8 @@ export interface IReview extends Document {
   adminReply?: string;
   isHelpfulCount: number; // lượt thích của đánh giá đó
   status: "pending" | "approved" | "rejected"; // Thêm trạng thái duyệt
+  aiStatus?: "approved" | "flagged" | "rejected"; // Đánh giá an toàn do AI đề xuất
+  aiReason?: string; // Lý do cảnh báo của AI
 }
 
 // 1. Thêm interface cho Model để TypeScript nhận diện được static method
@@ -74,6 +76,15 @@ const reviewSchema = new Schema<IReview, IReviewModel>(
     isHelpfulCount: {
       type: Number,
       default: 0,
+    },
+    aiStatus: {
+      type: String,
+      enum: ["approved", "flagged", "rejected"],
+      default: "approved",
+    },
+    aiReason: {
+      type: String,
+      default: null,
     },
   },
   {

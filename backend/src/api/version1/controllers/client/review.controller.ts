@@ -22,6 +22,28 @@ export const createReviewProduct = async (
       images,
     });
 
+    // Populate user and product info for admin real-time notification
+    try {
+      await reviewNew.populate([
+        { path: "userId", select: "fullName avatar email" },
+        { path: "productId", select: "title thumbnail" }
+      ]);
+    } catch (popError) {
+      console.error("Lỗi populate review: ", popError);
+    }
+
+    try {
+      const io = req.app.get("io");
+      if (io) {
+        console.log("Emitting newReview socket event for review ID:", reviewNew._id);
+        io.emit("newReview", reviewNew);
+      } else {
+        console.warn("Socket.io (io) instance is not available on req.app");
+      }
+    } catch (socketError) {
+      console.error("Lỗi emit socket newReview: ", socketError);
+    }
+
     res.status(201).json({
       status: true,
       message: "Đánh giá sản phẩm thành công!",

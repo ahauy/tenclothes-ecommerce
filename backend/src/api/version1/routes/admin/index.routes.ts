@@ -4,6 +4,7 @@ import productRouter from "./product.routes"
 import uploadRouter from "./upload.routes"
 import categoryRouter from "./category.routes"
 import orderRouter from "./order.routes"
+import reviewRouterAdmin from "./review.routes"
 // import userRouter from "./user.routes"
 
 const mainV1RoutesAdmin = (app: Express): void => {
@@ -15,6 +16,7 @@ const mainV1RoutesAdmin = (app: Express): void => {
   app.use(`${apiVersion1Admin}/orders`, orderRouter)
   app.use(`${apiVersion1Admin}/upload`, uploadRouter)
   app.use(`${apiVersion1Admin}/category`, categoryRouter)
+  app.use(`${apiVersion1Admin}/reviews`, reviewRouterAdmin)
   // app.use(`${apiVersion1Admin}/users`, userRouter)
 }
 
