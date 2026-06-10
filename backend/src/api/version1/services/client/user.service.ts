@@ -1,8 +1,11 @@
 import bcrypt from "bcrypt";
 import User from "../../../../models/user.model";
 import ApiError from "../../../../helpers/ApiError";
-import { IUpdateProfileBody, IChangePasswordBody, IAddressBody } from "../../validators/client/user.validator";
-
+import {
+  IUpdateProfileBody,
+  IChangePasswordBody,
+  IAddressBody,
+} from "../../validators/client/user.validator";
 
 // ---- Get Profile ----
 export const getProfileService = async (userId: string) => {
@@ -31,7 +34,7 @@ export const getProfileService = async (userId: string) => {
 // ---- Update Profile ----
 export const updateProfileService = async (
   userId: string,
-  data: IUpdateProfileBody
+  data: IUpdateProfileBody,
 ) => {
   const user = await User.findById(userId);
   if (!user) {
@@ -79,7 +82,7 @@ export const updateProfileService = async (
 // ---- Change Password ----
 export const changePasswordService = async (
   userId: string,
-  data: IChangePasswordBody
+  data: IChangePasswordBody,
 ) => {
   const user = await User.findById(userId);
   if (!user) {
@@ -119,12 +122,13 @@ export const addAddressService = async (userId: string, data: IAddressBody) => {
   user.addresses!.push({
     name: data.name,
     phone: data.phone,
+    email: data.email,
     province: data.province,
     district: data.district,
     ward: data.ward,
     address: data.address,
     isDefault: isFirstAddress,
-  } as any);
+  });
 
   await user.save();
   return user.addresses;
@@ -134,7 +138,7 @@ export const addAddressService = async (userId: string, data: IAddressBody) => {
 export const updateAddressService = async (
   userId: string,
   addressId: string,
-  data: IAddressBody
+  data: IAddressBody,
 ) => {
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "Không tìm thấy người dùng!");
@@ -144,6 +148,7 @@ export const updateAddressService = async (
 
   addressDoc.name = data.name;
   addressDoc.phone = data.phone;
+  addressDoc.email = data.email;
   addressDoc.province = data.province;
   addressDoc.district = data.district;
   addressDoc.ward = data.ward;
@@ -154,7 +159,10 @@ export const updateAddressService = async (
 };
 
 // DELETE /users/addresses/:addressId
-export const deleteAddressService = async (userId: string, addressId: string) => {
+export const deleteAddressService = async (
+  userId: string,
+  addressId: string,
+) => {
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "Không tìm thấy người dùng!");
 
@@ -162,7 +170,10 @@ export const deleteAddressService = async (userId: string, addressId: string) =>
   if (!addressDoc) throw new ApiError(404, "Không tìm thấy địa chỉ!");
 
   if (addressDoc.isDefault) {
-    throw new ApiError(400, "Không thể xóa địa chỉ mặc định! Vui lòng đặt địa chỉ khác làm mặc định trước.");
+    throw new ApiError(
+      400,
+      "Không thể xóa địa chỉ mặc định! Vui lòng đặt địa chỉ khác làm mặc định trước.",
+    );
   }
 
   addressDoc.deleteOne();
@@ -171,7 +182,10 @@ export const deleteAddressService = async (userId: string, addressId: string) =>
 };
 
 // PATCH /users/addresses/:addressId/set-default
-export const setDefaultAddressService = async (userId: string, addressId: string) => {
+export const setDefaultAddressService = async (
+  userId: string,
+  addressId: string,
+) => {
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "Không tìm thấy người dùng!");
 

@@ -61,6 +61,7 @@ const addressBodySchema = z.object({
   phone: z
     .string()
     .regex(/^(0|\+84)[0-9]{9}$/, "Số điện thoại không hợp lệ!"),
+  email: z.email("Email không hợp lệ!"),
   province: z.string().min(1, "Vui lòng chọn Tỉnh/Thành phố!"),
   district: z.string().min(1, "Vui lòng chọn Quận/Huyện!"),
   ward: z.string().min(1, "Vui lòng chọn Phường/Xã!"),

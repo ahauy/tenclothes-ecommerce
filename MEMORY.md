@@ -19,6 +19,10 @@
     - Added strict TypeScript definitions (`IReviewAdmin`, `IReviewUser`, etc.) in `review.interface.ts`.
     - Added filter dropdowns for moderation status (`pending`, `approved`, `rejected`) and AI safety ratings (`approved`, `flagged`, `rejected`).
     - Added approve/reject patch actions and a comprehensive review detail modal with an image lightbox.
+- **User Strike Warning System & Tooltips Unified (2026-06-09):**
+    - Built user strike warning mechanism where admin can issue warnings to users posting profane comments.
+    - Automatically sends warning emails, hides profane comments, and bans user accounts after 3 strikes.
+    - Unified icon button tooltip mechanism across Products and Reviews page using native browser `title` tooltips for maximum performance and design consistency.
 
 ## Learnings
 - TypeScript `verbatimModuleSyntax` requires `import type` for type-only imports.

@@ -20,4 +20,9 @@ export const reviewService = {
     const response = await api.delete(`/reviews/${id}`);
     return response.data;
   },
+
+  strikeUser: async (id: string) => {
+    const response = await api.post(`/reviews/strike/${id}`);
+    return response.data;
+  },
 };

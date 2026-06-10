@@ -29,15 +29,18 @@ import { cn } from "../utils/cn";
 import { toast } from "sonner";
 import type { IJsonFail } from "../interfaces/api.interface";
 import ProductDrawer from "../components/products/ProductDrawer";
-// import ReactPaginate from 'react-paginate';
-import ReactPaginateLib from "react-paginate";
-const ReactPaginate: any =
-  (ReactPaginateLib as any).default || ReactPaginateLib;
+// import ReactPaginateLib from "react-paginate";
+// const ReactPaginate: any =
+//   (ReactPaginateLib as any).default || ReactPaginateLib;
+import ReactPaginate from "react-paginate";
 import CustomDropdown from "../components/UI/CustomDropdown";
 import TrashDrawer from "../components/trash/TrashDrawer";
 import ProductHistoryDrawer from "../components/products/ProductHistoryDrawer";
 
+
 const Products: React.FC = () => {
+
+  // State quản lý sản phẩm, danh mục, loading, tìm kiếm, phân trang, drawer, v.v.
   const [products, setProducts] = useState<IProductAdmin[]>([]);
   const [categories, setCategories] = useState<
     { _id: string; title: string }[]
@@ -59,6 +62,8 @@ const Products: React.FC = () => {
       }
     };
   }, [searchTerm]);
+
+  // State phân trang, drawer, chọn sản phẩm để chỉnh sửa/xóa, batch actions, filters, v.v.
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -75,7 +80,7 @@ const Products: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
 
-  // Filters State
+  // Filters
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
@@ -85,6 +90,7 @@ const Products: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("all");
 
+  // State quản lý các drawer phụ như thùng rác, lịch sử sản phẩm
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedProductForHistory, setSelectedProductForHistory] = useState<{
@@ -784,7 +790,7 @@ const Products: React.FC = () => {
                                 className={cn(
                                   "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
                                   product.isActive
-                                    ? "translate-x-[14px]"
+                                    ? "translate-x-3.5"
                                     : "translate-x-0",
                                 )}
                               />
@@ -814,7 +820,7 @@ const Products: React.FC = () => {
                                 className={cn(
                                   "w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-sm border border-neutral-100",
                                   product.isFeatured
-                                    ? "translate-x-[14px]"
+                                    ? "translate-x-3.5"
                                     : "translate-x-0",
                                 )}
                               />

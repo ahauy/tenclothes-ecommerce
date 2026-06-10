@@ -18,6 +18,7 @@ export interface IChangePasswordPayload {
 export interface IAddressPayload {
   name: string;
   phone: string;
+  email: string;
   province: string;
   district: string;
   ward: string;

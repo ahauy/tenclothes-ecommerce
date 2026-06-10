@@ -3,6 +3,8 @@ export interface IReviewUser {
   fullName: string;
   avatar?: string;
   email: string;
+  strikeCount?: number;
+  isActive?: boolean;
 }
 
 export interface IReviewProduct {
@@ -28,6 +30,7 @@ export interface IReviewAdmin {
   status: "pending" | "approved" | "rejected";
   aiStatus: "approved" | "flagged" | "rejected";
   aiReason?: string | null;
+  isStruck?: boolean;
   createdAt: string;
   updatedAt: string;
 }

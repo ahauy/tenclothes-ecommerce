@@ -4,6 +4,7 @@ import mongoose, { Document } from "mongoose";
 export interface IAddresses extends mongoose.Types.Subdocument {
   name: string; // Tên người nhận hàng
   phone: string; // Điện thoại người nhận hàng
+  email: string;
   province: string; // Tỉnh/thành phố
   district: string; // Quận/huyện
   ward: string; // Phường xã
@@ -29,6 +30,7 @@ export interface IUser extends Document {
   info?: IInfo;
   addresses?: mongoose.Types.DocumentArray<IAddresses>;
   isActive: boolean; // Trạng thái tài khoản của khách hàng
+  strikeCount?: number;
   deletedAt?: Date;
   createdAt?: Date; // auto nhờ có timestamps: true
   updatedAt?: Date; // auto nhờ có timestamps: true

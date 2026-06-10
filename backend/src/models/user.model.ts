@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema<IUser>(
       {
         name: { type: String }, // Tên người nhận hàng
         phone: { type: String }, // SĐT nhận hàng
+        email: { type: String }, // Email nhận hàng
         province: {
           type: String,
         }, // Tỉnh/Thành
@@ -55,6 +56,10 @@ const userSchema = new mongoose.Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    strikeCount: {
+      type: Number,
+      default: 0,
     },
     deletedAt: {
       type: Date,

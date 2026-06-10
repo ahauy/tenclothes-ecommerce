@@ -9,6 +9,7 @@ const reviewRouterAdmin: Router = express.Router();
 reviewRouterAdmin.get("/", verifyToken, authorizationRole(["admin"]), controller.getReviewsAdmin);
 reviewRouterAdmin.patch("/approve/:id", verifyToken, authorizationRole(["admin"]), controller.approveReviewAdmin);
 reviewRouterAdmin.patch("/reject/:id", verifyToken, authorizationRole(["admin"]), controller.rejectReviewAdmin);
+reviewRouterAdmin.post("/strike/:id", verifyToken, authorizationRole(["admin"]), controller.strikeUserAdmin);
 reviewRouterAdmin.delete("/:id", verifyToken, authorizationRole(["admin"]), controller.deleteReviewAdmin);
 
 export default reviewRouterAdmin;

@@ -33,8 +33,6 @@ const Login = () => {
     if (res.data?.status) {
       const token = res.data.accessToken;
       setAccessToken(token);
-      console.log(token);
-      
       try {
         const profileRes = await userServices.getProfile(token);
         useAuthStore.getState().setUser(profileRes.data.data);

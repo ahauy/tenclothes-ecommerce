@@ -8,7 +8,7 @@ import {
 import DropdownAddress from "./DropdownAddress/DropdownAddress";
 
 // IMPORT ZUSTAND STORE CỦA BẠN VÀO ĐÂY (Nhớ sửa lại đường dẫn cho đúng)
-import { useCheckoutInforStore } from "../stores/useCheckoutInforStore"; 
+import { useCheckoutInforStore } from "../stores/useCheckoutInforStore";
 
 interface AddressFormModalProps {
   isOpen: boolean;
@@ -21,12 +21,14 @@ interface AddressFormModalProps {
 const EMPTY_FORM = {
   name: "",
   phone: "",
+  email: "",
   address: "",
 };
 
 type FormErrors = {
   name?: string;
   phone?: string;
+  email?: string;
   province?: string;
   district?: string;
   ward?: string;
@@ -59,6 +61,7 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
       setForm({
         name: initialData.name,
         phone: initialData.phone,
+        email: initialData.email,
         address: initialData.address,
       });
       // Gán thẳng Code vào để Dropdown tự động map ra tên hiển thị
@@ -77,7 +80,7 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
   if (!isOpen) return null;
 
   const handleChangeText = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -91,13 +94,13 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
     if (!form.name.trim()) errs.name = "Vui lòng nhập tên người nhận!";
     if (!/^(0|\+84)[0-9]{9}$/.test(form.phone))
       errs.phone = "Số điện thoại không hợp lệ!";
-      
+
     // Validate dựa trên Code thay vì Name
     if (!provinceCode) errs.province = "Vui lòng chọn Tỉnh/Thành phố!";
     if (!districtCode) errs.district = "Vui lòng chọn Quận/Huyện!";
     if (!wardCode) errs.ward = "Vui lòng chọn Phường/Xã!";
     if (!form.address.trim()) errs.address = "Vui lòng nhập địa chỉ chi tiết!";
-    
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -114,6 +117,7 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
     const payload: IAddressPayload = {
       name: form.name.trim(),
       phone: form.phone.trim(),
+      email: form.email.trim(),
       province: String(provinceCode),
       district: String(districtCode),
       ward: String(wardCode),
@@ -127,7 +131,7 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
         res = await userServices.updateAddress(
           accessToken,
           initialData._id,
-          payload
+          payload,
         );
       } else {
         res = await userServices.addAddress(accessToken, payload);
@@ -135,8 +139,10 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
 
       const addressesList: IAddress[] = res.data.data; // Danh sách địa chỉ mới nhất
 
-      // 🌟 LOGIC LƯU LOCAL STORAGE: Tìm xem trong list có cái nào đang là Default không
-      const defaultAddress = addressesList.find((addr) => addr.isDefault === true);
+      // LOGIC LƯU LOCAL STORAGE: Tìm xem trong list có cái nào đang là Default không
+      const defaultAddress = addressesList.find(
+        (addr) => addr.isDefault === true,
+      );
       if (defaultAddress) {
         setCheckoutField("fullName", defaultAddress.name);
         setCheckoutField("phone", defaultAddress.phone);
@@ -144,10 +150,13 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
         setCheckoutField("district", String(defaultAddress.district));
         setCheckoutField("ward", String(defaultAddress.ward));
         setCheckoutField("detailAddress", defaultAddress.address);
+        setCheckoutField("email", defaultAddress.email);
       }
 
       toast.success(
-        isEditMode ? "Cập nhật địa chỉ thành công!" : "Thêm địa chỉ thành công!"
+        isEditMode
+          ? "Cập nhật địa chỉ thành công!"
+          : "Thêm địa chỉ thành công!",
       );
       onSuccess(addressesList);
       handleClose();
@@ -161,7 +170,7 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
 
   return (
     // Đã sửa class z-100 thành z-[100]
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
         .addr-modal * { font-family: 'Manrope', sans-serif; }
@@ -196,8 +205,17 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
             disabled={isLoading}
             className="w-8 h-8 flex items-center justify-center text-[#9ca3af] hover:text-[#1a1a1a] hover:bg-[#f3f4f6] transition-colors -mt-0.5 -mr-1 disabled:opacity-40"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
         </div>
@@ -222,10 +240,14 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
                 onChange={handleChangeText}
                 placeholder="Nguyễn Văn A"
                 className={`w-full px-4 py-3 border text-sm text-[#1a1a1a] placeholder:text-[#d1d5db] focus:outline-none focus:border-[#1a1a1a] transition-colors ${
-                  errors.name ? "border-rose-400 bg-rose-50" : "border-[#e5e7eb]"
+                  errors.name
+                    ? "border-rose-400 bg-rose-50"
+                    : "border-[#e5e7eb]"
                 }`}
               />
-              {errors.name && <p className="mt-1 text-xs text-rose-500">{errors.name}</p>}
+              {errors.name && (
+                <p className="mt-1 text-xs text-rose-500">{errors.name}</p>
+              )}
             </div>
 
             {/* Phone */}
@@ -240,10 +262,36 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
                 onChange={handleChangeText}
                 placeholder="0912 345 678"
                 className={`w-full px-4 py-3 border text-sm text-[#1a1a1a] placeholder:text-[#d1d5db] focus:outline-none focus:border-[#1a1a1a] transition-colors ${
-                  errors.phone ? "border-rose-400 bg-rose-50" : "border-[#e5e7eb]"
+                  errors.phone
+                    ? "border-rose-400 bg-rose-50"
+                    : "border-[#e5e7eb]"
                 }`}
               />
-              {errors.phone && <p className="mt-1 text-xs text-rose-500">{errors.phone}</p>}
+              {errors.phone && (
+                <p className="mt-1 text-xs text-rose-500">{errors.phone}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#6b7280] mb-2">
+                Email <span className="text-rose-500">*</span>
+              </label>
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChangeText}
+                placeholder="nguyenvana@example.com"
+                className={`w-full px-4 py-3 border text-sm text-[#1a1a1a] placeholder:text-[#d1d5db] focus:outline-none focus:border-[#1a1a1a] transition-colors ${
+                  errors.email
+                    ? "border-rose-400 bg-rose-50"
+                    : "border-[#e5e7eb]"
+                }`}
+              />
+              {errors.email && (
+                <p className="mt-1 text-xs text-rose-500">{errors.email}</p>
+              )}
             </div>
 
             {/* Dropdown Khu vực */}
@@ -256,7 +304,6 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
                 province={provinceCode}
                 district={districtCode}
                 ward={wardCode}
-                
                 // Dropdown giờ chỉ nhận Code, bỏ qua tham số Name
                 onChangeProvince={(code) => {
                   setProvinceCode(code);
@@ -270,7 +317,6 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
                   setWardCode(code);
                   setErrors((prev) => ({ ...prev, ward: undefined }));
                 }}
-                
                 errors={{
                   province: errors.province,
                   district: errors.district,
@@ -291,10 +337,14 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
                 onChange={handleChangeText}
                 placeholder="Số nhà, tên đường, tòa nhà, căn hộ..."
                 className={`w-full px-4 py-3 border text-sm text-[#1a1a1a] placeholder:text-[#d1d5db] focus:outline-none focus:border-[#1a1a1a] resize-none transition-colors ${
-                  errors.address ? "border-rose-400 bg-rose-50" : "border-[#e5e7eb]"
+                  errors.address
+                    ? "border-rose-400 bg-rose-50"
+                    : "border-[#e5e7eb]"
                 }`}
               />
-              {errors.address && <p className="mt-1 text-xs text-rose-500">{errors.address}</p>}
+              {errors.address && (
+                <p className="mt-1 text-xs text-rose-500">{errors.address}</p>
+              )}
             </div>
           </form>
         </div>
@@ -320,7 +370,11 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
                 <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Đang lưu...
               </>
-            ) : isEditMode ? "Lưu thay đổi" : "Thêm địa chỉ"}
+            ) : isEditMode ? (
+              "Lưu thay đổi"
+            ) : (
+              "Thêm địa chỉ"
+            )}
           </button>
         </div>
       </div>
