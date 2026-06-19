@@ -11,6 +11,7 @@ import PlaceOrder from "./pages/PlaceOrder";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
 import { Toaster } from "sonner";
 import { useAuthStore } from "./stores/useAuthStore";
 import { useCartStore } from "./stores/useCartStore";
@@ -73,6 +74,7 @@ const App = () => {
           <Route path="/collection/:slug" element={<Collection />}/>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/sign-up" element={<SignUp />}></Route>
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/order" element={<Order />}></Route>
           <Route path="/momo-return" element={<MoMoReturn />}></Route>
           <Route path="/place-order" element={<PlaceOrder />}></Route>

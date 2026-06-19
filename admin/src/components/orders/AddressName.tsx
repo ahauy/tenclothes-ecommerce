@@ -28,7 +28,9 @@ const AddressName: React.FC<Props> = ({ provinceCode, districtCode, wardCode }) 
 
         const fetchPromises = [];
 
-        if (provinceCode) {
+        const isNumeric = (val?: string) => val ? /^\d+$/.test(val) : false;
+
+        if (provinceCode && isNumeric(provinceCode)) {
           fetchPromises.push(
             fetch(`https://provinces.open-api.vn/api/p/${provinceCode}`)
               .then(res => res.ok ? res.json() : null)
@@ -37,7 +39,7 @@ const AddressName: React.FC<Props> = ({ provinceCode, districtCode, wardCode }) 
           );
         }
         
-        if (districtCode) {
+        if (districtCode && isNumeric(districtCode)) {
           fetchPromises.push(
             fetch(`https://provinces.open-api.vn/api/d/${districtCode}`)
               .then(res => res.ok ? res.json() : null)
@@ -46,7 +48,7 @@ const AddressName: React.FC<Props> = ({ provinceCode, districtCode, wardCode }) 
           );
         }
 
-        if (wardCode) {
+        if (wardCode && isNumeric(wardCode)) {
           fetchPromises.push(
             fetch(`https://provinces.open-api.vn/api/w/${wardCode}`)
               .then(res => res.ok ? res.json() : null)

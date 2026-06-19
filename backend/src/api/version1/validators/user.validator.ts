@@ -20,8 +20,7 @@ export const getUsersQuerySchema = z.object({
 export const updateUserStatusSchema = z.object({
   body: z.object({
     isActive: z.boolean({
-      required_error: "Trạng thái hoạt động (isActive) là bắt buộc",
-      invalid_type_error: "Trạng thái phải là kiểu boolean",
+      message: "Trạng thái phải là kiểu boolean",
     }),
   }),
 });

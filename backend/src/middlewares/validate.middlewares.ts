@@ -16,17 +16,28 @@ export const validate = (schema: z.Schema) => {
         params: req.params,
       });
 
-      // // gán dữ liệu chuyển đổi vào trong req
+      // gán dữ liệu chuyển đổi vào trong req
       if (parsedData["body"]) req.body = parsedData["body"];
-      if (parsedData["query"]) req.query = parsedData["body"];
-      if (parsedData["params"]) req.params = parsedData["params"];
+      if (parsedData["query"]) {
+        for (const key in req.query) {
+          delete req.query[key];
+        }
+        Object.assign(req.query, parsedData["query"]);
+      }
+      if (parsedData["params"]) {
+        for (const key in req.params) {
+          delete req.params[key];
+        }
+        Object.assign(req.params, parsedData["params"]);
+      }
 
       next();
     } catch (error) {
       // Nếu có lỗi, trả về 400 ngay lập tức
-      if (error instanceof ZodError) {
+      if (error instanceof ZodError || (error && typeof error === "object" && error.constructor.name === "ZodError")) {
+        const zodError = error as ZodError;
         // Biến mảng lỗi rắc rối của Zod thành mảng JSON đẹp mắt cho Frontend
-        const formattedErrors = error.issues.map((issue) => ({
+        const formattedErrors = zodError.issues.map((issue) => ({
           field: issue.path[issue.path.length - 1], // Lấy tên trường bị lỗi (vd: price)
           message: issue.message, // Lấy câu thông báo tiếng Việt
         }));

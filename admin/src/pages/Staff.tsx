@@ -6,13 +6,8 @@ import {
   Edit2,
   ChevronLeft,
   ChevronRight,
-  Shield,
-  Activity,
-  Check,
-  X,
   Mail,
   Phone,
-  User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { staffService } from "../services/staff.service";

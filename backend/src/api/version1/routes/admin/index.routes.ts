@@ -5,7 +5,9 @@ import uploadRouter from "./upload.routes"
 import categoryRouter from "./category.routes"
 import orderRouter from "./order.routes"
 import reviewRouterAdmin from "./review.routes"
-// import userRouter from "./user.routes"
+import dashboardRouter from "./dashboard.routes"
+import userRouter from "./user.routes"
+import staffRouter from "./staff.routes"
 
 const mainV1RoutesAdmin = (app: Express): void => {
   const apiVersion1Admin = "/api/version1/admin"
@@ -17,7 +19,10 @@ const mainV1RoutesAdmin = (app: Express): void => {
   app.use(`${apiVersion1Admin}/upload`, uploadRouter)
   app.use(`${apiVersion1Admin}/category`, categoryRouter)
   app.use(`${apiVersion1Admin}/reviews`, reviewRouterAdmin)
-  // app.use(`${apiVersion1Admin}/users`, userRouter)
+  app.use(`${apiVersion1Admin}/dashboard`, dashboardRouter)
+  app.use(`${apiVersion1Admin}/user`, userRouter)
+  app.use(`${apiVersion1Admin}/staffs`, staffRouter)
+  app.use(`${apiVersion1Admin}/staff`, staffRouter)
 }
 
 export default mainV1RoutesAdmin

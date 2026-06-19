@@ -292,7 +292,7 @@ const Search = () => {
                         {/* Price */}
                         <div className="shrink-0 text-right">
                           <p className="text-sm font-bold text-black">
-                            {item.salePrice.toLocaleString("vi-VN")}đ
+                            {(item?.salePrice ?? 0).toLocaleString("vi-VN")}đ
                           </p>
                           {hasDiscount && (
                             <p className="text-xs text-neutral-400 line-through">

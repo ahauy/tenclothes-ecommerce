@@ -628,11 +628,11 @@ const Reviews: React.FC = () => {
                         {review.userId?.fullName || "Người dùng ẩn"}
                       </p>
                       {review.userId &&
-                        (review.userId.strikeCount > 0 ||
+                        ((review.userId.strikeCount ?? 0) > 0 ||
                           review.userId.isActive === false) && (
                           <div className="mt-1">
                             <UserStrikeBadge
-                              strikeCount={review.userId.strikeCount}
+                              strikeCount={review.userId.strikeCount ?? 0}
                               isActive={review.userId.isActive}
                             />
                           </div>
@@ -865,11 +865,11 @@ const Reviews: React.FC = () => {
                               {review.userId?.fullName || "Người dùng ẩn"}
                             </p>
                             {review.userId &&
-                              (review.userId.strikeCount > 0 ||
+                              ((review.userId.strikeCount ?? 0) > 0 ||
                                 review.userId.isActive === false) && (
                                 <div className="mt-1">
                                   <UserStrikeBadge
-                                    strikeCount={review.userId.strikeCount}
+                                    strikeCount={review.userId.strikeCount ?? 0}
                                     isActive={review.userId.isActive}
                                   />
                                 </div>
@@ -1169,12 +1169,12 @@ const Reviews: React.FC = () => {
                             {selectedReview.userId?.fullName || "Người dùng ẩn"}
                           </p>
                           {selectedReview.userId &&
-                            (selectedReview.userId.strikeCount > 0 ||
+                            ((selectedReview.userId.strikeCount ?? 0) > 0 ||
                               selectedReview.userId.isActive === false) && (
                               <div className="mt-1">
                                 <UserStrikeBadge
                                   strikeCount={
-                                    selectedReview.userId.strikeCount
+                                    selectedReview.userId.strikeCount ?? 0
                                   }
                                   isActive={selectedReview.userId.isActive}
                                 />

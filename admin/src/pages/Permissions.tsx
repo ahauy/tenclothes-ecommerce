@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Shield,
   Plus,
-  Trash2,
-  Check,
-  X,
   ChevronRight,
   Save,
   Lock,

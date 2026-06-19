@@ -90,8 +90,10 @@ const Login = () => {
       </div>
 
       <div className="w-full flex justify-between text-sm -mt-2">
-        <p className="cursor-point">Forgot your password?</p>
-        <NavLink to="/sign-up">Create account</NavLink>
+        <NavLink to="/forgot-password" className="hover:underline cursor-pointer">
+          Forgot your password?
+        </NavLink>
+        <NavLink to="/sign-up" className="hover:underline">Create account</NavLink>
       </div>
 
       <button

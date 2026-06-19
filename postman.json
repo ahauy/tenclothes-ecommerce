@@ -1,0 +1,2365 @@
+{
+  "info": {
+    "_postman_id": "c1a6bb9a-a82f-4c12-a192-ec2e3f5b7218",
+    "name": "TenClothes E-Commerce API",
+    "description": "Postman Collection for TenClothes E-Commerce API (Version 1). Includes Client APIs (Public & Auth) and Admin APIs (Dashboard, Products, Orders, Staffs, etc.) with automated Bearer Token variables storage on login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Client",
+      "description": "APIs related to the customer app (Auth, Public Products, Categories, Checkout, Coupons, Cart, Orders, Reviews, and Profiles).",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Nguyen Van A\",\n  \"email\": \"customer@test.com\",\n  \"password\": \"Hauhamhoc123!\",\n  \"confirmPassword\": \"Hauhamhoc123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.status && jsonData.accessToken) {",
+                      "    pm.collectionVariables.set(\"clientToken\", jsonData.accessToken);",
+                      "    console.log(\"Saved clientToken:\", jsonData.accessToken);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.com\",\n  \"password\": \"Hauhamhoc123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Refresh Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/refresh-token",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "refresh-token"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Forgot Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/password/forgot",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "password",
+                    "forgot"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Verify OTP",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.com\",\n  \"otp\": \"123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/password/otp",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "password",
+                    "otp"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Reset Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer@test.com\",\n  \"otp\": \"123456\",\n  \"password\": \"Hauhamhoc1234!\",\n  \"confirmPassword\": \"Hauhamhoc1234!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/auth/password/reset",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "auth",
+                    "password",
+                    "reset"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "Get Products by Category Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/category/ao-thun",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "category",
+                    "ao-thun"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Category Filters",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/category/ao-thun/filters",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "category",
+                    "ao-thun",
+                    "filters"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Latest Collection",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/latest-collection",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "latest-collection"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Best Selling",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/best-selling",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "best-selling"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Related Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/related-collection?productId=66123456789abcdef0123456",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "related-collection"
+                  ],
+                  "query": [
+                    {
+                      "key": "productId",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Search Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/search?keyword=T-Shirt",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "search"
+                  ],
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "T-Shirt"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Product Detail by Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/products/ao-thun-nam-1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "products",
+                    "ao-thun-nam-1"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cart",
+          "description": "Actions related to shopping cart (validate, sync, add, update, remove)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Local Validate Cart",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"66123456789abcdef0123456\",\n      \"sku\": \"TSHIRT-BLK-M\",\n      \"color\": \"Black\",\n      \"size\": \"M\",\n      \"quantity\": 2\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/cart/local-validate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "cart",
+                    "local-validate"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sync Cart",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"66123456789abcdef0123456\",\n      \"sku\": \"TSHIRT-BLK-M\",\n      \"color\": \"Black\",\n      \"size\": \"M\",\n      \"quantity\": 2\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/cart/sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "cart",
+                    "sync"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Add to Cart",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"66123456789abcdef0123456\",\n  \"sku\": \"TSHIRT-BLK-M\",\n  \"color\": \"Black\",\n  \"size\": \"M\",\n  \"quantity\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/cart/add",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "cart",
+                    "add"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Cart Item",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"66123456789abcdef0123456\",\n  \"sku\": \"TSHIRT-BLK-M\",\n  \"color\": \"Black\",\n  \"size\": \"M\",\n  \"quantity\": 3\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/cart/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "cart",
+                    "update"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Remove from Cart",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"66123456789abcdef0123456\",\n  \"sku\": \"TSHIRT-BLK-M\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/cart/remove",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "cart",
+                    "remove"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Category",
+          "item": [
+            {
+              "name": "Get Category Tree (Client)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/category/tree",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "category",
+                    "tree"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Checkout",
+          "item": [
+            {
+              "name": "Get Checkout Success Detail",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/checkout/success/66123456789abcdef0123456",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "checkout",
+                    "success",
+                    "66123456789abcdef0123456"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Coupons",
+          "item": [
+            {
+              "name": "Get All Active Coupons",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/coupons",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "coupons"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Validate Coupon Code",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"WELCOME10\",\n  \"totalAmount\": 500000\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/coupons/validate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "coupons",
+                    "validate"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Place Order (COD or MoMo)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"customer\": {\n    \"fullName\": \"Nguyen Van A\",\n    \"email\": \"customer@test.com\",\n    \"phone\": \"0987654321\",\n    \"province\": \"Hà Nội\",\n    \"district\": \"Cầu Giấy\",\n    \"ward\": \"Dịch Vọng\",\n    \"detailAddress\": \"Số 1 Cầu Giấy\",\n    \"note\": \"Giao hàng giờ hành chính\",\n    \"paymentMethod\": \"cod\"\n  },\n  \"items\": [\n    {\n      \"productId\": \"66123456789abcdef0123456\",\n      \"sku\": \"TSHIRT-BLK-M\",\n      \"color\": \"Black\",\n      \"size\": \"M\",\n      \"quantity\": 2\n    }\n  ],\n  \"couponCode\": \"WELCOME10\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "orders"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "MoMo IPN Webhook",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"partnerCode\": \"MOMO\",\n  \"orderId\": \"ORDER-123456\",\n  \"requestId\": \"REQ-123456\",\n  \"amount\": 500000,\n  \"orderInfo\": \"Thanh toan don hang\",\n  \"orderType\": \"momo_wallet\",\n  \"transId\": 987654321,\n  \"resultCode\": 0,\n  \"message\": \"Successful.\",\n  \"payType\": \"qr\",\n  \"responseTime\": 1620000000000,\n  \"extraData\": \"\",\n  \"signature\": \"...\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/orders/momo-ipn",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "orders",
+                    "momo-ipn"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get My Orders (History)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/orders/my-orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "orders",
+                    "my-orders"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cancel Order",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cancelReason\": \"Không muốn mua nữa vì lý do cá nhân!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/orders/:orderCode/cancel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "orders",
+                    ":orderCode",
+                    "cancel"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderCode",
+                      "value": "ORDER-123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Repurchase Order",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/orders/:orderCode/repurchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "orders",
+                    ":orderCode",
+                    "repurchase"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderCode",
+                      "value": "ORDER-123456"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews",
+          "item": [
+            {
+              "name": "Submit Product Review (Multipart)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "productId",
+                      "value": "66123456789abcdef0123456",
+                      "type": "text"
+                    },
+                    {
+                      "key": "orderId",
+                      "value": "66123456789abcdef0123477",
+                      "type": "text"
+                    },
+                    {
+                      "key": "rating",
+                      "value": "5",
+                      "type": "text"
+                    },
+                    {
+                      "key": "content",
+                      "value": "Sản phẩm chất lượng tốt, đóng gói kỹ lưỡng và giao hàng nhanh!",
+                      "type": "text"
+                    },
+                    {
+                      "key": "images",
+                      "description": "Upload review image (max 5)",
+                      "type": "file",
+                      "src": []
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/reviews",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "reviews"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Product Reviews List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/reviews/66123456789abcdef0123456",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "reviews",
+                    "66123456789abcdef0123456"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Profile & Address",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Profile Detail",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "profile"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Profile Info",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Nguyen Van A Sửa\",\n  \"phone\": \"0987654321\",\n  \"gender\": \"male\",\n  \"dob\": \"1998-12-30\",\n  \"height\": \"175\",\n  \"weight\": \"65\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "profile"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Change Password",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPassword\": \"Hauhamhoc123!\",\n  \"newPassword\": \"Hauhamhoc1234!\",\n  \"confirmPassword\": \"Hauhamhoc1234!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/change-password",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "change-password"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Address List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/addresses",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "addresses"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Add New Address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyen Van A\",\n  \"phone\": \"0987654321\",\n  \"email\": \"customer@test.com\",\n  \"province\": \"Hà Nội\",\n  \"district\": \"Cầu Giấy\",\n  \"ward\": \"Dịch Vọng\",\n  \"address\": \"Số 1 Cầu Giấy\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/addresses",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "addresses"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Existing Address",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyen Van A Sửa\",\n  \"phone\": \"0987654321\",\n  \"email\": \"customer@test.com\",\n  \"province\": \"Hà Nội\",\n  \"district\": \"Cầu Giấy\",\n  \"ward\": \"Dịch Vọng\",\n  \"address\": \"Số 10 Cầu Giấy\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/addresses/:addressId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "addresses",
+                    ":addressId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "addressId",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete Address",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/addresses/:addressId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "addresses",
+                    ":addressId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "addressId",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Set Default Address",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/users/addresses/:addressId/set-default",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "users",
+                    "addresses",
+                    ":addressId",
+                    "set-default"
+                  ],
+                  "variable": [
+                    {
+                      "key": "addressId",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "APIs related to the administrative dashboard (Stats, Products CRUD, Orders Moderation, Review actions, Staff, and Users management).",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Login (Admin/Staff)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.status && jsonData.accessToken) {",
+                      "    pm.collectionVariables.set(\"adminToken\", jsonData.accessToken);",
+                      "    console.log(\"Saved adminToken:\", jsonData.accessToken);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"vutuanhau.haui@gmail.com\",\n  \"password\": \"Hauhamhoc123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "auth",
+                    "login"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Refresh Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/auth/refresh-token",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "auth",
+                    "refresh-token"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Dashboard Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/dashboard/stats?startDate=2026-06-01&endDate=2026-06-30",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "dashboard",
+                    "stats"
+                  ],
+                  "query": [
+                    {
+                      "key": "startDate",
+                      "value": "2026-06-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2026-06-30"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Export Financial Report (Excel)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/dashboard/export?startDate=2026-06-01&endDate=2026-06-30",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "dashboard",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "key": "startDate",
+                      "value": "2026-06-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2026-06-30"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Products (Paginated & Filtered)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products?page=1&limit=10&keyword=Ao",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "keyword",
+                      "value": "Ao"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Áo Thun Nam Cao Cấp v1\",\n  \"description\": \"Áo thun cotton mềm mịn, co giãn thoải mái.\",\n  \"brand\": \"TenClothes\",\n  \"weight\": 200,\n  \"categoryIds\": [\"66123456789abcdef0123400\"],\n  \"tags\": [\"ao thun\", \"nam\", \"hot\"],\n  \"price\": 250000,\n  \"currency\": \"VND\",\n  \"discountPercentage\": 10,\n  \"gender\": \"male\",\n  \"productStyles\": [\n    {\n      \"colorName\": \"Đen\",\n      \"colorHex\": \"#000000\",\n      \"images\": [\"https://res.cloudinary.com/dbr8yqstc/image/upload/v1/dummy.jpg\"],\n      \"isDefault\": true\n    }\n  ],\n  \"variants\": [\n    {\n      \"sku\": \"TSHIRT-BLK-M\",\n      \"colorName\": \"Đen\",\n      \"size\": \"M\",\n      \"stock\": 100,\n      \"priceDifference\": 0\n    },\n    {\n      \"sku\": \"TSHIRT-BLK-L\",\n      \"colorName\": \"Đen\",\n      \"size\": \"L\",\n      \"stock\": 50,\n      \"priceDifference\": 10000\n    }\n  ],\n  \"isActive\": true,\n  \"isFeatured\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "create"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Product by Slug",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Áo Thun Nam Cao Cấp v2\",\n  \"description\": \"Áo thun cotton mềm mịn, co giãn thoải mái (Mới update).\",\n  \"brand\": \"TenClothes\",\n  \"weight\": 200,\n  \"categoryIds\": [\"66123456789abcdef0123400\"],\n  \"tags\": [\"ao thun\", \"nam\", \"hot\", \"modern\"],\n  \"price\": 270000,\n  \"currency\": \"VND\",\n  \"discountPercentage\": 15,\n  \"gender\": \"male\",\n  \"productStyles\": [\n    {\n      \"colorName\": \"Đen\",\n      \"colorHex\": \"#000000\",\n      \"images\": [\"https://res.cloudinary.com/dbr8yqstc/image/upload/v1/dummy.jpg\"],\n      \"isDefault\": true\n    }\n  ],\n  \"variants\": [\n    {\n      \"sku\": \"TSHIRT-BLK-M\",\n      \"colorName\": \"Đen\",\n      \"size\": \"M\",\n      \"stock\": 80,\n      \"priceDifference\": 0\n    }\n  ],\n  \"isActive\": true,\n  \"isFeatured\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/update/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "update",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": "ao-thun-nam-cao-cap-v1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Change Status (Active/Inactive)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/change-status/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "change-status",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": "ao-thun-nam-cao-cap-v1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Change Featured (Featured/Unfeatured)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/change-featured/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "change-featured",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": "ao-thun-nam-cao-cap-v1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete Product (Soft Delete)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/delete/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "delete",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": "ao-thun-nam-cao-cap-v1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Restore Deleted Product",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/restore/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "restore",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": "ao-thun-nam-cao-cap-v1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Product History",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/history/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "history",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": "ao-thun-nam-cao-cap-v1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Batch Change Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\"66123456789abcdef0123400\", \"66123456789abcdef0123401\"],\n  \"status\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/batch/change-status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "batch",
+                    "change-status"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Batch Change Featured",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\"66123456789abcdef0123400\", \"66123456789abcdef0123401\"],\n  \"isFeatured\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/batch/change-featured",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "batch",
+                    "change-featured"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Batch Delete Products",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\"66123456789abcdef0123400\", \"66123456789abcdef0123401\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/products/batch/delete",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "products",
+                    "batch",
+                    "delete"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Category",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Category Tree (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/category",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "category"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Orders Stats (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders/stats",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders",
+                    "stats"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Orders List (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders?page=1&limit=10&status=pending",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "description": "pending / processing / shipping / delivered / cancelled / returned"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Order Detail (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Order Status (Admin)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"processing\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders/:id/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders",
+                    ":id",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Batch Update Order Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\"66123456789abcdef0123456\", \"66123456789abcdef0123457\"],\n  \"status\": \"shipping\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders/batch/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders",
+                    "batch",
+                    "status"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Batch Delete Orders",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\"66123456789abcdef0123456\", \"66123456789abcdef0123457\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders/batch",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders",
+                    "batch"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete One Order",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/orders/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "orders",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Admin Reviews List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/reviews?page=1&limit=10&status=pending",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "reviews"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "description": "pending / approved / rejected"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Approve Review",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/reviews/approve/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "reviews",
+                    "approve",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Reject Review",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/reviews/reject/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "reviews",
+                    "reject",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Strike User (Issue Warning for Review)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/reviews/strike/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "reviews",
+                    "strike",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete Review (Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/reviews/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "reviews",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Staffs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Staff List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/staffs?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "staffs"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Staff Account",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Nguyen Nhan Vien A\",\n  \"email\": \"employee1@test.com\",\n  \"password\": \"Hauhamhoc123!\",\n  \"phone\": \"0987654321\",\n  \"role\": \"employee\",\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/staffs/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "staffs",
+                    "create"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Staff Account",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Nguyen Nhan Vien A Sửa\",\n  \"phone\": \"0987654322\",\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/staffs/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "staffs",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete Staff Account",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/staffs/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "staffs",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users Management",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Get Users list (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/user?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "user"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get User Detail by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/user/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "user",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Toggle User Status (Active/Inactive)",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/user/status/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "user",
+                    "status",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete User (Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/user/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "user",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "66123456789abcdef0123456"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "item": [
+            {
+              "name": "Upload Images to Cloudinary",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "images",
+                      "description": "Upload multiple product images to Cloudinary",
+                      "type": "file",
+                      "src": []
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/version1/admin/upload",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "version1",
+                    "admin",
+                    "upload"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "clientToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

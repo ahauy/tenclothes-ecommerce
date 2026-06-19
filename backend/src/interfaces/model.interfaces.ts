@@ -217,3 +217,12 @@ export interface IProductLog extends Document {
   };
   createdAt: Date;
 }
+
+// ----------------- FORGOT PASSWORD MODEL ------------------
+export interface IForgotPassword extends Document {
+  email: string;
+  otp: string;
+  expireAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}

@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Search,
-  ChevronDown,
   RefreshCcw,
   ChevronLeft,
   ChevronRight,
@@ -785,7 +784,7 @@ const TrashProducts: React.FC = () => {
               <ReactPaginate
                 breakLabel="..."
                 nextLabel={<ChevronRight className="w-4 h-4" />}
-                onPageChange={(e) => setPage(e.selected + 1)}
+                onPageChange={(e: { selected: number }) => setPage(e.selected + 1)}
                 pageRangeDisplayed={3}
                 marginPagesDisplayed={1}
                 pageCount={totalPages}

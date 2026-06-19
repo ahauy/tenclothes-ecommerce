@@ -8,17 +8,37 @@ export const getListOrderAdminService = async (queryFilter: IRequestQueryFilter)
     page = "1",
     limit = "10",
     keyword,
-    sort,
-    startDate,
-    endDate,
-    orderStatus,
-  } = queryFilter
+  } = queryFilter;
 
-  const pageNum = Number(page)
-  const limitNum = Number(limit)
-  const skip = (pageNum - 1) * limitNum
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
 
-  const filter: any = {}  
+  const filter: any = { deleted: false };
+
+  if (keyword) {
+    filter.$or = [
+      { fullName: { $regex: keyword, $options: "i" } },
+      { email: { $regex: keyword, $options: "i" } },
+      { phone: { $regex: keyword, $options: "i" } },
+    ];
+  }
+
+  const users = await User.find(filter)
+    .select("-password")
+    .skip(skip)
+    .limit(limitNum)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const total = await User.countDocuments(filter);
+
+  return {
+    users,
+    total,
+    page: pageNum,
+    limit: limitNum,
+  };
 };
 
 // 2. Get user by ID

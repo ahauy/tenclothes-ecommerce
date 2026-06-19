@@ -29,10 +29,9 @@ import { cn } from "../utils/cn";
 import { toast } from "sonner";
 import type { IJsonFail } from "../interfaces/api.interface";
 import ProductDrawer from "../components/products/ProductDrawer";
-// import ReactPaginateLib from "react-paginate";
-// const ReactPaginate: any =
-//   (ReactPaginateLib as any).default || ReactPaginateLib;
-import ReactPaginate from "react-paginate";
+import ReactPaginateLib from "react-paginate";
+const ReactPaginate: any =
+  (ReactPaginateLib as any).default || ReactPaginateLib;
 import CustomDropdown from "../components/UI/CustomDropdown";
 import TrashDrawer from "../components/trash/TrashDrawer";
 import ProductHistoryDrawer from "../components/products/ProductHistoryDrawer";

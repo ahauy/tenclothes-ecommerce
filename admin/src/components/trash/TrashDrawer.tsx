@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Search,
@@ -11,11 +11,9 @@ import {
   Activity,
   X,
   Loader2,
-  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { productService } from "../../services/product.service";
-import { categoryService } from "../../services/category.service";
 import type { IProductAdmin } from "../../interfaces/product.interface";
 import { toast } from "sonner";
 import type { IJsonFail } from "../../interfaces/api.interface";
@@ -32,15 +30,10 @@ interface TrashDrawerProps {
 
 const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose, onRestore }) => {
   const [products, setProducts] = useState<IProductAdmin[]>([]);
-  const [categories, setCategories] = useState<{ _id: string; title: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
-  
-  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-  const [productToEdit, setProductToEdit] = useState<IProductAdmin | null>(null);
   const [productToRestore, setProductToRestore] = useState<{ id: string; title: string; slug: string } | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
 
@@ -68,7 +61,6 @@ const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose, onRestore })
       });
       setProducts(response.data.products);
       setTotalPages(response.data.totalPages);
-      setTotalProducts(response.data.totalProducts);
     } catch (error: unknown) {
       const err = error as IJsonFail;
       toast.error(err?.message || "Không thể tải danh sách sản phẩm");
@@ -93,21 +85,7 @@ const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose, onRestore })
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      categoryService.getCategories().then((res) => {
-        const flatten = (cats: any[]): any[] => {
-          let res: any[] = [];
-          cats.forEach((cat) => {
-            res.push({ _id: cat._id, title: `${cat.level > 1 ? "└ ".repeat(cat.level - 1) : ""}${cat.title}` });
-            if (cat.children) res = [...res, ...flatten(cat.children)];
-          });
-          return res;
-        };
-        setCategories(flatten(res.data || []));
-      });
-    }
-  }, [isOpen]);
+
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
@@ -131,11 +109,6 @@ const TrashDrawer: React.FC<TrashDrawerProps> = ({ isOpen, onClose, onRestore })
     { label: "Tất cả loại hàng", value: "all", icon: <Layers className="w-3.5 h-3.5" /> },
     { label: "Sản phẩm nổi bật", value: "featured", icon: <Zap className="w-3.5 h-3.5 text-amber-500" /> },
     { label: "Sản phẩm thường", value: "normal", icon: <Package className="w-3.5 h-3.5" /> },
-  ];
-
-  const categoryOptions = [
-    { label: "Tất cả danh mục", value: "all", icon: <Layers className="w-3.5 h-3.5" /> },
-    ...categories.map((cat) => ({ label: cat.title, value: cat._id })),
   ];
 
   return createPortal(

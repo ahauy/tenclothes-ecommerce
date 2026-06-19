@@ -131,7 +131,7 @@ const ProductDrawer: React.FC<ProductDrawerProps> = ({ isOpen, onClose, onSucces
     setIsSubmitting(true);
     try {
       const uploadedStyles = await Promise.all(
-        data.productStyles.map(async (style, index) => {
+        data.productStyles.map(async (_, index) => {
           const files = styleFiles[index] || [];
           if (files.length > 0) {
             return await uploadService.uploadImages(files);

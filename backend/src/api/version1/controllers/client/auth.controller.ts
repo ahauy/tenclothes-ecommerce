@@ -1,7 +1,15 @@
 import { type Request, type Response } from "express";
-import { IRegisterReqBody } from "../../validators/client/auth.validator";
+import {
+  IRegisterReqBody,
+  IForgotPasswordReqBody,
+  IVerifyOtpReqBody,
+  IResetPasswordReqBody,
+} from "../../validators/client/auth.validator";
 import {
   registerService,
+  forgotPasswordService,
+  verifyOtpService,
+  resetPasswordService,
   // verifyRefreshTokenService,
 } from "../../services/client/auth.service";
 import ApiError from "../../../../helpers/ApiError";
@@ -106,3 +114,132 @@ export const registerController = async (
 //     res.status(500).json({ message: "Lỗi hệ thống!" });
 //   }
 // };
+
+export const forgotPasswordController = async (
+  req: Request<{}, {}, IForgotPasswordReqBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    await forgotPasswordService(email);
+
+    res.status(200).json({
+      status: true,
+      message: "Mã OTP đã được gửi đến email của bạn!",
+      data: null,
+    });
+  } catch (error) {
+    console.error("Có lỗi trong forgotPasswordController: ", error);
+
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({
+        status: false,
+        message: error.message,
+        data: null,
+      });
+      return;
+    }
+
+    if (error instanceof Error) {
+      res.status(400).json({
+        status: false,
+        message: error.message,
+        data: null,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      status: false,
+      message: "Hệ thống đang bảo trì hoặc gặp sự cố, vui lòng thử lại sau!",
+      data: null,
+    });
+  }
+};
+
+export const verifyOtpController = async (
+  req: Request<{}, {}, IVerifyOtpReqBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email, otp } = req.body;
+
+    await verifyOtpService(email, otp);
+
+    res.status(200).json({
+      status: true,
+      message: "Mã OTP hợp lệ!",
+      data: null,
+    });
+  } catch (error) {
+    console.error("Có lỗi trong verifyOtpController: ", error);
+
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({
+        status: false,
+        message: error.message,
+        data: null,
+      });
+      return;
+    }
+
+    if (error instanceof Error) {
+      res.status(400).json({
+        status: false,
+        message: error.message,
+        data: null,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      status: false,
+      message: "Hệ thống đang bảo trì hoặc gặp sự cố, vui lòng thử lại sau!",
+      data: null,
+    });
+  }
+};
+
+export const resetPasswordController = async (
+  req: Request<{}, {}, IResetPasswordReqBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const resetData = req.body;
+
+    await resetPasswordService(resetData);
+
+    res.status(200).json({
+      status: true,
+      message: "Đặt lại mật khẩu thành công!",
+      data: null,
+    });
+  } catch (error) {
+    console.error("Có lỗi trong resetPasswordController: ", error);
+
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({
+        status: false,
+        message: error.message,
+        data: null,
+      });
+      return;
+    }
+
+    if (error instanceof Error) {
+      res.status(400).json({
+        status: false,
+        message: error.message,
+        data: null,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      status: false,
+      message: "Hệ thống đang bảo trì hoặc gặp sự cố, vui lòng thử lại sau!",
+      data: null,
+    });
+  }
+};

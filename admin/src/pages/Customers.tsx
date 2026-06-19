@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
   User,
   Activity,
   Check,
@@ -12,7 +10,6 @@ import {
   Phone,
   MapPin,
   Calendar,
-  AlertCircle,
   Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
